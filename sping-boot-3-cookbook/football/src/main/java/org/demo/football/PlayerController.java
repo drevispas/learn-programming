@@ -26,6 +26,9 @@ public class PlayerController {
         return footballService.getPlayer(id);
     }
 
+    // The message converter follows the Accept header in the request.
+    // Spring serializes the response as JSON by default.
+    // You can configure your own serialization by overriding WebMvcConfigurer.configureMessageConverters().
     @PostMapping
     public Player createPlayer(@RequestBody Player player) {
         return footballService.addPlayer(player);
