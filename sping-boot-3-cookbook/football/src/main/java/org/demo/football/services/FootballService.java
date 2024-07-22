@@ -42,8 +42,8 @@ public class FootballService {
         }
     }
 
-    public Player updatePlayer(Player player) {
-        if (players.containsKey(player.id())) {
+    public Player updatePlayer(String id, Player player) {
+        if (players.containsKey(player.id()) && id.equals(player.id())) {
             players.put(player.id(), player);
             return player;
         } else {
