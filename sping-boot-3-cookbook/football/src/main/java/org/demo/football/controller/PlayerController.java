@@ -1,10 +1,7 @@
-package org.demo.football;
+package org.demo.football.controller;
 
-import org.demo.football.exceptions.AlreadyExistsException;
-import org.demo.football.exceptions.NotFoundException;
 import org.demo.football.model.Player;
 import org.demo.football.services.FootballService;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,15 +43,4 @@ public class PlayerController {
     public void deletePlayer(@PathVariable String id) {
         footballService.deletePlayer(id);
     }
-
-    @ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "Player not found")
-    @ExceptionHandler(NotFoundException.class)
-    public void handleNotFoundException() {
-    }
-
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "Player already exists")
-    @ExceptionHandler(AlreadyExistsException.class)
-    public void handleAlreadyExistsException() {
-    }
-
 }
