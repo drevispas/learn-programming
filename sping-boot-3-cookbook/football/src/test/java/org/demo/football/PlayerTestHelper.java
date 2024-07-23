@@ -13,13 +13,14 @@ import java.util.List;
 public class PlayerTestHelper {
 
     public static final List<Player> PLAYERS = List.of(
-            new Player("p1", 5, "Alice", "Defender", LocalDate.of(1990, 1, 1)),
-            new Player("p2", 31, "Bob", "Midfielder", LocalDate.of(1994, 2, 4))
+            new Player("p1", 5, "Alice", "Defender", LocalDate.parse("1990-01-01")),
+            new Player("p2", 31, "Bob", "Midfielder", LocalDate.parse("1994-02-04"))
     );
 
-    public static final Player NEW_PLAYER = new Player("p3", 10, "Charlie", "Forward", LocalDate.of(1995, 3, 5));
+    public static final Player NEW_PLAYER = new Player("p3", 10, "Charlie", "Forward", LocalDate.parse("1995-03-05"));
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     static {
         OBJECT_MAPPER.registerModule(new JavaTimeModule());
     }
