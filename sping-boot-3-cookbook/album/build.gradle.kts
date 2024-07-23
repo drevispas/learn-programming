@@ -25,6 +25,8 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+//    testImplementation("org.wiremock:wiremock:3.9.0")
+    implementation("org.wiremock:wiremock-standalone:3.9.0")
 }
 
 dependencyManagement {
