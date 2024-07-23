@@ -25,6 +25,7 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // just "wiremock" without "standalone" causes an error "Jetty 11 is not present and no suitable HttpServerFactory extension was found."
 //    testImplementation("org.wiremock:wiremock:3.9.0")
     implementation("org.wiremock:wiremock-standalone:3.9.0")
 }
