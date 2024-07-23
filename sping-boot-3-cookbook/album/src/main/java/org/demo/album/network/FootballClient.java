@@ -2,6 +2,7 @@ package org.demo.album.network;
 
 import org.demo.album.model.Player;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
@@ -13,4 +14,7 @@ public interface FootballClient {
 
     @RequestMapping(method=GET, value="/players")
     List<Player> getPlayers();
+
+    @RequestMapping(method=GET, value="/players/{id}")
+    Player getPlayer(@PathVariable String id);
 }

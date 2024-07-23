@@ -1,5 +1,6 @@
 package org.demo.football.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.demo.football.exceptions.AlreadyExistsException;
 import org.demo.football.exceptions.NotFoundException;
 import org.demo.football.model.Player;
@@ -10,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class FootballService {
 
@@ -30,6 +32,7 @@ public class FootballService {
         if (player == null) {
             throw new NotFoundException("Player not found");
         }
+        log.info("Player: {}", player);
         return player;
     }
 

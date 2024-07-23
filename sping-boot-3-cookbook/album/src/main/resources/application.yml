@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: album
+server:
+  port: 8081
+football:
+  api:
+    url: http://localhost:8080
