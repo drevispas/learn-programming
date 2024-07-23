@@ -1,0 +1,51 @@
+#server:
+#  port: 9000
+#
+#logging:
+#  level:
+#    org.springframework.security: trace
+#
+#spring:
+#  application:
+#    name: footballauth
+#  security:
+#    oauth2:
+#      authorizationserver:
+#        client:
+#          football:
+#            registration:
+#              client-id: "football"
+#              client-secret: "{noop}SuperSecret"
+#              client-authentication-methods:
+#                - "client_secret_post"
+#              authorization-grant-types:
+#                - "client_credentials"
+#              scopes:
+#                - "football:read"
+
+server:
+  port: 9000
+
+logging:
+  level:
+    org.springframework.security: trace
+
+spring:
+  security:
+    oauth2:
+      authorizationserver:
+        client:
+          football:
+            registration:
+              client-id: "football"
+              # {noops} is a password encoder that does nothing that is used to store the client secret in plain text.
+              client-secret: "{noop}SuperSecret"
+              client-authentication-methods:
+                # With "client_secret_post", the client sends the client ID and client secret in the body of POST request.
+                - "client_secret_post"
+              authorization-grant-types:
+               # "client_credentials" is used when the client interacts with users
+                - "client_credentials"
+              scopes:
+                - "football:read"
+
