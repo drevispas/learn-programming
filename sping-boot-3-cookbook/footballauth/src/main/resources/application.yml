@@ -1,28 +1,3 @@
-#server:
-#  port: 9000
-#
-#logging:
-#  level:
-#    org.springframework.security: trace
-#
-#spring:
-#  application:
-#    name: footballauth
-#  security:
-#    oauth2:
-#      authorizationserver:
-#        client:
-#          football:
-#            registration:
-#              client-id: "football"
-#              client-secret: "{noop}SuperSecret"
-#              client-authentication-methods:
-#                - "client_secret_post"
-#              authorization-grant-types:
-#                - "client_credentials"
-#              scopes:
-#                - "football:read"
-
 server:
   port: 9000
 
@@ -31,6 +6,8 @@ logging:
     org.springframework.security: trace
 
 spring:
+  application:
+    name: footballauth
   security:
     oauth2:
       authorizationserver:
@@ -48,4 +25,3 @@ spring:
                 - "client_credentials"
               scopes:
                 - "football:read"
-
