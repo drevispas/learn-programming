@@ -1,0 +1,14 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: footballresource
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          audiences:
+            - football
+          # "issuer-uri" indicates all the endpoints of the authorization server including the public key location.
+          issuer-uri: http://localhost:9000
