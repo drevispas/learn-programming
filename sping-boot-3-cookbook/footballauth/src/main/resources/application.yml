@@ -23,5 +23,7 @@ spring:
               authorization-grant-types:
                # "client_credentials" is used when the client interacts with users
                 - "client_credentials"
+              # List of scopes that the client is allowed to request.
               scopes:
                 - "football:read"
+                - "football:admin"
