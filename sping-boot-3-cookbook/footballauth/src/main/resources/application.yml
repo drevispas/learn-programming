@@ -30,7 +30,7 @@ spring:
           football-ui:
             registration:
               client-id: "football-ui"
-              client-secret: "{noop}TheSuperSauce"
+              client-secret: "{noop}TheSecretSauce"
               client-authentication-methods:
                 - "client_secret_basic"
               authorization-grant-types:
