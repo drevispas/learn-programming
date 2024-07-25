@@ -1,0 +1,24 @@
+<!DOC HTML>
+<html>
+<head>
+    <title>Myself</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+<div>
+    <h1>This is what you can see in your OpenID data</h1>
+    <p>Your username <span style="front-weight:bold" th:text="${userName}"></span></p>
+    <p>Your audience <span style="front-weight:bold" th:text="${audience}"></span></p>
+    <p>Your expires at <span style="front-weight:bold" th:text="${expiresAt}"></span></p>
+</div>
+<h2>Here all the claims</h2>
+<table>
+    <tr th:each="claims : ${claims}">
+        <td th:text="${claims.key}"></td>
+        <td th:text="${claims.value}"></td>
+    </tr>
+</table>
+<h2>Let's try to use your rights</h2>
+<a href="/teams">Teams</a>
+</body>
+</html>

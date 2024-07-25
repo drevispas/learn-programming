@@ -1,0 +1,33 @@
+server:
+  port: 9080
+
+spring:
+  application:
+    name: footballui
+  security:
+    oauth2:
+      client:
+        registration:
+          football-ui:
+              client-id: football-ui
+              client-secret: "TheSecretSauce"
+              # URI to redirect to after the user logs in.
+              redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+              # After user consent, the authorization code is sent to `footballui` at this URL.
+              authorization-grant-type: authorization_code
+              scope:
+                # By giving `footballauth` the authorization code, `footballui` gets the ID token, access token, and refresh token.
+                - openid
+                - profile
+                - football:read
+                - football:admin
+        provider:
+            football-ui:
+                issuer-uri: http://localhost:9000
+  data:
+    # Spring Oauth2 client utilizes Redis to store the session because lots of redirects are involved during the OAuth2 flow.
+    redis:
+      host: localhost
+      port: 6379
+  thymeleaf:
+    cache: false
