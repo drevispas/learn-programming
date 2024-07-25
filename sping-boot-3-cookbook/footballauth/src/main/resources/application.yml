@@ -38,6 +38,7 @@ spring:
                 - "authorization_code"
                 - "refresh_token"
                 - "client_credentials"
+              # URI to redirect to after the user logs in. This should match the redirect URI in the client registration (in footballui).
               redirect-uris:
                 - "http://localhost:9080/login/oauth2/code/football-ui"
               scopes:
