@@ -15,13 +15,13 @@ spring:
           football:
             registration:
               client-id: "football"
-              # {noops} is a password encoder that does nothing that is used to store the client secret in plain text.
+              # `{noops}` is a password encoder that does nothing that is used to store the client secret in plain text.
               client-secret: "{noop}SuperSecret"
               client-authentication-methods:
-                # With "client_secret_post", the client sends the client ID and client secret in the body of POST request.
+                # With `client_secret_post`, the client sends the client ID and client secret in the body of POST request.
                 - "client_secret_post"
               authorization-grant-types:
-               # "client_credentials" is used when the client interacts with users
+               # `client_credentials` is used when the client interacts with users
                 - "client_credentials"
               # List of scopes that the client is allowed to request.
               scopes:
@@ -32,13 +32,13 @@ spring:
               client-id: "football-ui"
               client-secret: "{noop}TheSecretSauce"
               client-authentication-methods:
-                # "client_secret_basic" sends the client ID and client secret in the Authorization header in the form of "Basic" authentication.
+                # `client_secret_basic` sends the client ID and client secret in the Authorization header in the form of `Basic` authentication.
                 - "client_secret_basic"
               authorization-grant-types:
                 - "authorization_code"
                 - "refresh_token"
                 - "client_credentials"
-              # URI to redirect to after the user logs in. This should match the redirect URI in the client registration (in footballui).
+              # URI to redirect to after the user logs in. This should match the redirect URI of the client registration in `footballui` service.
               redirect-uris:
                 - "http://localhost:9080/login/oauth2/code/football-ui"
               scopes:

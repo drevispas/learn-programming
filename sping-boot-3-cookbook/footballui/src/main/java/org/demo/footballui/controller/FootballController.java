@@ -14,18 +14,19 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.client.RestTemplate;
 
+// Simulate a web frontend like a SPA using Thymeleaf
 // Use @Controller for Thymeleaf instead of @RestController for JSON
 @Controller
 @Slf4j
 public class FootballController {
 
-    // home.html contains a link to /myself
+    // You can go to `home.html` that contains a link to `/myself` with no authentication
     @GetMapping("/")
     public String home() {
         return "home";
     }
 
-    // "/myself" need to be authenticated
+    // `/myself` need to be authenticated
     @GetMapping("/myself")
     public String myself(Model model, @AuthenticationPrincipal OidcUser oidcUser) {
         model.addAttribute("userName", oidcUser.getName());
