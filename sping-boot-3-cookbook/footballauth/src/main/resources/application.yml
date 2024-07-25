@@ -47,6 +47,27 @@ spring:
                 - "football:read"
                 - "football:admin"
             require-authorization-consent: true
+      # The authorization server becomes a client to Google identity provider. It makes the clients to sign in with Google through the authorization server.
+      # In that case the authorization server don't need a repository to store the client details (see below user.name and user.password).
+      # But it still issues tokens to the client by itself rather than Google.
+      client:
+        registration:
+          football-google:
+            client-id: "831976824273-36hfu7o62lle98tcpira60ujb14kd8e8.apps.googleusercontent.com"
+            client-secret: "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"
+            # URI should match the redirect URI of Google client registration.
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            authorization-grant-type: authorization_code
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          football-google:
+            issuer-uri: "https://accounts.google.com"
+            user-name-attribute: given_name
+    # used for signing in the authorization server to get the authorization code.
+    # This is not used when using Google as the identity provider.
     user:
       name: "user"
       password: "{noop}password"
