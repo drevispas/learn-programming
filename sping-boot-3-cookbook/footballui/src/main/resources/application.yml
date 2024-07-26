@@ -11,7 +11,8 @@ spring:
           football-ui:
               client-id: football-ui
               client-secret: "TheSecretSauce"
-              # URI to redirect to after the user logs in.
+              # URI to redirect to after the user logs in the form of
+              #  `http://localhost:9080/login/oauth2/code/football-ui?code=xxx&state=yyy`.
               redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
               # After user consent, the authorization code is sent to `footballui` at this URL.
               authorization-grant-type: authorization_code
