@@ -21,6 +21,7 @@ public class SecurityConfig {
                         // POST should have admin scope, or it will be forbidden with 403
                         .requestMatchers(HttpMethod.POST, "/football/teams/**").hasAuthority("SCOPE_football:admin")
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/football").permitAll()
                         .requestMatchers("/actuator/**").hasAuthority("SCOPE_football:admin")
                         .anyRequest().authenticated()
                 )

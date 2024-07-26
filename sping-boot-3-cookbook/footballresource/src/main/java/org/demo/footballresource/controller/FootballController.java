@@ -1,16 +1,21 @@
 package org.demo.footballresource.controller;
 
+import lombok.RequiredArgsConstructor;
+import org.demo.footballresource.service.FileLoader;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/football")
+@RequiredArgsConstructor
 public class FootballController {
+
+    private final FileLoader fileLoader;
 
     @GetMapping("/teams")
     public List<String> listTeams() {
-        return List.of("Real Madrid", "Barcelona", "Liverpool", "Manchester City");
+        return fileLoader.getTeams();
     }
 
     @PostMapping("/teams")
