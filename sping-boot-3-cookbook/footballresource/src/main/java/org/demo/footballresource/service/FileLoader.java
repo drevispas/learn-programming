@@ -35,6 +35,7 @@ public class FileLoader {
 
     public void loadFile() {
         try {
+            Thread.sleep(5000);
             Files.list(Paths.get(folder))
                     .filter(Files::isRegularFile)
                     .filter(file -> file.toString().endsWith(".json"))
@@ -49,6 +50,8 @@ public class FileLoader {
                     });
         } catch (IOException e) {
             throw new RuntimeException("Error loading file", e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 }
