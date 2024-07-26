@@ -39,6 +39,7 @@ spring:
                 - "refresh_token"
                 - "client_credentials"
               # URI to redirect to after the user logs in. This should match the redirect URI of the client registration in `footballui` service.
+              # Redirect GET method in the form of `http://localhost:9080/login/oauth2/code/football-ui?code=xxx&state=yyy`.
               redirect-uris:
                 - "http://localhost:9080/login/oauth2/code/football-ui"
               scopes:
