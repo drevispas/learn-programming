@@ -1,6 +1,7 @@
 package org.demo.football.controller;
 
 import org.demo.football.model.Player;
+import org.demo.football.model.PlayerRanking;
 import org.demo.football.services.FootballService;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,5 +43,10 @@ public class PlayerController {
     @DeleteMapping("/{id}")
     public void deletePlayer(@PathVariable String id) {
         footballService.deletePlayer(id);
+    }
+
+    @GetMapping("/rankings")
+    public List<PlayerRanking> listPlayerRankings() {
+        return footballService.listPlayerRankings();
     }
 }

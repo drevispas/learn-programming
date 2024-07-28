@@ -1,10 +1,13 @@
 package org.demo.football.services;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.demo.football.exceptions.AlreadyExistsException;
 import org.demo.football.exceptions.NotFoundException;
 import org.demo.football.model.Player;
+import org.demo.football.model.PlayerRanking;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -13,7 +16,14 @@ import java.util.Map;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FootballService {
+
+    private final RestTemplate restTemplate;
+
+//    public FootballService(RestTemplateBuilder restTemplateBuilder) {
+//        this.restTemplate = restTemplateBuilder.build();
+//    }
 
     // Map.of(), Map.ofEntries() create immutable maps
     private final Map<String, Player> initialPlayers = Map.ofEntries(
@@ -60,5 +70,14 @@ public class FootballService {
         } else {
             throw new NotFoundException("Player not found");
         }
+    }
+
+    public List<PlayerRanking> listPlayerRankings() {
+        String url = "http://localhost:8000/football/ranking";
+        return players.values().stream()
+                .map(player -> {
+                    int ranking = restTemplate.getForObject(url + "/" + player.number(), int.class);
+                    return new PlayerRanking(player, ranking);
+                }).toList();
     }
 }

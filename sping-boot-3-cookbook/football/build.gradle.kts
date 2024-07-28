@@ -27,7 +27,10 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
-
+	// Bridge between Micrometer and OpenTelemetry
+	implementation("io.micrometer:micrometer-tracing-bridge-otel")
+	// Exporter from OpenTelemetry to Zipkin
+	implementation("io.opentelemetry:opentelemetry-exporter-zipkin")
 }
 
 tasks.withType<Test> {
