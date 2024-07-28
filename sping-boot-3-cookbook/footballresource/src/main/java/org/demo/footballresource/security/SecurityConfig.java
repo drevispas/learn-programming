@@ -21,6 +21,7 @@ public class SecurityConfig {
                         // POST should have admin scope, or it will be forbidden with 403
                         .requestMatchers(HttpMethod.POST, "/football/teams/**").hasAuthority("SCOPE_football:admin")
                         .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/football/ranking/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Configure OAuth2 resource server to accept JWT

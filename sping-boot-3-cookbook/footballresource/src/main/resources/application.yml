@@ -3,6 +3,7 @@ server:
 
 spring:
   application:
+    # Identifies the application in distributed tracing.
     name: footballresource
   security:
     oauth2:
@@ -29,6 +30,13 @@ management:
       probes:
         # proves are enabled automatically under Kubernetes environment
         enabled: true
+  tracing:
+    sampling:
+      # By default, only 10% of the requests are sampled. This ensures 100% of the requests are sampled.
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
 
 football:
   folder: teams

@@ -26,6 +26,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.postgresql:postgresql")
+    // Bridge between Micrometer and OpenTelemetry
+    implementation("io.micrometer:micrometer-tracing-bridge-otel")
+    // Exporter from OpenTelemetry to Zipkin
+    implementation("io.opentelemetry:opentelemetry-exporter-zipkin")
 }
 
 tasks.withType<Test> {
