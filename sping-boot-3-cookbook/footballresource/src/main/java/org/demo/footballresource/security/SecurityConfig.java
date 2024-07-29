@@ -17,11 +17,13 @@ public class SecurityConfig {
                 authorizeRequests
                         // Spring default JwtAuthenticationConverter will be used to convert JWT to Authentication
                         // "SCOPE_" prefix is added to the scope value by JwtAuthenticationConverter
-                        .requestMatchers(HttpMethod.GET, "/football/teams/**").hasAuthority("SCOPE_football:read")
+//                        .requestMatchers(HttpMethod.GET, "/football/teams/**").hasAuthority("SCOPE_football:read")
+                        .requestMatchers(HttpMethod.GET, "/football/teams/**").permitAll()
                         // POST should have admin scope, or it will be forbidden with 403
                         .requestMatchers(HttpMethod.POST, "/football/teams/**").hasAuthority("SCOPE_football:admin")
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/football/ranking/**").permitAll()
+                        .requestMatchers("/football/stats/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Configure OAuth2 resource server to accept JWT

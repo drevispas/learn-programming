@@ -2,6 +2,7 @@ package org.demo.footballresource.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.demo.footballresource.service.DataService;
 import org.demo.footballresource.service.FileLoader;
 import org.demo.footballresource.service.TradingService;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ public class FootballController {
 
     private final FileLoader fileLoader;
     private final TradingService tradingService;
+    private final DataService dataService;
 
     @GetMapping("/teams")
     public List<String> listTeams() {
@@ -42,5 +44,10 @@ public class FootballController {
                     + " at this moment. Please try again later.");
         }
         return random.nextInt(1000);
+    }
+
+    @GetMapping("/stats/{player}")
+    public String getPlayerStats(@PathVariable String player) {
+        return dataService.getPlayerStats(player);
     }
 }
