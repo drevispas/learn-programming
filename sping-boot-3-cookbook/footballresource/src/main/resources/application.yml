@@ -1,6 +1,10 @@
 server:
   port: 8000
 
+logging:
+  level:
+    org.springframework.security: trace
+
 spring:
   application:
     # Identifies the application in distributed tracing.
