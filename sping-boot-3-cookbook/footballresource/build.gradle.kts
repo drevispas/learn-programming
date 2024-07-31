@@ -30,6 +30,8 @@ dependencies {
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
     // Exporter from OpenTelemetry to Zipkin
     implementation("io.opentelemetry:opentelemetry-exporter-zipkin")
+    // AOP
+    implementation("org.springframework.boot:spring-boot-starter-aop")
 }
 
 tasks.withType<Test> {

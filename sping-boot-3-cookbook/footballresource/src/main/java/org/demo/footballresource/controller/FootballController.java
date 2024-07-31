@@ -58,4 +58,10 @@ public class FootballController {
         log.info("player: {}, bid: {}", player, bid);
         auctionService.addBid(player, bid);
     }
+
+    @PostMapping("/auction/{player}")
+    public void addAuction(@PathVariable String player, @RequestBody String bid) {
+        log.info("player: {}, bid: {}", player, bid);
+        auctionService.addBidAOP(player, bid);
+    }
 }

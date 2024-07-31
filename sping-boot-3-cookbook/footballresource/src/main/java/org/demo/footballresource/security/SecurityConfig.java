@@ -27,6 +27,7 @@ public class SecurityConfig {
                         .requestMatchers("/football/ranking/**").permitAll()
                         .requestMatchers("/football/stats/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/football/bid/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/football/auction/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Configure OAuth2 resource server to accept JWT

@@ -3,6 +3,7 @@ package org.demo.footballresource.service;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.observation.annotation.Observed;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Observed(name = "football.auction")
 @Slf4j
 @Service
 public class AuctionService {
@@ -37,5 +39,15 @@ public class AuctionService {
             }
             bids.remove(player);
         });
+    }
+
+    public void addBidAOP(String player, String bid) {
+        bids.put(player, bid);
+        try {
+            Thread.sleep(random.nextInt(20));
+        } catch (InterruptedException e) {
+            log.error("Error adding bid", e);
+        }
+        bids.remove(player);
     }
 }
