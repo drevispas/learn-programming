@@ -1,0 +1,7 @@
+server:
+  port: 8761
+eureka:
+  client:
+    # Followings prohibits the Eureka server from registering itself as a client.
+    register-with-eureka: false
+    fetch-registry: false
