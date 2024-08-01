@@ -18,6 +18,14 @@ repositories {
 	mavenCentral()
 }
 
+extra["springCloudVersion"] = "2023.0.3"
+
+dependencyManagement {
+	imports {
+		mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+	}
+}
+
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-web")
@@ -31,6 +39,11 @@ dependencies {
 	implementation("io.micrometer:micrometer-tracing-bridge-otel")
 	// Exporter from OpenTelemetry to Zipkin
 	implementation("io.opentelemetry:opentelemetry-exporter-zipkin")
+	// Connect to Eureka
+	implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+	implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+	// Unable to load io.netty.resolver.dns.macos.MacOSDnsServerAddressStreamProvider
+	implementation("io.netty:netty-resolver-dns-native-macos:4.1.112.Final:osx-aarch_64")
 }
 
 tasks.withType<Test> {
