@@ -18,7 +18,7 @@ public class TradingService {
 
     public int getPendingOrders() {
         int pendingOrders = new Random().nextInt(100);
-        log.info("Pending orders: {}", pendingOrders);
+        log.debug("Pending orders: {}", pendingOrders);
         return pendingOrders;
     }
 
