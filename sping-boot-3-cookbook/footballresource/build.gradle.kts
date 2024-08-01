@@ -32,6 +32,8 @@ dependencies {
     implementation("io.opentelemetry:opentelemetry-exporter-zipkin")
     // AOP
     implementation("org.springframework.boot:spring-boot-starter-aop")
+    // Prometheus
+    implementation("io.micrometer:micrometer-registry-prometheus")
 }
 
 tasks.withType<Test> {

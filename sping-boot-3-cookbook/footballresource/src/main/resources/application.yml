@@ -1,9 +1,9 @@
 server:
   port: 8000
 
-logging:
-  level:
-    org.springframework.security: trace
+#logging:
+#  level:
+#    org.springframework.security: trace
 
 spring:
   application:
@@ -25,15 +25,18 @@ spring:
     password: football
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,env,metrics,beans,loggers,football
   endpoint:
     health:
       probes:
         # proves are enabled automatically under Kubernetes environment
         enabled: true
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,env,metrics,beans,loggers,football,prometheus
+  # Tracing is useful in showing the relationship between the services in a distributed system.
   tracing:
     sampling:
       # By default, only 10% of the requests are sampled. This ensures 100% of the requests are sampled.
