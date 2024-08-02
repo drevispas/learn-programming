@@ -9,7 +9,9 @@ import java.util.List;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
-@FeignClient(name = "football", url = "http://localhost:8080")
+//@FeignClient(name = "football", url = "http://localhost:8080")
+// Set just the name of the service to use the service discovery feature
+@FeignClient(name = "football")
 public interface FootballClient {
 
     @RequestMapping(method=GET, value="/players")

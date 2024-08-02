@@ -29,6 +29,11 @@ dependencies {
     // Spring Boot uses Jetty 12 but just wiremock depends on Jetty 11 so that we use "wiremock-standalone" instead of "wiremock"
 //    testImplementation("org.wiremock:wiremock:3.9.0")
     implementation("org.wiremock:wiremock-standalone:3.9.0")
+    // Connect to Eureka
+    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+    // Unable to load io.netty.resolver.dns.macos.MacOSDnsServerAddressStreamProvider
+    implementation("io.netty:netty-resolver-dns-native-macos:4.1.112.Final:osx-aarch_64")
 }
 
 dependencyManagement {
