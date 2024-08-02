@@ -2,7 +2,7 @@ package org.demo.album.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.demo.album.model.Player;
-import org.demo.album.network.FootballClient;
+import org.demo.album.network.FootballFeignClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,19 +16,19 @@ import java.util.Optional;
 public class FootballClientService {
 
     // footballClient is a FeignClient
-    private final FootballClient footballClient;
+    private final FootballFeignClient footballFeignClient;
     private final RestClient restClient;
-    public FootballClientService(FootballClient footballClient, RestClient restClient) {
-        this.footballClient = footballClient;
+    public FootballClientService(FootballFeignClient footballFeignClient, RestClient restClient) {
+        this.footballFeignClient = footballFeignClient;
         this.restClient = restClient;
     }
 
     public List<Player> getPlayersWithFeign() {
-        return footballClient.getPlayers();
+        return footballFeignClient.getPlayers();
     }
 
     public Player getPlayerWithFeign(String id) {
-        return footballClient.getPlayer(id);
+        return footballFeignClient.getPlayer(id);
     }
 
     public List<Player> getPlayers() {
@@ -46,5 +46,9 @@ public class FootballClientService {
                     }
                     return Optional.ofNullable(response.bodyTo(Player.class));
                 });
+    }
+
+    public String getServiceInfo() {
+        return footballFeignClient.getServiceInfo();
     }
 }

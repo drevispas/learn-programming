@@ -1,4 +1,10 @@
+football:
+  # random.uuid is defined at the package org.springframework.boot.env
+  instance-id: ${random.uuid}
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    # random.int generates 9-digit random number
+    instance-id: ${spring.application.name}:${random.int}}

@@ -1,11 +1,11 @@
 package org.demo.football.services;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.demo.football.exceptions.AlreadyExistsException;
 import org.demo.football.exceptions.NotFoundException;
 import org.demo.football.model.Player;
 import org.demo.football.model.PlayerRanking;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -16,14 +16,14 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class FootballService {
 
     private final RestTemplate restTemplate;
 
-//    public FootballService(RestTemplateBuilder restTemplateBuilder) {
-//        this.restTemplate = restTemplateBuilder.build();
-//    }
+    public FootballService(RestTemplateBuilder restTemplateBuilder) {
+        this.restTemplate = restTemplateBuilder.build();
+    }
 
     // Map.of(), Map.ofEntries() create immutable maps
     private final Map<String, Player> initialPlayers = Map.ofEntries(

@@ -39,4 +39,9 @@ public class AlbumController {
     public Player getPlayerWithFeign(@PathVariable String id) {
         return footballClientService.getPlayerWithFeign(id);
     }
+
+    @GetMapping("/serviceinfo")
+    public String getServiceInfo() {
+        return footballClientService.getServiceInfo();
+    }
 }

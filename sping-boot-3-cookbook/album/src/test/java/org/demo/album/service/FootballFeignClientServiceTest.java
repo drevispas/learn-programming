@@ -15,7 +15,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(properties = {"football.api.url=http://localhost:7979"})
-class FootballClientServiceTest {
+class FootballFeignClientServiceTest {
 
     @BeforeAll
     static void init() {

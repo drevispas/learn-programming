@@ -12,11 +12,14 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 //@FeignClient(name = "football", url = "http://localhost:8080")
 // Set just the name of the service to use the service discovery feature
 @FeignClient(name = "football")
-public interface FootballClient {
+public interface FootballFeignClient {
 
     @RequestMapping(method=GET, value="/players")
     List<Player> getPlayers();
 
     @RequestMapping(method=GET, value="/players/{id}")
     Player getPlayer(@PathVariable String id);
+
+    @RequestMapping(method = GET, value="/serviceinfo")
+    String getServiceInfo();
 }
