@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: footballgateway
+  cloud:
+    gateway:
+      mvc:
+        routes:
+          - id: players
+            uri: lb://football
+            predicates:
+              - Path=/api/players/**
+            filters:
+              # StripPrefix=1 removes the first segment of the path. For example, /api/players/1 becomes /players/1.
+              - StripPrefix=1
+          - id: album
+            # By using "lb://servicename", we enable client-side load balancing.
+            uri: lb://album
+            predicates:
+              - Path=/api/albums/**
+            filters:
+              - StripPrefix=1
+# This gateway becomes a client to all the backend services.
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

@@ -7,4 +7,4 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
   instance:
     # random.int generates 9-digit random number
-    instance-id: ${spring.application.name}:${random.int}}
+    instance-id: ${spring.application.name}:${random.int}
