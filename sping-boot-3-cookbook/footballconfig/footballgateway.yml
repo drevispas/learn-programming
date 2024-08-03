@@ -1,0 +1,20 @@
+server:
+  port: 8080
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: players
+          uri: ${PLAYERS_URI:lb://football}
+          predicates:
+            - Path=/api/players/**
+          filters:
+            # StripPrefix=1 removes the first segment of the path. For example, /api/players/1 becomes /players/1.
+            - StripPrefix=1
+        - id: album
+          # By using "lb://servicename", we enable client-side load balancing.
+          uri: lb://album
+          predicates:
+            - Path=${ALBUMS_URI:/api/albums/**}
+          filters:
+            - StripPrefix=1
