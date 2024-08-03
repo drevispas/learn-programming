@@ -18,6 +18,9 @@ spring:
             - Path=${ALBUMS_URI:/api/albums/**}
           filters:
             - StripPrefix=1
+  config:
+    import: optional:configserver:http://localhost:8888
+
 # This gateway becomes a client to all the backend services.
 eureka:
   client:

@@ -34,6 +34,8 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
     // Unable to load io.netty.resolver.dns.macos.MacOSDnsServerAddressStreamProvider
     implementation("io.netty:netty-resolver-dns-native-macos:4.1.112.Final:osx-aarch_64")
+    // Spring cloud config starter
+    implementation("org.springframework.cloud:spring-cloud-starter-config")
 }
 
 dependencyManagement {

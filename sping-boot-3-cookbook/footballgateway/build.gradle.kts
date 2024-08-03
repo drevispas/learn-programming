@@ -28,6 +28,8 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     // Test with contract stub runner
     testImplementation("org.springframework.cloud:spring-cloud-starter-contract-stub-runner")
+    // Spring cloud config starter
+    implementation("org.springframework.cloud:spring-cloud-starter-config")
 }
 
 dependencyManagement {

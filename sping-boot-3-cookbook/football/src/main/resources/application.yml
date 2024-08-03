@@ -8,3 +8,9 @@ eureka:
   instance:
     # random.int generates 9-digit random number
     instance-id: ${spring.application.name}:${random.int}
+spring:
+  config:
+    # Load cconfiguration from the Config Server
+    import: optional:configserver:http://localhost:8888
+  application:
+    name: football
