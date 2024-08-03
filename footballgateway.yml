@@ -4,10 +4,10 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: players
+        - id: football
           uri: ${PLAYERS_URI:lb://football}
           predicates:
-            - Path=/api/players/**
+            - Path=/api/football/**
           filters:
             # StripPrefix=1 removes the first segment of the path. For example, /api/players/1 becomes /players/1.
             - StripPrefix=1
