@@ -18,6 +18,8 @@ repositories {
     mavenCentral()
 }
 
+extra["springCloudVersion"] = "2023.0.3"
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -34,6 +36,14 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-aop")
     // Prometheus
     implementation("io.micrometer:micrometer-registry-prometheus")
+    // Eureka client
+    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+    }
 }
 
 tasks.withType<Test> {

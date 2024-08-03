@@ -1,5 +1,6 @@
 server:
-  port: 8000
+#  port: 8000
+  port: 0
 
 #logging:
 #  level:
@@ -47,3 +48,9 @@ management:
 
 football:
   folder: teams
+
+eureka:
+  client:
+    service-url:
+      # Eureka server URL
+      defaultZone: http://localhost:8761/eureka/
