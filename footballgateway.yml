@@ -18,9 +18,9 @@ spring:
             - Path=${ALBUMS_URI:/api/albums/**}
           filters:
             - StripPrefix=1
-        - id: admin
-          uri: lb://footballadmin
-          predicates:
-            - Path=/admin/**
-          filters:
-            - StripPrefix=1
+#        - id: admin
+#          uri: lb://footballadmin
+#          predicates:
+#            - Path=/admin/**
+#          filters:
+#            - StripPrefix=1
