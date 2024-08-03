@@ -24,9 +24,11 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("de.codecentric:spring-boot-admin-starter-server")
 	implementation("org.springframework.cloud:spring-cloud-starter-config")
+	// Discover microservices using Eureka
 	implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
 }
 
 dependencyManagement {

@@ -10,6 +10,7 @@ management:
   endpoints:
     web:
       exposure:
+        # Expose service detail to Spring Boot Admin
         include: health,info,env,metrics,beans,loggers,prometheus
   tracing:
     sampling:
