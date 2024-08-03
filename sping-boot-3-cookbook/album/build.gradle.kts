@@ -36,6 +36,15 @@ dependencies {
     implementation("io.netty:netty-resolver-dns-native-macos:4.1.112.Final:osx-aarch_64")
     // Spring cloud config starter
     implementation("org.springframework.cloud:spring-cloud-starter-config")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    // Bridge between Micrometer and OpenTelemetry
+    implementation("io.micrometer:micrometer-tracing-bridge-otel")
+    // Exporter from OpenTelemetry to Zipkin
+    implementation("io.opentelemetry:opentelemetry-exporter-zipkin")
+    // Micrometer tracing
+    implementation("io.micrometer:micrometer-tracing")
+    // OpenFeign does not propagate distributed tracing headers by default so that we need to add this dependency
+    implementation("io.github.openfeign:feign-micrometer")
 }
 
 dependencyManagement {

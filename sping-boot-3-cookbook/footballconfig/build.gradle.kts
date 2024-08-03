@@ -23,6 +23,11 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-config-server")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    // Bridge between Micrometer and OpenTelemetry
+    implementation("io.micrometer:micrometer-tracing-bridge-otel")
+    // Exporter from OpenTelemetry to Zipkin
+    implementation("io.opentelemetry:opentelemetry-exporter-zipkin")
 }
 
 dependencyManagement {
