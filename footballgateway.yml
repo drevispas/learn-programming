@@ -27,7 +27,7 @@ spring:
         - id: footballresource
           uri: lb://footballresource
           predicates:
-              - Path=/api/footballresource/**
+              - Path=/api/football/**
           filters:
               - StripPrefix=1
   security:
