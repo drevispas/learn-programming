@@ -7,6 +7,10 @@ eureka:
   instance:
     instance-id: ${spring.application.name}:${random.int}
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,env,metrics,beans,loggers,prometheus
   tracing:
     sampling:
         # The value 1.0 means that all requests are traced.
