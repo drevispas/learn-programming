@@ -7,14 +7,20 @@ spring:
         - id: football
           uri: ${PLAYERS_URI:lb://football}
           predicates:
-            - Path=/api/football/players/**
+            - Path=/api/players/**
           filters:
             # StripPrefix=1 removes the first segment of the path. For example, /api/players/1 becomes /players/1.
-            - StripPrefix=2
+            - StripPrefix=1
         - id: album
           # By using "lb://servicename", we enable client-side load balancing.
           uri: lb://album
           predicates:
             - Path=${ALBUMS_URI:/api/albums/**}
+          filters:
+            - StripPrefix=1
+        - id: admin
+          uri: lb://footballadmin
+          predicates:
+            - Path=/admin/**
           filters:
             - StripPrefix=1
