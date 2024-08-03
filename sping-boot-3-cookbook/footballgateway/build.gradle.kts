@@ -35,6 +35,8 @@ dependencies {
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
     // Exporter from OpenTelemetry to Zipkin
     implementation("io.opentelemetry:opentelemetry-exporter-zipkin")
+    // Resource server
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 }
 
 dependencyManagement {

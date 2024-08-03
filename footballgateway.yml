@@ -24,3 +24,19 @@ spring:
             - Path=/admin/**
           filters:
             - StripPrefix=1
+        - id: footballresource
+          uri: lb://footballresource
+          predicates:
+              - Path=/api/footballresource/**
+          filters:
+              - StripPrefix=1
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # `audiences` is a list of the JWT clients that are allowed to access the resource server.
+          audiences:
+            - football
+            - football-ui
+          # `issuer-uri` indicates all the endpoints of the authorization server including the public key location.
+          issuer-uri: http://localhost:9000

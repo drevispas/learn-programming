@@ -18,6 +18,8 @@ spring:
             - Path=${ALBUMS_URI:/api/albums/**}
           filters:
             - StripPrefix=1
+
+  # After connecting to the Config Server, this application.yml file will be overwritten and no longer used.
   config:
     import: optional:configserver:http://localhost:8888
 
