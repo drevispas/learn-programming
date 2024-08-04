@@ -1,8 +1,8 @@
 package org.demo.footballresource.jdbc.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.demo.footballresource.jdbc.entity.Team;
-import org.demo.footballresource.jdbc.service.TeamJdbcService;
+import org.demo.footballresource.jdbc.entity.JdbcTeam;
+import org.demo.footballresource.jdbc.service.JdbcTeamService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,22 +13,22 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/jdbc/teams")
 @RestController
-public class TeamController {
+public class JdbcTeamController {
 
-    private final TeamJdbcService teamJdbcService;
+    private final JdbcTeamService jdbcTeamService;
 
     @GetMapping("/count")
     public int countTeams() {
-        return teamJdbcService.countTeams();
+        return jdbcTeamService.countTeams();
     }
 
     @GetMapping
-    public List<Team> listTeams() {
-        return teamJdbcService.listTeams();
+    public List<JdbcTeam> listTeams() {
+        return jdbcTeamService.listTeams();
     }
 
     @GetMapping("/{id}")
-    public Team readTeam(@PathVariable int id) {
-        return teamJdbcService.getTeam(id);
+    public JdbcTeam readTeam(@PathVariable int id) {
+        return jdbcTeamService.getTeam(id);
     }
 }

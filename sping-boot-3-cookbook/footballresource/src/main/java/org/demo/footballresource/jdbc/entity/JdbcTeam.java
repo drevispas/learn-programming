@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class Team {
+public class JdbcTeam {
 
     private Integer id;
     private String name;

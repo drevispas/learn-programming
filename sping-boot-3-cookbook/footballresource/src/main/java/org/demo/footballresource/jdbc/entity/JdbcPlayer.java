@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 @AllArgsConstructor
 @Data
-public class Player {
+public class JdbcPlayer {
 
     private int id;
     private int jerseyNumber;

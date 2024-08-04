@@ -38,6 +38,8 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus")
     // Eureka client
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+    // Spring data JPA
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 }
 
 dependencyManagement {
