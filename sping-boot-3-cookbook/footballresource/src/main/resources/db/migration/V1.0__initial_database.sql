@@ -1,11 +1,11 @@
-CREATE DATABASE football
-    WITH
-    OWNER = user
-    ENCODING = 'UTF8'
-    CONNECTION LIMIT = -1
-    IS_TEMPLATE = False;
-
-\c football
+-- CREATE DATABASE football
+--     WITH
+--     OWNER = 'user'
+--     ENCODING = 'UTF8'
+--     CONNECTION LIMIT = -1
+--     IS_TEMPLATE = False;
+--
+-- \c football
 
 CREATE TABLE IF NOT EXISTS teams
 (

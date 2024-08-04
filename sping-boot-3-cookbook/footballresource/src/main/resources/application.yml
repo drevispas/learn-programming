@@ -28,7 +28,11 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
     # For Testcontainers to work
-    generate-ddl: true
+    # But not needed if you have Flyway or Liquibase
+#    generate-ddl: true
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0
 
 management:
   endpoint:

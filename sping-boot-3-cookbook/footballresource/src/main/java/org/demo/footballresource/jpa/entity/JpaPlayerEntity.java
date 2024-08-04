@@ -20,6 +20,9 @@ public class JpaPlayerEntity {
     // ManyToOne uses EAGER by default
     @ManyToOne(fetch = FetchType.LAZY)
     // @JoinColumn specifies the foreign key column in the players table and is often used with @ManyToOne
+    // team_id column of players table is the foreign key that references the id column of the teams table
     @JoinColumn(name = "team_id")
     private JpaTeamEntity team;
+    private Integer height;
+    private Integer weight;
 }

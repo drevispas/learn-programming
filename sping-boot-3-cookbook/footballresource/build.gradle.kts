@@ -3,6 +3,8 @@ plugins {
     id("org.springframework.boot") version "3.3.2"
     id("io.spring.dependency-management") version "1.1.6"
     id("io.freefair.lombok") version "8.6"
+    //
+    id("org.flywaydb.flyway") version "10.17.0"
 }
 
 group = "org.demo"
@@ -44,6 +46,9 @@ dependencies {
     testImplementation("org.testcontainers:postgresql")
     // Junit Jupiter for Testcontainers
     testImplementation("org.testcontainers:junit-jupiter")
+    // Below dependency doesn't work with Spring Boot 3.3.2
+//    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
 }
 
 dependencyManagement {

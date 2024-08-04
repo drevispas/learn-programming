@@ -21,7 +21,7 @@ import static org.hamcrest.core.Is.is;
 @SpringBootTest
 class JpaFootballServiceTest {
 
-    static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:latest")
+    static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("football")
             .withUsername("user")
             .withPassword("user");
