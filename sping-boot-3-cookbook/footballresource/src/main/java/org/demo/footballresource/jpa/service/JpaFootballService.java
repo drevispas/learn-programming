@@ -2,11 +2,12 @@ package org.demo.footballresource.jpa.service;
 
 import lombok.RequiredArgsConstructor;
 import org.demo.footballresource.jpa.entity.JpaTeamEntity;
-import org.demo.footballresource.jpa.model.JpaPlayer;
-import org.demo.footballresource.jpa.model.JpaTeam;
+import org.demo.footballresource.jpa.dto.JpaPlayer;
+import org.demo.footballresource.jpa.dto.JpaTeam;
 import org.demo.footballresource.jpa.repository.JpaPlayerRepository;
 import org.demo.footballresource.jpa.repository.JpaTeamRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -34,9 +35,13 @@ public class JpaFootballService {
     }
 
     // Return a team including its players
+    // Two queries (team read and player lazy fetch) should be executed in a single transaction
+    @Transactional(readOnly = true)
     public JpaTeam readTeam(Integer teamId) {
+        // jpaTeamRepository.findById() dones not read players because of LAZY fetch type
         var teamEntity = jpaTeamRepository.findById(teamId).orElseThrow();
         return new JpaTeam(teamEntity.getId(), teamEntity.getName(),
+                // teamEntity.getPlayers() read player table when the players field in teams entity is accessed
                 teamEntity.getPlayers().stream()
                         .map(it -> new JpaPlayer(it.getId(), it.getName(), it.getJerseyNumber(), it.getPosition(), it.getDateOfBirth()))
                         .toList()

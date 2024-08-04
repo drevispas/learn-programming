@@ -24,6 +24,9 @@ spring:
     url: jdbc:postgresql://localhost:5432/football
     username: user
     password: user
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
 
 management:
   endpoint:

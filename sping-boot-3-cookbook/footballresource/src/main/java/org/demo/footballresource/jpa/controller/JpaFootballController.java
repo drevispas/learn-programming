@@ -1,8 +1,8 @@
 package org.demo.footballresource.jpa.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.demo.footballresource.jpa.model.JpaPlayer;
-import org.demo.footballresource.jpa.model.JpaTeam;
+import org.demo.footballresource.jpa.dto.JpaPlayer;
+import org.demo.footballresource.jpa.dto.JpaTeam;
 import org.demo.footballresource.jpa.service.JpaFootballService;
 import org.springframework.web.bind.annotation.*;
 

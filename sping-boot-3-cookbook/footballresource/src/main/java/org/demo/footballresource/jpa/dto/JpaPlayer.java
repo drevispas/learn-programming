@@ -1,4 +1,4 @@
-package org.demo.footballresource.jpa.model;
+package org.demo.footballresource.jpa.dto;
 
 import java.time.LocalDate;
 

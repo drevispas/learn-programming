@@ -16,6 +16,7 @@ public class JpaPlayerEntity {
     private String name;
     private String position;
     private LocalDate dateOfBirth;
+    // ManyToOne uses EAGER by default
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
     private JpaTeamEntity team;
