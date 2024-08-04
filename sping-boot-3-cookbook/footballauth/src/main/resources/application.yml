@@ -27,6 +27,9 @@ spring:
               scopes:
                 - "football:read"
                 - "football:admin"
+            token:
+              # Change access token's TTL to 1 hour (default is 5 minutes).
+              access-token-time-to-live: 3600000
           football-ui:
             registration:
               client-id: "football-ui"
