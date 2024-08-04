@@ -15,6 +15,7 @@ import java.util.List;
 public class JpaTeamEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private String name;
     // Hibernate will retrieve players when the players field in teams entity is accessed

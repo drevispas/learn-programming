@@ -11,6 +11,7 @@ import java.time.LocalDate;
 public class JpaPlayerEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private Integer jerseyNumber;
     private String name;
@@ -18,6 +19,7 @@ public class JpaPlayerEntity {
     private LocalDate dateOfBirth;
     // ManyToOne uses EAGER by default
     @ManyToOne(fetch = FetchType.LAZY)
+    // @JoinColumn specifies the foreign key column in the players table and is often used with @ManyToOne
     @JoinColumn(name = "team_id")
     private JpaTeamEntity team;
 }

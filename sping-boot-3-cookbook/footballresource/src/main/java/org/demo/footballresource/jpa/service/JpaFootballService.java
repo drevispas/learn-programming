@@ -1,9 +1,9 @@
 package org.demo.footballresource.jpa.service;
 
 import lombok.RequiredArgsConstructor;
-import org.demo.footballresource.jpa.entity.JpaTeamEntity;
 import org.demo.footballresource.jpa.dto.JpaPlayer;
 import org.demo.footballresource.jpa.dto.JpaTeam;
+import org.demo.footballresource.jpa.entity.JpaTeamEntity;
 import org.demo.footballresource.jpa.repository.JpaPlayerRepository;
 import org.demo.footballresource.jpa.repository.JpaTeamRepository;
 import org.springframework.stereotype.Service;
@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Random;
 
 @RequiredArgsConstructor
 @Service
@@ -50,13 +49,10 @@ public class JpaFootballService {
 
     // Add a new team
     public JpaTeam addTeam(String name) {
-        Random random = new Random();
-        int randomId = random.nextInt();
-        if (randomId < 0) {
-            randomId = -randomId;
-        }
-        JpaTeamEntity jpaTeamEntity = new JpaTeamEntity(randomId, name, List.of());
-        return new JpaTeam(jpaTeamEntity.getId(), jpaTeamEntity.getName(), List.of());
+        JpaTeamEntity jpaTeamEntity = new JpaTeamEntity();
+        jpaTeamEntity.setName(name);
+        var team = jpaTeamRepository.save(jpaTeamEntity);
+        return new JpaTeam(team.getId(), team.getName(), List.of());
     }
 
     // Update the position of a player
