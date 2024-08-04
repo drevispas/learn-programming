@@ -24,12 +24,6 @@ spring:
             - Path=/admin/**
           filters:
             - StripPrefix=1
-        - id: footballresource-football
-          uri: lb://footballresource
-          predicates:
-              - Path=/api/football/**
-          filters:
-              - StripPrefix=1
         - id: footballresource
           uri: lb://footballresource
           predicates:
