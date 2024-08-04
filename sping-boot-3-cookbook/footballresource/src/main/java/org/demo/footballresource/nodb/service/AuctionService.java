@@ -1,4 +1,4 @@
-package org.demo.footballresource.service;
+package org.demo.footballresource.nodb.service;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;

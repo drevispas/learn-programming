@@ -1,4 +1,4 @@
-package org.demo.footballresource.service;
+package org.demo.footballresource.nodb.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

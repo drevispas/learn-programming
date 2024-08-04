@@ -1,11 +1,11 @@
-package org.demo.footballresource.controller;
+package org.demo.footballresource.nodb.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.demo.footballresource.service.AuctionService;
-import org.demo.footballresource.service.DataService;
-import org.demo.footballresource.service.FileLoader;
-import org.demo.footballresource.service.TradingService;
+import org.demo.footballresource.nodb.service.AuctionService;
+import org.demo.footballresource.nodb.service.DataService;
+import org.demo.footballresource.nodb.service.FileLoader;
+import org.demo.footballresource.nodb.service.TradingService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

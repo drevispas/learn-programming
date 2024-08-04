@@ -1,31 +1,31 @@
-package org.demo.footballresource.controller;
+package org.demo.footballresource.jdbc.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.demo.footballresource.entity.Player;
-import org.demo.footballresource.service.PlayerService;
+import org.demo.footballresource.jdbc.entity.Player;
+import org.demo.footballresource.jdbc.service.PlayerJdbcService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RequiredArgsConstructor
-@RequestMapping("/players")
+@RequestMapping("/jdbc/players")
 @RestController
 public class PlayerController {
 
-    private final PlayerService playerService;
+    private final PlayerJdbcService playerJdbcService;
 
     @GetMapping
     public List<Player> listPlayers() {
-        return playerService.listPlayers();
+        return playerJdbcService.listPlayers();
     }
 
     @GetMapping("/{id}")
     public Player readPlayer(@PathVariable int id) {
-        return playerService.getPlayer(id);
+        return playerJdbcService.getPlayer(id);
     }
 
     @PostMapping
     public Player createPlayer(@RequestBody Player player) {
-        return playerService.addPlayer(player);
+        return playerJdbcService.addPlayer(player);
     }
 }

@@ -1,7 +1,7 @@
-package org.demo.footballresource.service;
+package org.demo.footballresource.jdbc.service;
 
 import lombok.RequiredArgsConstructor;
-import org.demo.footballresource.entity.Team;
+import org.demo.footballresource.jdbc.entity.Team;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -10,7 +10,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Service
-public class TeamService {
+public class TeamJdbcService {
 
     // JPA injects the JdbcTemplate bean
     private final JdbcTemplate jdbcTemplate;

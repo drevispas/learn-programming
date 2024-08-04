@@ -1,7 +1,7 @@
-package org.demo.footballresource.service;
+package org.demo.footballresource.jdbc.service;
 
 import lombok.RequiredArgsConstructor;
-import org.demo.footballresource.entity.Player;
+import org.demo.footballresource.jdbc.entity.Player;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
@@ -10,7 +10,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Service
-public class PlayerService {
+public class PlayerJdbcService {
 
     // JPA injects the JdbcClient bean
     private final JdbcClient jdbcClient;

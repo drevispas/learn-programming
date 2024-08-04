@@ -1,4 +1,4 @@
-package org.demo.footballresource.service;
+package org.demo.footballresource.nodb.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -1,7 +1,7 @@
 package org.demo.footballresource.actuator;
 
 import lombok.RequiredArgsConstructor;
-import org.demo.footballresource.service.FileLoader;
+import org.demo.footballresource.nodb.service.FileLoader;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.annotation.WriteOperation;

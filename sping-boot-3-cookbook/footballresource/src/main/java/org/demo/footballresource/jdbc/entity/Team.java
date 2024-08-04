@@ -1,4 +1,4 @@
-package org.demo.footballresource.entity;
+package org.demo.footballresource.jdbc.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

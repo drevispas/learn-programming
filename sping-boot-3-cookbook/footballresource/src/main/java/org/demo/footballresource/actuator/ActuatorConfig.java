@@ -1,6 +1,6 @@
 package org.demo.footballresource.actuator;
 
-import org.demo.footballresource.service.FileLoader;
+import org.demo.footballresource.nodb.service.FileLoader;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
