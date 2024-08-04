@@ -40,6 +40,10 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     // Spring data JPA
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    // Testcontainers for PostgreSQL
+    testImplementation("org.testcontainers:postgresql")
+    // Junit Jupiter for Testcontainers
+    testImplementation("org.testcontainers:junit-jupiter")
 }
 
 dependencyManagement {
