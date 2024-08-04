@@ -22,8 +22,8 @@ spring:
           issuer-uri: http://localhost:9000
   datasource:
     url: jdbc:postgresql://localhost:5432/football
-    username: football
-    password: football
+    username: user
+    password: user
 
 management:
   endpoint:
