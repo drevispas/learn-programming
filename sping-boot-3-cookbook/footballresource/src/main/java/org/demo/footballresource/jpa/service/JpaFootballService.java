@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.demo.footballresource.jpa.dto.JpaPlayer;
 import org.demo.footballresource.jpa.dto.JpaTeam;
 import org.demo.footballresource.jpa.entity.JpaTeamEntity;
+import org.demo.footballresource.jpa.repository.JpaAlbumRepository;
 import org.demo.footballresource.jpa.repository.JpaPlayerRepository;
 import org.demo.footballresource.jpa.repository.JpaTeamRepository;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class JpaFootballService {
 
     private final JpaTeamRepository jpaTeamRepository;
     private final JpaPlayerRepository jpaPlayerRepository;
+    private final JpaAlbumRepository jpaAlbumRepository;
 
     // Search players that contain the given name
     public List<JpaPlayer> searchPlayers(String name) {
@@ -36,7 +38,7 @@ public class JpaFootballService {
     // Return a team including its players
     // Two queries (team read and player lazy fetch) should be executed in a single transaction
     @Transactional(readOnly = true)
-    public JpaTeam readTeam(Integer teamId) {
+    public JpaTeam jpaReadTeam(Integer teamId) {
         // jpaTeamRepository.findById() dones not read players because of LAZY fetch type
         var teamEntity = jpaTeamRepository.findById(teamId).orElseThrow();
         return new JpaTeam(teamEntity.getId(), teamEntity.getName(),
@@ -61,5 +63,15 @@ public class JpaFootballService {
         playerEntity.setPosition(position);
         jpaPlayerRepository.save(playerEntity);
         return new JpaPlayer(playerEntity.getId(), playerEntity.getName(), playerEntity.getJerseyNumber(), playerEntity.getPosition(), playerEntity.getDateOfBirth());
+    }
+
+    // JPQL join query make sure that team and players are fetched in a single query so that @Transactional is not needed
+    public JpaTeam jpqlReadTeam(Integer teamId) {
+        var teamEntity = jpaTeamRepository.findTeamAndPlayersById(teamId).orElseThrow();
+        return new JpaTeam(teamEntity.getId(), teamEntity.getName(),
+                teamEntity.getPlayers().stream()
+                        .map(it -> new JpaPlayer(it.getId(), it.getName(), it.getJerseyNumber(), it.getPosition(), it.getDateOfBirth()))
+                        .toList()
+                );
     }
 }

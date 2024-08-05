@@ -55,7 +55,7 @@ class JpaFootballServiceTest {
         // Act
         var team1 = jpaFootballService.addTeam(teamName);
         // Assert
-        var team2 = jpaFootballService.readTeam(team1.id());
+        var team2 = jpaFootballService.jpaReadTeam(team1.id());
         assertThat(team2, notNullValue());
         assertThat(team2, is(team1));
     }
@@ -66,7 +66,7 @@ class JpaFootballServiceTest {
         String teamName = "Team1";
         var team1 = jpaFootballService.addTeam(teamName);
         // Act
-        var team2 = jpaFootballService.readTeam(team1.id());
+        var team2 = jpaFootballService.jpaReadTeam(team1.id());
         // Assert
         assertThat(team2, notNullValue());
         assertThat(team2, is(team1));

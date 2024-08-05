@@ -18,11 +18,11 @@ public class JpaFootballController {
 
     @GetMapping("/teams/{id}")
     public JpaTeam getTeam(@PathVariable Integer id) {
-        return jpaFootballService.readTeam(id);
+        return jpaFootballService.jpaReadTeam(id);
     }
 
     @PostMapping("/teams")
-    public JpaTeam addTeam(@RequestBody String name) {
+    public JpaTeam createTeam(@RequestBody String name) {
         return jpaFootballService.addTeam(name);
     }
 
@@ -32,7 +32,7 @@ public class JpaFootballController {
     }
 
     @GetMapping("/players/birth/{date}")
-    public List<JpaPlayer> searchPlayersByBirthDate(@PathVariable LocalDate date) {
+    public List<JpaPlayer> listPlayersByBirthDate(@PathVariable LocalDate date) {
         return jpaFootballService.searchPlayersByDateOfBirth(date);
     }
 
