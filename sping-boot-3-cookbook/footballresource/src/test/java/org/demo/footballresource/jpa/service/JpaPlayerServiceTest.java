@@ -16,10 +16,10 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.Is.is;
 
 
-@ContextConfiguration(initializers = JpaFootballServiceTest.Initializer.class)
+@ContextConfiguration(initializers = JpaPlayerServiceTest.Initializer.class)
 @Testcontainers
 @SpringBootTest
-class JpaFootballServiceTest {
+class JpaPlayerServiceTest {
 
     static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("football")
@@ -46,16 +46,16 @@ class JpaFootballServiceTest {
     }
 
     @Autowired
-    private JpaFootballService jpaFootballService;
+    private JpaPlayerService jpaPlayerService;
 
     @Test
     public void testAddTeam() {
         // Arrange
         String teamName = "Team1";
         // Act
-        var team1 = jpaFootballService.addTeam(teamName);
+        var team1 = jpaPlayerService.addTeam(teamName);
         // Assert
-        var team2 = jpaFootballService.jpaReadTeam(team1.id());
+        var team2 = jpaPlayerService.jpaReadTeam(team1.id());
         assertThat(team2, notNullValue());
         assertThat(team2, is(team1));
     }
@@ -64,9 +64,9 @@ class JpaFootballServiceTest {
     public void testGetTeam() {
         // Arrange
         String teamName = "Team1";
-        var team1 = jpaFootballService.addTeam(teamName);
+        var team1 = jpaPlayerService.addTeam(teamName);
         // Act
-        var team2 = jpaFootballService.jpaReadTeam(team1.id());
+        var team2 = jpaPlayerService.jpaReadTeam(team1.id());
         // Assert
         assertThat(team2, notNullValue());
         assertThat(team2, is(team1));

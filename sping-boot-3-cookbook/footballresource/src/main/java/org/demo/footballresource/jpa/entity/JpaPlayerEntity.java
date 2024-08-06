@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Table(name = "players")
@@ -23,6 +24,8 @@ public class JpaPlayerEntity {
     // team_id column of players table is the foreign key that references the id column of the teams table
     @JoinColumn(name = "team_id")
     private JpaTeamEntity team;
+    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL)
+    private List<JpaCardEntity> cards;
     private Integer height;
     private Integer weight;
 }
