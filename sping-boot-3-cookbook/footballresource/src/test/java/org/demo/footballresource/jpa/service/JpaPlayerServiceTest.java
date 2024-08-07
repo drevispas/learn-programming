@@ -46,16 +46,16 @@ class JpaPlayerServiceTest {
     }
 
     @Autowired
-    private JpaPlayerService jpaPlayerService;
+    private JpaTeamService jpaTeamService;
 
     @Test
     public void testAddTeam() {
         // Arrange
         String teamName = "Team1";
         // Act
-        var team1 = jpaPlayerService.addTeam(teamName);
+        var team1 = jpaTeamService.jpaAddTeam(teamName);
         // Assert
-        var team2 = jpaPlayerService.jpaReadTeam(team1.id());
+        var team2 = jpaTeamService.jpaReadTeam(team1.id());
         assertThat(team2, notNullValue());
         assertThat(team2, is(team1));
     }
@@ -64,9 +64,9 @@ class JpaPlayerServiceTest {
     public void testGetTeam() {
         // Arrange
         String teamName = "Team1";
-        var team1 = jpaPlayerService.addTeam(teamName);
+        var team1 = jpaTeamService.jpaAddTeam(teamName);
         // Act
-        var team2 = jpaPlayerService.jpaReadTeam(team1.id());
+        var team2 = jpaTeamService.jpaReadTeam(team1.id());
         // Assert
         assertThat(team2, notNullValue());
         assertThat(team2, is(team1));

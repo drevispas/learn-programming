@@ -14,14 +14,14 @@ public class JpaAlbumService {
 
     private final JpaAlbumRepository jpaAlbumRepository;
 
-    public List<JpaPlayer> searchAlbumPlayers(int albumId, int page, int size) {
+    public List<JpaPlayer> searchPlayersByAlbum(int albumId, int page, int size) {
         Pageable pageable = Pageable.ofSize(size).withPage(page);
         return jpaAlbumRepository.findPageablePlayersByAlbumId(albumId, pageable).stream()
                 .map(it -> new JpaPlayer(it.getId(), it.getName(), it.getJerseyNumber(), it.getPosition(), it.getDateOfBirth()))
                 .toList();
     }
 
-    public List<JpaPlayer> searchAlbumTeamPlayers(int albumId, int teamId) {
+    public List<JpaPlayer> searchPlayersByAlbumTeam(int albumId, int teamId) {
         return jpaAlbumRepository.findByAlbumIdAndTeamId(albumId, teamId).stream()
                 .map(it -> new JpaPlayer(it.getId(), it.getName(), it.getJerseyNumber(), it.getPosition(), it.getDateOfBirth()))
                 .toList();

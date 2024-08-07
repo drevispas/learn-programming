@@ -30,6 +30,8 @@ spring:
     # For Testcontainers to work
     # But not needed if you have Flyway or Liquibase
 #    generate-ddl: true
+    # Should not be used in production
+    show-sql: true
   flyway:
     baseline-on-migrate: true
     baseline-version: 0

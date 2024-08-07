@@ -20,12 +20,12 @@ public class JpaAlbumController {
 
     @GetMapping("/{albumId}/players")
     public List<JpaPlayer> listAlbumPlayers(@PathVariable int albumId, @QueryParam("page") int page, @QueryParam("size") int size) {
-        return jpaAlbumService.searchAlbumPlayers(albumId, page, size);
+        return jpaAlbumService.searchPlayersByAlbum(albumId, page, size);
     }
 
     @GetMapping("/{albumId}/teams/{teamId}/players")
     public List<JpaPlayer> listAlbumTeamPlayers(@PathVariable int albumId, @PathVariable int teamId) {
-        return jpaAlbumService.searchAlbumTeamPlayers(albumId, teamId);
+        return jpaAlbumService.searchPlayersByAlbumTeam(albumId, teamId);
     }
 
     @GetMapping("/{albumId}/players/not-in")
