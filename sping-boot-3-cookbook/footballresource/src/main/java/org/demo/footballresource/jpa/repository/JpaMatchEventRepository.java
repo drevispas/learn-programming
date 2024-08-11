@@ -9,6 +9,7 @@ import java.util.List;
 public interface JpaMatchEventRepository extends JpaRepository<JpaMatchEventEntity, Integer> {
 
     // Retrieve all events in a match of a given type
+    // JPQL does not support JSON data types, so we use a native query
     @Query(nativeQuery = true, value = "select me.* from match_events me where me.match_id = ?1 and cast(me.details -> 'type' as int) = ?2")
     public List<JpaMatchEventEntity> findByIdIncludeType(Integer matchId, Integer type);
 }
