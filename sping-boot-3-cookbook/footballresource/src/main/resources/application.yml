@@ -47,7 +47,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,env,metrics,beans,loggers,football,prometheus
+        include: health,info,env,metrics,beans,loggers,football,prometheus
   # Tracing is useful in showing the relationship between the services in a distributed system.
   tracing:
     sampling:
