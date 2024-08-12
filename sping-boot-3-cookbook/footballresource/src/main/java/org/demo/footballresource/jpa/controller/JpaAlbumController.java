@@ -62,7 +62,7 @@ public class JpaAlbumController {
 
     @PostMapping("/cards/trade")
     public List<JpaCard> tradeCardsBetweenUsers(@RequestBody TradeCardsBetweenUsersRequest request) {
-        return jpaAlbumService.tradeUnusedCards(request.userId1, request.userId2);
+        return jpaAlbumService.tradeUnusedCardsBetweenUsers(request.userId1, request.userId2);
     }
     public record TradeCardsBetweenUsersRequest(int userId1, int userId2) {
     }

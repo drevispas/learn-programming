@@ -1,5 +1,6 @@
 package org.demo.footballresource.jpa.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.demo.footballresource.jpa.dto.*;
 import org.demo.footballresource.jpa.entity.JpaAlbumEntity;
@@ -94,8 +95,8 @@ public class JpaAlbumService {
     }
 
     // Take all unused cards of the user and distribute them to the albums that are not full
-    public List<JpaCard> distributeCardsToAlbum(int userId) {
-        return jpaCardRepository.distributeCardsToAlbum(userId).stream()
+    public List<JpaCard> distributeUnusedCardsToAlbum(int userId) {
+        return jpaCardRepository.distributeUnusedCardsToAlbum(userId).stream()
                 .map(it -> new JpaCard(it.getId(), it.getOwner().getId(), Optional.ofNullable(it.getAlbum().getId()),
                         new JpaPlayer(it.getPlayer().getId(), it.getPlayer().getName(), it.getPlayer().getJerseyNumber(),
                                 it.getPlayer().getPosition(), it.getPlayer().getDateOfBirth()))
@@ -104,6 +105,7 @@ public class JpaAlbumService {
     }
 
     // Transfer a card from one user to another
+    @Transactional
     public Optional<JpaCard> transferCard(int cardId, int userId) {
         int count = jpaCardRepository.transferCard(cardId, userId);
         if (count == 0) {
@@ -118,17 +120,21 @@ public class JpaAlbumService {
     }
 
     // Transfer all unused cards of the user to another user
-    public List<JpaCard> tradeUnusedCards(int userId1, int userId2) {
+    @Transactional
+    public List<JpaCard> tradeUnusedCardsBetweenUsers(int userId1, int userId2) {
+        // Count the number of cards that are not in user1's album and not in user2's card collection
         var tradableCountFromUser1ToUser2 = jpaCardRepository.countMatchBetweenUsers(userId1, userId2);
         var tradableCountFromUser2ToUser1 = jpaCardRepository.countMatchBetweenUsers(userId2, userId1);
         int count = Math.min(tradableCountFromUser1ToUser2, tradableCountFromUser2ToUser1);
         if (count == 0) {
             return List.of();
         } else {
+            // Transfer cards which are not in user1's album and not in user2's card collection
             var result = new ArrayList<>(jpaCardRepository.transferCardsBetweenUsers(userId1, userId2, count));
-            distributeCardsToAlbum(userId2);
+            // Spread the cards to the albums that are not full
+            distributeUnusedCardsToAlbum(userId2);
             result.addAll(jpaCardRepository.transferCardsBetweenUsers(userId2, userId1, count));
-            distributeCardsToAlbum(userId1);
+            distributeUnusedCardsToAlbum(userId1);
             return result.stream()
                     .map(it -> new JpaCard(it.getId(), it.getOwner().getId(), Optional.ofNullable(it.getAlbum().getId()),
                             new JpaPlayer(it.getPlayer().getId(), it.getPlayer().getName(), it.getPlayer().getJerseyNumber(),

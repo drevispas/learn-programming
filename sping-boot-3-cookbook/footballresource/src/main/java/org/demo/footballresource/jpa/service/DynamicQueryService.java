@@ -71,16 +71,23 @@ public class DynamicQueryService {
     // Dynamic query using JPQL
     // Delete the events of a match in certain time range
     public void deleteEventsInRange(int matchId, LocalDateTime start, LocalDateTime end) {
-        entityManager.getTransaction().begin();
-        Query query = entityManager.createQuery("""
-                delete from JpaMatchEventEntity e
-                where e.match.id = :matchId and e.eventTime between :start and :end
-                """);
-        query.setParameter("matchId", matchId);
-        query.setParameter("start", start);
-        query.setParameter("end", end);
-        query.executeUpdate();
-        entityManager.getTransaction().commit();
+        try {
+            // Start a transaction manually
+            entityManager.getTransaction().begin();
+            Query query = entityManager.createQuery("""
+                    delete from JpaMatchEventEntity e
+                    where e.match.id = :matchId and e.eventTime between :start and :end
+                    """);
+            query.setParameter("matchId", matchId);
+            query.setParameter("start", start);
+            query.setParameter("end", end);
+            query.executeUpdate();
+            // Commit the transaction manually
+            entityManager.getTransaction().commit();
+        } catch (Exception e) {
+            // Close the transaction as soon as an exception occurs
+            entityManager.getTransaction().rollback();
+        }
     }
 
     // Dynamic query using Native SQL

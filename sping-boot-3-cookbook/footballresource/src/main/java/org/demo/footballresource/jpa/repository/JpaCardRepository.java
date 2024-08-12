@@ -37,7 +37,7 @@ public interface JpaCardRepository extends JpaRepository<JpaCardEntity, Integer>
     where cards.id = r.card_id
     returning cards.*
     """)
-    List<JpaCardEntity> distributeCardsToAlbum(int userId);
+    List<JpaCardEntity> distributeUnusedCardsToAlbum(int userId);
 
     @Modifying
     @Query("""
@@ -54,7 +54,7 @@ public interface JpaCardRepository extends JpaRepository<JpaCardEntity, Integer>
     @Query(nativeQuery = true, value= """
     update cards set owner_id = ?2
     from (
-        -- find all cards that are not in any album
+        -- find all unused cards of user1 that can be transferred to user2 because user2 does not have them
         select c1.id
         from cards c1
         where c1.owner_id = ?1 and c1.album_id is null

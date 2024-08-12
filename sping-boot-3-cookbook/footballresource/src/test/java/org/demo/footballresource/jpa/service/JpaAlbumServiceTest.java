@@ -92,14 +92,14 @@ class JpaAlbumServiceTest {
     }
 
     @Test
-    public void testDistributeCardsToAlbum() {
+    public void testDistributeUnusedCardsToAlbum() {
         // Arrange
         var user = jpaUserService.addUser("Alice");
         var album = jpaAlbumService.buyAlbum(user.id(), "Album 1");
         var cards = jpaAlbumService.buyCards(user.id(), 5);
 
         // Act
-        var distributedCards = jpaAlbumService.distributeCardsToAlbum(user.id());
+        var distributedCards = jpaAlbumService.distributeUnusedCardsToAlbum(user.id());
 
         // Assert
         assertEquals(5, distributedCards.size());
