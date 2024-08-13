@@ -48,6 +48,8 @@ dependencies {
     // Below dependency doesn't work with Spring Boot 3.3.2
 //    implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
+    // Spring data MongoDB
+    implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
 }
 
 dependencyManagement {
