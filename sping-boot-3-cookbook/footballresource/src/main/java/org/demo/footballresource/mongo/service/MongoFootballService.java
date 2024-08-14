@@ -21,6 +21,10 @@ public class MongoFootballService {
     private final MongoTeamRepository teamRepository;
     private final MongoTemplate mongoTemplate;
 
+    public List<MongoTeam> listAllTeams() {
+        return teamRepository.findAll();
+    }
+
     public MongoTeam getTeam(String id) {
         return teamRepository.findById(id).orElse(null);
     }

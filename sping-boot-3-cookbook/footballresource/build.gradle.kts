@@ -50,6 +50,8 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
     // Spring data MongoDB
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+    // Testcontainers for MongoDB
+    testImplementation("org.testcontainers:mongodb")
 }
 
 dependencyManagement {
