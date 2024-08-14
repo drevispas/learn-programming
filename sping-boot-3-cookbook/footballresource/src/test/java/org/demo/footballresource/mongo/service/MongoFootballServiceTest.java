@@ -35,11 +35,8 @@ class MongoFootballServiceTest {
     }
 
     static void importFile(String collectionName) throws IOException, InterruptedException {
-//        MongoDBContainer.ExecResult result = mongoDBContainer.execInContainer(
-//                "mongoimport", "--db=football", "--collection=" + collectionName, "--file=" + collectionName + ".json" , "--jsonArray"
-//        );
         MongoDBContainer.ExecResult result = mongoDBContainer.execInContainer(
-                "mongoimport", "-d", "football", "-c", collectionName, "--file", collectionName + ".json", "--jsonArray"
+                "mongoimport", "--db=test", "--collection=" + collectionName, "--file=" + collectionName + ".json" , "--jsonArray"
         );
         if (result.getExitCode() != 0) {
             throw new RuntimeException("MongoDB failed to import file " + collectionName);
@@ -51,6 +48,7 @@ class MongoFootballServiceTest {
     // Configure the service to use the test container
     @DynamicPropertySource
     static void setProperties(DynamicPropertyRegistry registry) {
+        System.out.println("MongoDB URL: " + mongoDBContainer.getReplicaSetUrl());
         registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
     }
 
@@ -63,23 +61,22 @@ class MongoFootballServiceTest {
 
         // Act
         var teams = service.listAllTeams();
-        log.info("Teams: {}", teams);
 
         // Assert
         assertNotNull(teams);
         assertThat(teams).isNotEmpty();
     }
 
-//    @Test
-//    void testGetTeam() {
-//        // Arrange
-//
-//        // Act
-//        var team = service.getTeam(TEAM_ID);
-//        log.info("Team: {}", team);
-//
-//        // Assert
-//        assertNotNull(team);
-//        assertThat(team.getId()).isEqualTo(TEAM_ID);
-//    }
+    @Test
+    void testGetTeam() {
+        // Arrange
+
+        // Act
+        var team = service.getTeam(TEAM_ID);
+        log.info("Team: {}", team);
+
+        // Assert
+        assertNotNull(team);
+        assertThat(team.getId()).isEqualTo(TEAM_ID);
+    }
 }
