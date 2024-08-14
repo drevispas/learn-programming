@@ -2,9 +2,15 @@ server:
 #  port: 8000
   port: 0
 
-#logging:
-#  level:
-#    org.springframework.security: trace
+logging:
+  level:
+    org:
+      springframework:
+#        security: trace
+        data:
+          mongodb:
+            core:
+              MongoTemplate: debug
 
 spring:
   application:
@@ -37,8 +43,10 @@ spring:
     baseline-version: 0
   data:
     mongodb:
-      uri: mongodb://localhost:27017/?directConnection=true
-      database: football
+      uri: mongodb://user:user@localhost:27017/football
+      username: user
+      password: user
+#      database: football
 
 management:
   endpoint:
