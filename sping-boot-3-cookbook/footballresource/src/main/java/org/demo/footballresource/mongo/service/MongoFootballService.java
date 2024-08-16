@@ -29,6 +29,18 @@ public class MongoFootballService {
         return teamRepository.findById(id).orElse(null);
     }
 
+    public MongoTeam searchTeamByName(String teamName) {
+        return teamRepository.findByName(teamName).orElse(null);
+    }
+
+    public List<MongoTeam> getTeamsContainingName(String name) {
+        return teamRepository.findByNameContaining(name);
+    }
+
+    public List<MongoTeam> listTeamsByNameSQL(String name) {
+        return teamRepository.findTeamsByNameSQL(name);
+    }
+
     public MongoPlayer getPlayer(String id) {
         return teamRepository.findPlayerById(id)
                 .map(team -> {
@@ -44,18 +56,6 @@ public class MongoFootballService {
 
     public void deleteTeam(String id) {
         teamRepository.deleteById(id);
-    }
-
-    public MongoTeam searchTeamByName(String teamName) {
-        return teamRepository.findByName(teamName).orElse(null);
-    }
-
-    public List<MongoTeam> getTeamsContainingName(String name) {
-        return teamRepository.findByNameContaining(name);
-    }
-
-    public List<MongoTeam> listTeamsByNameSQL(String name) {
-        return teamRepository.findTeamsByNameSQL(name);
     }
 
     public void updateTeamName(String teamId, String newName) {
