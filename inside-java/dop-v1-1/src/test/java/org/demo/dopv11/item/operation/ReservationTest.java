@@ -1,11 +1,12 @@
 package org.demo.dopv11.item.operation;
 
-import org.demo.dopv11.item.data.Author;
-import org.demo.dopv11.item.data.Book;
-import org.demo.dopv11.item.data.Furniture;
-import org.demo.dopv11.item.data.ISBN;
-import org.demo.dopv11.user.data.Email;
-import org.demo.dopv11.user.data.RegisteredUser;
+import org.demo.dopv11.data.item.Author;
+import org.demo.dopv11.data.item.Book;
+import org.demo.dopv11.data.item.Furniture;
+import org.demo.dopv11.data.item.ISBN;
+import org.demo.dopv11.operation.Reservation;
+import org.demo.dopv11.data.user.Email;
+import org.demo.dopv11.data.user.RegisteredUser;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

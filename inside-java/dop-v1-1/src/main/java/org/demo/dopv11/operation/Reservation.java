@@ -1,10 +1,10 @@
-package org.demo.dopv11.item.operation;
+package org.demo.dopv11.operation;
 
-import org.demo.dopv11.item.data.Book;
-import org.demo.dopv11.item.data.Furniture;
-import org.demo.dopv11.item.data.ISBN;
-import org.demo.dopv11.item.data.Item;
-import org.demo.dopv11.user.data.RegisteredUser;
+import org.demo.dopv11.data.item.Book;
+import org.demo.dopv11.data.item.Furniture;
+import org.demo.dopv11.data.item.ISBN;
+import org.demo.dopv11.data.item.Item;
+import org.demo.dopv11.data.user.RegisteredUser;
 
 public class Reservation {
 

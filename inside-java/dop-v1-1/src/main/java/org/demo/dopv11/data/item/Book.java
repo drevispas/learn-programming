@@ -1,4 +1,4 @@
-package org.demo.dopv11.item.data;
+package org.demo.dopv11.data.item;
 
 import java.util.List;
 import java.util.Objects;

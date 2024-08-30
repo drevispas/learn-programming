@@ -1,4 +1,4 @@
-package org.demo.dopv11.user.data;
+package org.demo.dopv11.data.user;
 
 public record RegisteredUser(String name, Email email) implements User {
 
