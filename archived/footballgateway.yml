@@ -1,0 +1,43 @@
+server:
+  port: 8080
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: football
+          uri: ${PLAYERS_URI:lb://football}
+          predicates:
+            - Path=/api/players/**
+          filters:
+            # StripPrefix=1 removes the first segment of the path. For example, /api/players/1 becomes /players/1.
+            - StripPrefix=1
+        - id: album
+          # By using "lb://servicename", we enable client-side load balancing.
+          uri: lb://album
+          predicates:
+            - Path=${ALBUMS_URI:/api/albums/**}
+          filters:
+            - StripPrefix=1
+        - id: admin
+          uri: lb://footballadmin
+          predicates:
+            - Path=/admin/**
+          filters:
+            - StripPrefix=1
+        - id: footballresource
+          uri: lb://footballresource
+          predicates:
+            - Path=/api/football/**
+          filters:
+            - StripPrefix=2
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # `audiences` is a list of the JWT clients that are allowed to access the resource server.
+          audiences:
+            - football
+            - football-ui
+          # `issuer-uri` indicates all the endpoints of the authorization server including the public key location.
+          issuer-uri: http://localhost:9000

@@ -1,0 +1,18 @@
+server:
+  port: 0
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    instance-id: ${spring.application.name}:${random.int}
+management:
+  endpoints:
+    web:
+      exposure:
+        # Expose service detail to Spring Boot Admin
+        include: health,info,env,metrics,beans,loggers,prometheus
+  tracing:
+    sampling:
+        # The value 1.0 means that all requests are traced.
+        probability: 1.0

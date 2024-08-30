@@ -1,0 +1,6 @@
+spring:
+  boot:
+    admin:
+      ui:
+        # This is required when the Spring Boot Admin server is running behind a reverse proxy like Spring Cloud Gateway.
+        public-url: http://localhost:8080/admin
