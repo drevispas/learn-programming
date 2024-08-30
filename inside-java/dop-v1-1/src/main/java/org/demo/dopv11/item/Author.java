@@ -1,4 +1,4 @@
-package org.demo.dopv11;
+package org.demo.dopv11.item;
 
 public record Author(String name) {
 }
