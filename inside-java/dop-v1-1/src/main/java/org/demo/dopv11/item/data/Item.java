@@ -1,4 +1,4 @@
-package org.demo.dopv11.item;
+package org.demo.dopv11.item.data;
 
 // Sealed interfaces do not describe behavior, but rather grouping
 public sealed interface Item permits Book, Furniture {
