@@ -1,6 +1,8 @@
 server:
   port: 8761
-#spring:
+spring:
+  application:
+    name: footballregistry
 #  config:
 #    import: optional:configserver:http://localhost:8888
 eureka:

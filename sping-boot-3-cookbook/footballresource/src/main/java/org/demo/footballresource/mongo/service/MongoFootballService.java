@@ -3,7 +3,7 @@ package org.demo.footballresource.mongo.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.demo.footballresource.mongo.dto.MongoPlayer;
-import org.demo.footballresource.mongo.entity.MongoTeam;
+import org.demo.footballresource.mongo.entity.MongoTeam1;
 import org.demo.footballresource.mongo.repository.MongoTeamRepository;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -21,23 +21,23 @@ public class MongoFootballService {
     private final MongoTeamRepository teamRepository;
     private final MongoTemplate mongoTemplate;
 
-    public List<MongoTeam> listAllTeams() {
+    public List<MongoTeam1> listAllTeams() {
         return teamRepository.findAll();
     }
 
-    public MongoTeam getTeam(String id) {
+    public MongoTeam1 getTeam(String id) {
         return teamRepository.findById(id).orElse(null);
     }
 
-    public MongoTeam searchTeamByName(String teamName) {
+    public MongoTeam1 searchTeamByName(String teamName) {
         return teamRepository.findByName(teamName).orElse(null);
     }
 
-    public List<MongoTeam> getTeamsContainingName(String name) {
+    public List<MongoTeam1> getTeamsContainingName(String name) {
         return teamRepository.findByNameContaining(name);
     }
 
-    public List<MongoTeam> listTeamsByNameSQL(String name) {
+    public List<MongoTeam1> listTeamsByNameSQL(String name) {
         return teamRepository.findTeamsByNameSQL(name);
     }
 
@@ -50,7 +50,7 @@ public class MongoFootballService {
                 .orElse(null);
     }
 
-    public MongoTeam createTeam(MongoTeam team) {
+    public MongoTeam1 createTeam(MongoTeam1 team) {
         return teamRepository.save(team);
     }
 
@@ -61,6 +61,6 @@ public class MongoFootballService {
     public void updateTeamName(String teamId, String newName) {
         Query query = new Query(Criteria.where("id").is(teamId));
         Update update = new Update().set("name", newName);
-        mongoTemplate.updateFirst(query, update, MongoTeam.class);
+        mongoTemplate.updateFirst(query, update, MongoTeam1.class);
     }
 }

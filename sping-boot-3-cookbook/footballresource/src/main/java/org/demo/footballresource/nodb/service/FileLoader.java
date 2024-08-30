@@ -35,6 +35,7 @@ public class FileLoader {
 
     public void loadFile() {
         try {
+            log.info("Loading file from folder: {}", folder);
             Thread.sleep(5000);
             Files.list(Paths.get(folder))
                     .filter(Files::isRegularFile)

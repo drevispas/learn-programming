@@ -1,5 +1,6 @@
 server:
 #  port: 8000
+  # use port 0 if you want to use a random port and connect through the Eureka server
   port: 0
 
 logging:

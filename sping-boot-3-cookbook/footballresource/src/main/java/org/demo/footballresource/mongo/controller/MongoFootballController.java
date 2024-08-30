@@ -2,7 +2,7 @@ package org.demo.footballresource.mongo.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.demo.footballresource.mongo.dto.MongoPlayer;
-import org.demo.footballresource.mongo.entity.MongoTeam;
+import org.demo.footballresource.mongo.entity.MongoTeam1;
 import org.demo.footballresource.mongo.service.MongoFootballService;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,17 +16,17 @@ public class MongoFootballController {
     private final MongoFootballService footballService;
 
     @GetMapping("/teams/{teamId}")
-    public MongoTeam getTeam(@PathVariable String teamId) {
+    public MongoTeam1 getTeam(@PathVariable String teamId) {
         return footballService.getTeam(teamId);
     }
 
     @GetMapping("/teams")
-    public MongoTeam searchTeamByName(@RequestParam String teamName) {
+    public MongoTeam1 searchTeamByName(@RequestParam String teamName) {
         return footballService.searchTeamByName(teamName);
     }
 
     @GetMapping("/teams/{name}/contains")
-    public List<MongoTeam> getTeamsContainingName(@PathVariable String name) {
+    public List<MongoTeam1> getTeamsContainingName(@PathVariable String name) {
         return footballService.getTeamsContainingName(name);
     }
 
@@ -36,7 +36,7 @@ public class MongoFootballController {
     }
 
     @PostMapping("/teams")
-    public MongoTeam createTeam(@RequestBody MongoTeam team) {
+    public MongoTeam1 createTeam(@RequestBody MongoTeam1 team) {
         return footballService.createTeam(team);
     }
 
@@ -46,7 +46,7 @@ public class MongoFootballController {
     }
 
     @GetMapping("/teams/{name}/sql")
-    public List<MongoTeam> listTeamsByNameSQL(@PathVariable String name) {
+    public List<MongoTeam1> listTeamsByNameSQL(@PathVariable String name) {
         return footballService.listTeamsByNameSQL(name);
     }
 

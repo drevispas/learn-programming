@@ -1,7 +1,7 @@
 package org.demo.footballresource.mongo.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.demo.footballresource.mongo.entity.MongoTeam;
+import org.demo.footballresource.mongo.entity.MongoTeam1;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class MongoFootballServiceTest {
 
     static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo")
-            .withCopyFileToContainer(MountableFile.forClasspathResource("mongo/teams.json"), "teams.json")
+            .withCopyFileToContainer(MountableFile.forClasspathResource("mongo/teams1.json"), "teams1.json")
             // log the output of the container
 //            .withLogConsumer(outputFrame -> log.warn(outputFrame.getUtf8String()))
             ;
@@ -41,7 +41,7 @@ class MongoFootballServiceTest {
     @BeforeAll
     static void startContainer() throws IOException, InterruptedException {
         mongoDBContainer.start();
-        importFile("teams");
+        importFile("teams1");
     }
 
     static void importFile(String collectionName) throws IOException, InterruptedException {
@@ -158,7 +158,7 @@ class MongoFootballServiceTest {
     @Test
     void testCreateTeam() {
         // Arrange
-        var team = new MongoTeam();
+        var team = new MongoTeam1();
         team.setName("Test Team");
 
         // Act
@@ -175,7 +175,7 @@ class MongoFootballServiceTest {
     @Test
     void testDeleteTeam() {
         // Arrange
-        var team = new MongoTeam();
+        var team = new MongoTeam1();
         team.setName("Test Team");
         var created = service.createTeam(team);
 
@@ -190,7 +190,7 @@ class MongoFootballServiceTest {
     @Test
     void updateTeamName() {
         // Arrange
-        var team = new MongoTeam();
+        var team = new MongoTeam1();
         team.setName("Test Team");
         var created = service.createTeam(team);
 

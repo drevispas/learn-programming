@@ -12,8 +12,8 @@ import java.util.List;
 @ToString
 @Getter
 @Setter
-@Document(collection = "teams")
-public class MongoTeam {
+@Document(collection = "teams1")
+public class MongoTeam1 {
 
     @Id
     private String id;
