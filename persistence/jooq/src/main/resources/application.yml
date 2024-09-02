@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: jooq
+  # Caution: Jooq will generate the below Java classes even in unit tests
+  datasource:
+    url: jdbc:postgresql://localhost:5432/football
+    username: user
+    password: user
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration # Default migration path, adjust as necessary
+    schemas:
+      - public
+    baseline-on-migrate: true

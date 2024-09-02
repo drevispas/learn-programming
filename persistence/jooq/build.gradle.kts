@@ -31,11 +31,11 @@ dependencies {
 //    runtimeOnly("com.h2database:h2")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    // PostgreSQL runtime
-    runtimeOnly("org.postgresql:postgresql")
+    // PostgreSQL
+    implementation("org.postgresql:postgresql")
     // Testcontainers for Spring Boot and PostgreSQL
-    testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.testcontainers:postrgresql")
+//    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:postgresql")
     testImplementation("org.testcontainers:junit-jupiter")
     // Flyway
     implementation("org.flywaydb:flyway-core")
@@ -43,7 +43,8 @@ dependencies {
     // Jooq starter
     implementation("org.springframework.boot:spring-boot-starter-jooq")
     // Jooq database driver
-    jooqGenerator("org.postgresql:postgresql:42.7.4")
+//    jooqGenerator("org.postgresql:postgresql:42.7.4")
+    jooqGenerator("org.postgresql:postgresql")
 }
 
 tasks.withType<Test> {
