@@ -24,6 +24,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @SpringBootTest
 class MongoFootballServiceTest {
 
+    // `static` is used to share the container between the test methods
+    // and the container is stopped after all the test methods are executed
     static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo")
             .withCopyFileToContainer(MountableFile.forClasspathResource("mongo/teams1.json"), "teams1.json")
             // log the output of the container

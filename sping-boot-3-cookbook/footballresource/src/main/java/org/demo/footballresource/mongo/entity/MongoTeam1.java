@@ -12,6 +12,7 @@ import java.util.List;
 @ToString
 @Getter
 @Setter
+// @Document is used to specify the collection name
 @Document(collection = "teams1")
 public class MongoTeam1 {
 
