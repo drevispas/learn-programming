@@ -22,7 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Slf4j
 @Testcontainers
 @SpringBootTest
-class MongoFootballServiceTest {
+class MongoTeam1ServiceTest {
 
     // `static` is used to share the container between the test methods
     // and the container is stopped after all the test methods are executed
@@ -64,7 +64,7 @@ class MongoFootballServiceTest {
     }
 
     @Autowired
-    private MongoFootballService service;
+    private MongoTeam1Service service;
 
     @Test
     void testListAllTeams() {

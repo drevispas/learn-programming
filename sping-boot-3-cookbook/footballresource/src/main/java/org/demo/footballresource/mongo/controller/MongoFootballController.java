@@ -1,9 +1,9 @@
 package org.demo.footballresource.mongo.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.demo.footballresource.mongo.dto.MongoPlayer;
+import org.demo.footballresource.mongo.dto.MongoPlayer1Dto;
 import org.demo.footballresource.mongo.entity.MongoTeam1;
-import org.demo.footballresource.mongo.service.MongoFootballService;
+import org.demo.footballresource.mongo.service.MongoTeam1Service;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.List;
 @RestController
 public class MongoFootballController {
 
-    private final MongoFootballService footballService;
+    private final MongoTeam1Service footballService;
 
     @GetMapping("/teams/{teamId}")
     public MongoTeam1 getTeam(@PathVariable String teamId) {
@@ -31,7 +31,7 @@ public class MongoFootballController {
     }
 
     @GetMapping("/players/{playerId}")
-    public MongoPlayer getPlayer(@PathVariable String playerId) {
+    public MongoPlayer1Dto getPlayer(@PathVariable String playerId) {
         return footballService.getPlayer(playerId);
     }
 

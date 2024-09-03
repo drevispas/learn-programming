@@ -16,10 +16,10 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.Is.is;
 
 
-@ContextConfiguration(initializers = JpaPlayerServiceTest.Initializer.class)
+@ContextConfiguration(initializers = JpaMongoPlayer1DtoServiceTest.Initializer.class)
 @Testcontainers
 @SpringBootTest
-class JpaPlayerServiceTest {
+class JpaMongoPlayer1DtoServiceTest {
 
     static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("football")
