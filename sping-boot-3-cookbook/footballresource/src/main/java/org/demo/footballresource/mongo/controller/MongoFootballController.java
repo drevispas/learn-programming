@@ -1,43 +1,40 @@
 package org.demo.footballresource.mongo.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.demo.footballresource.mongo.dto.MongoPlayer1Dto;
-import org.demo.footballresource.mongo.entity.MongoTeam1;
-import org.demo.footballresource.mongo.service.MongoTeam1Service;
+import org.demo.footballresource.mongo.entity.MongoMatch;
+import org.demo.footballresource.mongo.entity.MongoMatchEvent;
+import org.demo.footballresource.mongo.entity.MongoPlayer;
+import org.demo.footballresource.mongo.entity.MongoTeam;
+import org.demo.footballresource.mongo.service.MongoFootballService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RequiredArgsConstructor
-@RequestMapping("/mongo")
+@RequestMapping("/mongo/football")
 @RestController
 public class MongoFootballController {
 
-    private final MongoTeam1Service footballService;
+    private final MongoFootballService footballService;
 
     @GetMapping("/teams/{teamId}")
-    public MongoTeam1 getTeam(@PathVariable String teamId) {
-        return footballService.getTeam(teamId);
+    public MongoTeam getTeamById(@PathVariable String teamId) {
+        return footballService.getTeamById(teamId);
     }
 
     @GetMapping("/teams")
-    public MongoTeam1 searchTeamByName(@RequestParam String teamName) {
-        return footballService.searchTeamByName(teamName);
+    public MongoTeam getTeamByName(@RequestParam String teamName) {
+        return footballService.getTeamByName(teamName);
     }
 
-    @GetMapping("/teams/{name}/contains")
-    public List<MongoTeam1> getTeamsContainingName(@PathVariable String name) {
-        return footballService.getTeamsContainingName(name);
-    }
-
-    @GetMapping("/players/{playerId}")
-    public MongoPlayer1Dto getPlayer(@PathVariable String playerId) {
-        return footballService.getPlayer(playerId);
+    @GetMapping("/teams/contains")
+    public List<MongoTeam> listTeamsByName(@RequestParam String name) {
+        return footballService.listTeamsByName(name);
     }
 
     @PostMapping("/teams")
-    public MongoTeam1 createTeam(@RequestBody MongoTeam1 team) {
-        return footballService.createTeam(team);
+    public MongoTeam saveTeam(@RequestBody MongoTeam team) {
+        return footballService.saveTeam(team);
     }
 
     @DeleteMapping("/teams/{teamId}")
@@ -45,13 +42,23 @@ public class MongoFootballController {
         footballService.deleteTeam(teamId);
     }
 
-    @GetMapping("/teams/{name}/sql")
-    public List<MongoTeam1> listTeamsByNameSQL(@PathVariable String name) {
-        return footballService.listTeamsByNameSQL(name);
+    @PatchMapping("/teams/{teamId}")
+    public void updateTeamName(@PathVariable String teamId, @RequestParam String name) {
+        footballService.updateTeamName(teamId, name);
     }
 
-    @PutMapping("/teams/{teamId}")
-    public void updateTeamName(@PathVariable String teamId, @RequestParam String newName) {
-        footballService.updateTeamName(teamId, newName);
+    @GetMapping("/payers/{playerId}")
+    public MongoPlayer getPlayerById(@PathVariable String playerId) {
+        return footballService.getPlayerById(playerId);
+    }
+
+    @GetMapping("/matches/{matchId}/events")
+    public List<MongoMatchEvent> listMatchEvents(@PathVariable String matchId) {
+        return footballService.listMatchEvents(matchId);
+    }
+
+    @GetMapping("/matches/{matchId}/{playerId}/events")
+    public List<MongoMatchEvent> listMatchEvents(@PathVariable String matchId, @PathVariable String playerId) {
+        return footballService.listPlayerEvents(matchId, playerId);
     }
 }

@@ -13,7 +13,9 @@ public class MongoMatch {
     @Id
     private String id;
     private LocalDate matchDate;
+    // @Indexed is used to create an index on the field
     @Indexed
+    // lazy = false means that the referenced object will be loaded automatically when the match is loaded
     @DBRef(lazy = false)
     private MongoTeam team1;
     @Indexed
