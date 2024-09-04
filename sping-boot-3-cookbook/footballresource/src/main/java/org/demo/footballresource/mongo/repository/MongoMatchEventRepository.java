@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface MongoMatchEventRepository extends MongoRepository<MongoMatchEvent, String> {
 
-    @Query(value = "{'match.$id: ?0'}")
+    @Query(value = "{'match.$id': ?0}")
     List<MongoMatchEvent> findByMatchId(String matchId);
 
     @Query(value = "{'$and': [{'match.$id': ?0}, {'$or': [{'player1.$id': ?1},{'player2.$id': ?1}]}]}")

@@ -1,6 +1,7 @@
 package org.demo.footballresource.mongo.entity;
 
 import jakarta.persistence.Id;
+import lombok.Getter;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -10,10 +11,11 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Getter
 // We are interested in sharding the collection based on the match field
 // @Sharded is used to specify the shard key and this makes the workload is distributed across the servers
 @Sharded(shardKey = {"match"})
-@Document(collection = "matchEvents")
+@Document(collection = "match_events")
 public class MongoMatchEvent {
 
     @Id

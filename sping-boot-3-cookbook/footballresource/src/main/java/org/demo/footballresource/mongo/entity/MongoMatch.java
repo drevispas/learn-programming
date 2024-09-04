@@ -1,12 +1,14 @@
 package org.demo.footballresource.mongo.entity;
 
 import jakarta.persistence.Id;
+import lombok.Getter;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
 
+@Getter
 @Document(collection = "matches")
 public class MongoMatch {
 

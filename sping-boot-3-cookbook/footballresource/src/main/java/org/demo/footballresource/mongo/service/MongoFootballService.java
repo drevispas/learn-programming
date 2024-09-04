@@ -34,7 +34,7 @@ public class MongoFootballService {
         return mongoTeamRepository.findByName(name).orElse(null);
     }
 
-    public List<MongoTeam> listTeamsByName(String name) {
+    public List<MongoTeam> listTeamsContainingName(String name) {
         return mongoTeamRepository.findByNameContaining(name);
     }
 

@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Getter
 @Setter
 // @Document is used to specify the collection name
-@Document(collection = "teams1")
+@Document(collection = "teams")
 public class MongoTeam {
 
     @Id

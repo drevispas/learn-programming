@@ -1,7 +1,6 @@
 package org.demo.footballresource.mongo.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.demo.footballresource.mongo.entity.MongoMatch;
 import org.demo.footballresource.mongo.entity.MongoMatchEvent;
 import org.demo.footballresource.mongo.entity.MongoPlayer;
 import org.demo.footballresource.mongo.entity.MongoTeam;
@@ -28,8 +27,8 @@ public class MongoFootballController {
     }
 
     @GetMapping("/teams/contains")
-    public List<MongoTeam> listTeamsByName(@RequestParam String name) {
-        return footballService.listTeamsByName(name);
+    public List<MongoTeam> listTeamsContainingName(@RequestParam String teamName) {
+        return footballService.listTeamsContainingName(teamName);
     }
 
     @PostMapping("/teams")
@@ -43,11 +42,11 @@ public class MongoFootballController {
     }
 
     @PatchMapping("/teams/{teamId}")
-    public void updateTeamName(@PathVariable String teamId, @RequestParam String name) {
-        footballService.updateTeamName(teamId, name);
+    public void updateTeamName(@PathVariable String teamId, @RequestParam String teamName) {
+        footballService.updateTeamName(teamId, teamName);
     }
 
-    @GetMapping("/payers/{playerId}")
+    @GetMapping("/players/{playerId}")
     public MongoPlayer getPlayerById(@PathVariable String playerId) {
         return footballService.getPlayerById(playerId);
     }
