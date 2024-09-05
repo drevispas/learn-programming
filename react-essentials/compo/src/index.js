@@ -5,12 +5,14 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import TodoApp from "./TodoApp";
 import CounterApp from "./CounterApp";
+import UserFetcherApp from "./UserFetcherApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     {/*<TodoApp />*/}
-    <CounterApp />
+    {/*<CounterApp />*/}
+    <UserFetcherApp />
   </React.StrictMode>
 );
 
