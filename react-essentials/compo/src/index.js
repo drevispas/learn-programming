@@ -4,11 +4,13 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import TodoApp from "./TodoApp";
+import CounterApp from "./CounterApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <TodoApp />
+    {/*<TodoApp />*/}
+    <CounterApp />
   </React.StrictMode>
 );
 
