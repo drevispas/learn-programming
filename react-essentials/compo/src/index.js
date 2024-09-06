@@ -9,6 +9,7 @@ import UserFetcherApp from "./useEffect/UserFetcherApp";
 import InputFocusApp from "./useRef/InputFocusApp";
 import ExpensiveCalculationApp from "./useMemo/ExpensiveCalculationApp";
 import ReducerCounterApp from "./useReducer/ReducerCounterApp";
+import ThemeContextApp from "./Context/ThemeContextApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -21,9 +22,11 @@ root.render(
         <hr/>
         <InputFocusApp/>
         <hr/>
-        <ExpensiveCalculationApp />
+        <ExpensiveCalculationApp/>
         <hr/>
-        <ReducerCounterApp />
+        <ReducerCounterApp/>
+        <hr/>
+        <ThemeContextApp/>
     </React.StrictMode>
 );
 
