@@ -10,6 +10,7 @@ import InputFocusApp from "./useRef/InputFocusApp";
 import ExpensiveCalculationApp from "./useMemo/ExpensiveCalculationApp";
 import ReducerCounterApp from "./useReducer/ReducerCounterApp";
 import ThemeContextApp from "./Context/ThemeContextApp";
+import ReduxCounterApp from "./redux/ReduxCounterApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -27,6 +28,8 @@ root.render(
         <ReducerCounterApp/>
         <hr/>
         <ThemeContextApp/>
+        <hr/>
+        <ReduxCounterApp/>
     </React.StrictMode>
 );
 
