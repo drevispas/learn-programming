@@ -3,19 +3,26 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import TodoApp from "./TodoApp";
-import CounterApp from "./CounterApp";
-import UserFetcherApp from "./UserFetcherApp";
-import InputFocusApp from "./InputFocusApp";
+import TodoApp from "./useState/TodoApp";
+import CounterApp from "./useState/CounterApp";
+import UserFetcherApp from "./useEffect/UserFetcherApp";
+import InputFocusApp from "./useRef/InputFocusApp";
+import ExpensiveCalculationApp from "./useMemo/ExpensiveCalculationApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    {/*<TodoApp />*/}
-    {/*<CounterApp />*/}
-    {/*<UserFetcherApp />*/}
-    <InputFocusApp />
-  </React.StrictMode>
+    <React.StrictMode>
+        <TodoApp/>
+        <hr/>
+        <CounterApp/>
+        <hr/>
+        <UserFetcherApp/>
+        <hr/>
+        <InputFocusApp/>
+        <hr/>
+        <ExpensiveCalculationApp />
+        <hr/>
+    </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function

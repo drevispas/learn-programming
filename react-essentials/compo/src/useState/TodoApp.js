@@ -10,6 +10,7 @@ function TodoApp() {
 
     return (
         <div>
+            <h2>Todo</h2>
             <AddTodoForm addTodo={addTodo} />
             <ul>
                 {todos.map((todo, index) => (

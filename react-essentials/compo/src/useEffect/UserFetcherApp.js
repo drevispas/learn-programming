@@ -13,7 +13,7 @@ function UserFetcherApp() {
     }
     return (
         <div>
-            <h1>User</h1>
+            <h2>UserFetcher</h2>
             {user && (
             <div>
                 <p>Name: {user.first_name} {user.last_name}</p>

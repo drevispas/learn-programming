@@ -9,7 +9,8 @@ function CounterApp() {
 
     return (
         <div>
-            <h1>{count}</h1>
+            <h2>Counter</h2>
+            <h3>{count}</h3>
             <button onClick={handleIncrement}>Increment</button>
             <button onClick={handleDecrement}>Decrement</button>
             <button onClick={handleReset}>Reset</button>
