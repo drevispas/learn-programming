@@ -9,9 +9,10 @@ import UserFetcherApp from "./hooks/useEffect/UserFetcherApp";
 import InputFocusApp from "./hooks/useRef/InputFocusApp";
 import ExpensiveCalculationApp from "./hooks/useMemo/ExpensiveCalculationApp";
 import ReducerCounterApp from "./hooks/useReducer/ReducerCounterApp";
-import ThemeContextApp from "./Context/ThemeContextApp";
+import ThemeContextApp from "./context/ThemeContextApp";
 import ReduxCounterApp from "./redux/ReduxCounterApp";
 import {RouterApp} from "./router/RouterApp";
+import {RestrictedRouteApp} from "./restrictedRoute/RestrictedRouteApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -32,7 +33,8 @@ root.render(
         {/*<hr/>*/}
         {/*<ReduxCounterApp/>*/}
         {/*<hr/>*/}
-        <RouterApp/>
+        {/*<RouterApp/>*/}
+        <RestrictedRouteApp/>
     </React.StrictMode>
 );
 
