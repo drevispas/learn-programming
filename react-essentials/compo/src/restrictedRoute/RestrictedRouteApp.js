@@ -8,6 +8,7 @@ import {useState} from "react";
 export const RestrictedRouteApp = () => {
     const [authStatus, setAuthStatus] = useState(AuthService.isAuthenticated);
     const handleLogin = () => {
+        // .login()에 넘기지 않고 여기에서 setAuthStatus()를 호출해도 동작함
         AuthService.login(() => {
             setAuthStatus(AuthService.isAuthenticated);
         });
