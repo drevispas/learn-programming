@@ -6,13 +6,15 @@ import reportWebVitals from './reportWebVitals';
 import TodoApp from "./TodoApp";
 import CounterApp from "./CounterApp";
 import UserFetcherApp from "./UserFetcherApp";
+import InputFocusApp from "./InputFocusApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     {/*<TodoApp />*/}
     {/*<CounterApp />*/}
-    <UserFetcherApp />
+    {/*<UserFetcherApp />*/}
+    <InputFocusApp />
   </React.StrictMode>
 );
 
