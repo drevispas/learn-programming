@@ -3,33 +3,36 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import TodoApp from "./useState/TodoApp";
-import CounterApp from "./useState/CounterApp";
-import UserFetcherApp from "./useEffect/UserFetcherApp";
-import InputFocusApp from "./useRef/InputFocusApp";
-import ExpensiveCalculationApp from "./useMemo/ExpensiveCalculationApp";
-import ReducerCounterApp from "./useReducer/ReducerCounterApp";
+import TodoApp from "./hooks/useState/TodoApp";
+import CounterApp from "./hooks/useState/CounterApp";
+import UserFetcherApp from "./hooks/useEffect/UserFetcherApp";
+import InputFocusApp from "./hooks/useRef/InputFocusApp";
+import ExpensiveCalculationApp from "./hooks/useMemo/ExpensiveCalculationApp";
+import ReducerCounterApp from "./hooks/useReducer/ReducerCounterApp";
 import ThemeContextApp from "./Context/ThemeContextApp";
 import ReduxCounterApp from "./redux/ReduxCounterApp";
+import {RouterApp} from "./router/RouterApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
     <React.StrictMode>
-        <TodoApp/>
-        <hr/>
-        <CounterApp/>
-        <hr/>
-        <UserFetcherApp/>
-        <hr/>
-        <InputFocusApp/>
-        <hr/>
-        <ExpensiveCalculationApp/>
-        <hr/>
-        <ReducerCounterApp/>
-        <hr/>
-        <ThemeContextApp/>
-        <hr/>
-        <ReduxCounterApp/>
+        {/*<TodoApp/>*/}
+        {/*<hr/>*/}
+        {/*<CounterApp/>*/}
+        {/*<hr/>*/}
+        {/*<UserFetcherApp/>*/}
+        {/*<hr/>*/}
+        {/*<InputFocusApp/>*/}
+        {/*<hr/>*/}
+        {/*<ExpensiveCalculationApp/>*/}
+        {/*<hr/>*/}
+        {/*<ReducerCounterApp/>*/}
+        {/*<hr/>*/}
+        {/*<ThemeContextApp/>*/}
+        {/*<hr/>*/}
+        {/*<ReduxCounterApp/>*/}
+        {/*<hr/>*/}
+        <RouterApp/>
     </React.StrictMode>
 );
 
