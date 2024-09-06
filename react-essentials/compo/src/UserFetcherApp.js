@@ -1,27 +1,9 @@
 import React from 'react';
+import useFetchUser from './useFetchUser';
 
 function UserFetcherApp() {
-    const [user, setUser] = React.useState(null);
-    const [loading, setLoading] = React.useState(true);
-    const [error, setError] = React.useState(null);
-
-    React.useEffect(() => {
-        fetch('https://reqres.in/api/users/1')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to fetch user');
-                }
-                return response.json();
-            })
-            .then(json => {
-                setUser(json.data);
-                setLoading(false);
-            })
-            .catch(error => {
-                setError(error);
-                setLoading(false);
-            })
-    })
+    const url = 'https://reqres.in/api/users/2';
+    const {user, loading, error} = useFetchUser(url);
 
     if (loading === true) {
         return <p>Loading...</p>
