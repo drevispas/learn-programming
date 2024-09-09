@@ -15,6 +15,7 @@ import {RouterApp} from "./routes/router/RouterApp";
 import {RestrictedRouteApp} from "./routes/protectedRoute/RestrictedRouteApp";
 import {ControlledFormApp} from "./forms/ControlledFormApp";
 import {UncontrolledFormApp} from "./forms/UncontrolledFormApp";
+import {FormValidationApp} from "./forms/FormValidationApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -42,6 +43,8 @@ root.render(
         <ControlledFormApp/>
         <hr/>
         <UncontrolledFormApp/>
+        <hr/>
+        <FormValidationApp/>
     </React.StrictMode>
 );
 
