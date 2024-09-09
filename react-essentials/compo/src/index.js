@@ -11,8 +11,9 @@ import ExpensiveCalculationApp from "./hooks/useMemo/ExpensiveCalculationApp";
 import ReducerCounterApp from "./hooks/useReducer/ReducerCounterApp";
 import ThemeContextApp from "./context/ThemeContextApp";
 import ReduxCounterApp from "./redux/ReduxCounterApp";
-import {RouterApp} from "./router/RouterApp";
-import {RestrictedRouteApp} from "./restrictedRoute/RestrictedRouteApp";
+import {RouterApp} from "./routes/router/RouterApp";
+import {RestrictedRouteApp} from "./routes/protectedRoute/RestrictedRouteApp";
+import {ControlledFormApp} from "./forms/ControlledFormApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -34,7 +35,8 @@ root.render(
         {/*<ReduxCounterApp/>*/}
         {/*<hr/>*/}
         {/*<RouterApp/>*/}
-        <RestrictedRouteApp/>
+        {/*<RestrictedRouteApp/>*/}
+        <ControlledFormApp/>
     </React.StrictMode>
 );
 
