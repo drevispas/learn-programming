@@ -17,6 +17,7 @@ export const ControlledFormApp = () => {
 
     return (
         <div>
+            <h3>Controlled Form</h3>
             <form onSubmit={handleSubmit}>
                 <label>
                     Name:

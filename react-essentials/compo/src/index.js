@@ -14,6 +14,7 @@ import ReduxCounterApp from "./redux/ReduxCounterApp";
 import {RouterApp} from "./routes/router/RouterApp";
 import {RestrictedRouteApp} from "./routes/protectedRoute/RestrictedRouteApp";
 import {ControlledFormApp} from "./forms/ControlledFormApp";
+import {UncontrolledFormApp} from "./forms/UncontrolledFormApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -35,8 +36,12 @@ root.render(
         {/*<ReduxCounterApp/>*/}
         {/*<hr/>*/}
         {/*<RouterApp/>*/}
+        {/*<hr/>*/}
         {/*<RestrictedRouteApp/>*/}
+        {/*<hr/>*/}
         <ControlledFormApp/>
+        <hr/>
+        <UncontrolledFormApp/>
     </React.StrictMode>
 );
 
