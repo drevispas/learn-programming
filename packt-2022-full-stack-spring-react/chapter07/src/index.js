@@ -3,11 +3,15 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import {ContextHookApp} from "./hooks/context/ContextHookApp";
+import {EventHandlerApp} from "./events/EventHandlerApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    {/*<App />*/}
+    {/*  <ContextHookApp />*/}
+      <EventHandlerApp />
   </React.StrictMode>
 );
 
