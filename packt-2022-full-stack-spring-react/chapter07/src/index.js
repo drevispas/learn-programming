@@ -5,14 +5,16 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import {ContextHookApp} from "./hooks/context/ContextHookApp";
 import {EventHandlerApp} from "./events/EventHandlerApp";
+import {AgGridApp} from "./thirdParty/agGrid/AgGridApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    {/*<App />*/}
-    {/*  <ContextHookApp />*/}
-      <EventHandlerApp />
-  </React.StrictMode>
+    <React.StrictMode>
+        {/*<App />*/}
+        {/*  <ContextHookApp />*/}
+        {/*  <EventHandlerApp />*/}
+        <AgGridApp/>
+    </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function
