@@ -6,6 +6,7 @@ import reportWebVitals from './reportWebVitals';
 import {ContextHookApp} from "./hooks/context/ContextHookApp";
 import {EventHandlerApp} from "./events/EventHandlerApp";
 import {AgGridApp} from "./thirdParty/agGrid/AgGridApp";
+import {MUIApp} from "./mui/MUIApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -13,7 +14,8 @@ root.render(
         {/*<App />*/}
         {/*  <ContextHookApp />*/}
         {/*  <EventHandlerApp />*/}
-        <AgGridApp/>
+        {/*<AgGridApp/>*/}
+        <MUIApp/>
     </React.StrictMode>
 );
 
