@@ -7,6 +7,7 @@ import {ContextHookApp} from "./hooks/context/ContextHookApp";
 import {EventHandlerApp} from "./events/EventHandlerApp";
 import {AgGridApp} from "./thirdParty/agGrid/AgGridApp";
 import {MUIApp} from "./mui/MUIApp";
+import {RoutingApp} from "./routing/RoutingApp";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -15,7 +16,8 @@ root.render(
         {/*  <ContextHookApp />*/}
         {/*  <EventHandlerApp />*/}
         {/*<AgGridApp/>*/}
-        <MUIApp/>
+        {/*<MUIApp/>*/}
+        <RoutingApp />
     </React.StrictMode>
 );
 
