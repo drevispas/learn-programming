@@ -23,6 +23,8 @@ public class Owner {
     private String lastName;
 
     @Builder.Default
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "owner", fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "owner", fetch = FetchType.LAZY)
+//    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
     private List<Car> cars = new ArrayList<>();
 }
