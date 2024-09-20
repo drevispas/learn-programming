@@ -26,13 +26,25 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
-    compileOnly("org.projectlombok:lombok")
+//    compileOnly("org.projectlombok:lombok")
+    implementation("org.projectlombok:lombok")
+    testImplementation("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // devtools
+    implementation("org.springframework.boot:spring-boot-devtools")
     // actuator
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    // jpa
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    // h2
+    runtimeOnly("com.h2database:h2")
+    // mariadb
+    runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
+    // datasource proxy  starter
+    implementation("com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:1.9.2")
 }
 
 tasks.withType<Test> {

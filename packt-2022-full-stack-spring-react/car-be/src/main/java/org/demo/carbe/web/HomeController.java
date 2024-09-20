@@ -1,4 +1,4 @@
-package org.demo.carbe;
+package org.demo.carbe.web;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
