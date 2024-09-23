@@ -83,7 +83,7 @@ class CarServiceTest {
     "insert into car (brand,color,manufacturing_year,model,price,register_number,id) values (?,?,?,?,?,?,default)" * 2
     "insert into owner_cars (owner_id,cars_id) values (?,?)" * 2
 
-    [Unidirectional @ManyToOne with @JoinColumn relationship]
+    [Unidirectional @OneToMany with @JoinColumn relationship]
     ---
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")

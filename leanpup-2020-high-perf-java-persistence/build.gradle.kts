@@ -27,6 +27,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
+    // jpa
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    // h2
     runtimeOnly("com.h2database:h2")
 //    runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
 //    runtimeOnly("org.postgresql:postgresql")
