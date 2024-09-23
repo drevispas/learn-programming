@@ -1,9 +1,7 @@
-package org.demo.carbe.service;
+package org.demo.carbe.repository;
 
 import org.demo.carbe.domain.Car;
 import org.demo.carbe.domain.Owner;
-import org.demo.carbe.repository.CarRepository;
-import org.demo.carbe.repository.OwnerRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,18 +12,15 @@ import java.util.List;
 import java.util.logging.Logger;
 
 @SpringBootTest
-class CarServiceTest {
+class CarRepositoryTest {
 
-    Logger logger = Logger.getLogger(CarServiceTest.class.getName());
+    Logger logger = Logger.getLogger(CarRepositoryTest.class.getName());
 
     @Autowired
     private OwnerRepository ownerRepository;
 
     @Autowired
     private CarRepository carRepository;
-
-    @Autowired
-    private CarService carService;
 
     private Owner owner1;
     private Owner owner2;
