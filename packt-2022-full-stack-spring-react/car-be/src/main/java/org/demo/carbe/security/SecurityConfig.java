@@ -28,10 +28,10 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.authorizeHttpRequests(authorizeRequests ->
                 authorizeRequests
-                        .requestMatchers("/h2/**").permitAll()
+                        .requestMatchers("/**").permitAll()
                         .anyRequest().authenticated()
         )
-                .formLogin(withDefaults())
+//                .formLogin(withDefaults())
 //                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2/**"))
                 .csrf(AbstractHttpConfigurer::disable)
                 .build();
