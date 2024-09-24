@@ -7,13 +7,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.time.LocalDateTime;
-
 /**
  * @DataJpaTest 설정하고 @OneToMany 테스트하면 중간 테이블이 생성되지 않음
  */
 @SpringBootTest
-class UniUniOtoPostRepositoryTest {
+class UniOtoPostRepositoryTest {
 
     @Autowired
     private UniOtoPostRepository postRepository;
