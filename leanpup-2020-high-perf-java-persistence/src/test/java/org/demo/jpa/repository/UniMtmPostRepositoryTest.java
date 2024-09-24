@@ -24,8 +24,8 @@ class UniMtmPostRepositoryTest {
      * Hibernate: insert into uni_mtm_post (title,id) values (?,default)
      * Hibernate: insert into uni_mtm_tag (name,id) values (?,default)
      * Hibernate: insert into uni_mtm_tag (name,id) values (?,default)
-     * Hibernate: insert into post_tag (tag_id,post_id) values (?,?)
-     * Hibernate: insert into post_tag (tag_id,post_id) values (?,?)
+     * Hibernate: insert into uni_mtm_post_tag (tag_id,post_id) values (?,?)
+     * Hibernate: insert into uni_mtm_post_tag (tag_id,post_id) values (?,?)
      */
     @Test
     void savePost() {
