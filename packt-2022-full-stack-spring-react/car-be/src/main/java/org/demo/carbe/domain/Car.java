@@ -1,15 +1,14 @@
 package org.demo.carbe.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Builder(toBuilder = true)
-@NoArgsConstructor
-@AllArgsConstructor
+import java.util.HashSet;
+import java.util.Set;
+
 @Data
+@NoArgsConstructor
 @Entity
 public class Car {
     @Id
@@ -23,7 +22,6 @@ public class Car {
     private int manufacturingYear;
     private int price;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id")
-    private Owner owner;
+    @ManyToMany(mappedBy = "cars")
+    private Set<Owner> owners = new HashSet<>();
 }

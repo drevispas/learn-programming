@@ -1,18 +1,14 @@
 package org.demo.carbe.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
-@Builder(toBuilder = true)
-@NoArgsConstructor
-@AllArgsConstructor
 @Data
+@NoArgsConstructor
 @Entity
 public class Owner {
 
@@ -22,9 +18,19 @@ public class Owner {
     private String firstName;
     private String lastName;
 
-    @Builder.Default
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "owner", fetch = FetchType.LAZY)
-//    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id")
-    private List<Car> cars = new ArrayList<>();
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(name = "owner_car",
+            joinColumns = @JoinColumn(name = "owner_id"),
+            inverseJoinColumns = @JoinColumn(name = "car_id"))
+    private Set<Car> cars = new HashSet<>();
+
+    public void addCar(Car car) {
+        cars.add(car);
+        car.getOwners().add(this);
+    }
+
+    public void removeCar(Car car) {
+        cars.remove(car);
+        car.getOwners().remove(this);
+    }
 }
