@@ -44,6 +44,8 @@ dependencies {
     runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
     // datasource proxy starter
     implementation("com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:1.9.2")
+    // spring data rest
+    implementation("org.springframework.boot:spring-boot-starter-data-rest")
 }
 
 tasks.withType<Test> {
