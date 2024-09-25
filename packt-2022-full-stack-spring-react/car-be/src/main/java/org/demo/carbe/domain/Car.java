@@ -1,5 +1,6 @@
 package org.demo.carbe.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,9 @@ public class Car {
     private int manufacturingYear;
     private int price;
 
-    @ManyToMany(mappedBy = "cars")
-    private Set<Owner> owners = new HashSet<>();
+//    @ManyToMany(mappedBy = "cars")
+//    private Set<Owner> owners = new HashSet<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private Owner owner;
 }
