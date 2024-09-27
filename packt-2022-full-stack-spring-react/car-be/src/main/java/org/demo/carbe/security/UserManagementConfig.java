@@ -20,7 +20,7 @@ public class UserManagementConfig {
             .authorities("read", "write")
             .build();
 
-    // Set a static password instead of the default random password
+    // If enalbed multiple UserDetailsService beans, neither of them will be used.
 //    @Bean
     public UserDetailsService inMemoryUserDetailsService() {
         return new InMemoryUserDetailsManager(userDetails);
