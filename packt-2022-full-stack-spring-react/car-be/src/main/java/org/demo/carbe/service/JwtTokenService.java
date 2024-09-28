@@ -17,20 +17,20 @@ import java.util.Collections;
 @Service
 public class JwtTokenService implements TokenService {
 
-//    private final AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final JwtHelper jwtHelper;
 
     @Override
     public String generateToken(String username, String password) {
         log.info("Generating token for user: {}", username);
-//        authenticationManager.authenticate(
-//                new UsernamePasswordAuthenticationToken(username, password)
-//        );
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+        );
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        if (userDetails == null || !userDetails.getUsername().equals(username)) {
-            throw new BadCredentialsException("User not found");
-        }
-        return jwtHelper.createToken(Collections.emptyMap(), username);
+//        if (userDetails == null || !userDetails.getUsername().equals(username)) {
+//            throw new BadCredentialsException("User not found");
+//        }
+        return jwtHelper.createToken(Collections.emptyMap(), userDetails.getUsername());
     }
 }
