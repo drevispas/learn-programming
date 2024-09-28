@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlGroup;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -16,6 +18,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@SqlGroup({
+        @Sql(value = "classpath:init/first.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD),
+        @Sql(value = "classpath:init/second.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+})
 @AutoConfigureMockMvc
 @SpringBootTest
 class CarControllerTest {
@@ -50,8 +56,8 @@ class CarControllerTest {
                 .perform(get("/cars/owners")
                         .header("Authorization", "Bearer " + tokenResponse.getAccessToken()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].firstName").value("John"))
-                .andExpect(mvcResult -> assertTrue(mvcResult.getResponse().getContentAsString().contains("John")));
+                .andExpect(jsonPath("$", hasSize(3)))
+                .andExpect(jsonPath("$[2].firstName").value("Alice"))
+                .andExpect(mvcResult -> assertTrue(mvcResult.getResponse().getContentAsString().contains("Alice")));
     }
 }
