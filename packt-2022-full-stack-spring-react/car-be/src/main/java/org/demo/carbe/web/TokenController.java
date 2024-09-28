@@ -1,8 +1,6 @@
 package org.demo.carbe.web;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import org.demo.carbe.service.TokenService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,11 +22,14 @@ public class TokenController {
     }
 
     @Data
+    @Builder
     public static class TokenRequest {
         private String username;
         private String password;
     }
 
+    @NoArgsConstructor
+    @AllArgsConstructor
     @Data
     @Builder
     public static class TokenResponse {

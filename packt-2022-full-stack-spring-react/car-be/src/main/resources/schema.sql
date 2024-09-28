@@ -1,3 +1,5 @@
+create schema if not exists spring;
+
 CREATE TABLE if not exists spring.users
 (
     username VARCHAR(50)  NOT NULL,

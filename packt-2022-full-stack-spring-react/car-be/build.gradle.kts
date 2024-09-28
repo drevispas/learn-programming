@@ -38,8 +38,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     // jpa
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    // h2
-    runtimeOnly("com.h2database:h2")
+    // h2 for test only
+    testImplementation("com.h2database:h2")
     // mariadb
     runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
     // datasource proxy starter
