@@ -1,5 +1,8 @@
 package org.demo.carbe.security.filter;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,27 +42,35 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authorizationHeader.substring(BEARER_PREFIX.length());
-        String username = jwtHelper.extractUsername(token);
-        log.info("Username: {}", username);
-        if (Objects.isNull(username)) {
-            throw new BadCredentialsException("Invalid token: username not found");
-        }
-        // Ensure that the user is not already authenticated
-        log.info("Authentication: {}", SecurityContextHolder.getContext().getAuthentication());
-        if (SecurityContextHolder.getContext().getAuthentication() != null) {
-            throw new BadCredentialsException("Invalid token: user already authenticated");
+        try {
+            String token = authorizationHeader.substring(BEARER_PREFIX.length());
+            String username = jwtHelper.extractUsername(token);
+            log.info("Username: {}", username);
+            if (Objects.isNull(username)) {
+                throw new BadCredentialsException("Invalid token: username not found");
+            }
+            // Ensure that the user is not already authenticated
+            log.info("Authentication: {}", SecurityContextHolder.getContext().getAuthentication());
+            if (SecurityContextHolder.getContext().getAuthentication() != null) {
+                throw new BadCredentialsException("Invalid token: user already authenticated");
+            }
+
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (!jwtHelper.validateToken(token, userDetails)) {
+                throw new BadCredentialsException("Invalid token: token not valid");
+            }
+
+            // Make the user authenticated
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+        } catch (ExpiredJwtException | BadCredentialsException | UnsupportedJwtException | MalformedJwtException e) {
+            log.error("Invalid token: {}", e.getMessage());
+            log.debug("Exception: ", e);
+            request.setAttribute("exception", e);
         }
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        if (!jwtHelper.validateToken(token, userDetails)) {
-            throw new BadCredentialsException("Invalid token: token not valid");
-        }
-
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-
+        // Continue the filter chain
         filterChain.doFilter(request, response);
     }
 
