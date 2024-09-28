@@ -19,7 +19,7 @@ public class TokenController {
     @PostMapping("/create")
     public TokenResponse createToken(@RequestBody TokenRequest tokenRequest) {
         return TokenResponse.builder()
-                .token(tokenService.generateToken(tokenRequest.username, tokenRequest.password))
+                .accessToken(tokenService.generateToken(tokenRequest.username, tokenRequest.password))
                 .build();
     }
 
@@ -32,6 +32,6 @@ public class TokenController {
     @Data
     @Builder
     public static class TokenResponse {
-        private String token;
+        private String accessToken;
     }
 }
