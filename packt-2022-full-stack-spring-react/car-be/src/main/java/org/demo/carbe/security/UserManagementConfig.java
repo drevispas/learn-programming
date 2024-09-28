@@ -15,16 +15,16 @@ import javax.sql.DataSource;
 @Configuration
 public class UserManagementConfig {
 
-    final private UserDetails userDetails = User.withUsername("user")
-            .password("user")
-            .authorities("read", "write")
-            .build();
+//    final private UserDetails userDetails = User.withUsername("user")
+//            .password("user")
+//            .authorities("read", "write")
+//            .build();
 
     // If enalbed multiple UserDetailsService beans, neither of them will be used.
 //    @Bean
-    public UserDetailsService inMemoryUserDetailsService() {
-        return new InMemoryUserDetailsManager(userDetails);
-    }
+//    public UserDetailsService inMemoryUserDetailsService() {
+//        return new InMemoryUserDetailsManager(userDetails);
+//    }
 
     @Bean
     public UserDetailsService jdbcUserDetailsService(DataSource dataSource) {

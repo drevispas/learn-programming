@@ -2,6 +2,7 @@ package org.demo.carbe.security.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -50,6 +51,11 @@ public class JwtHelper {
 
     private Date extractExpiration(String token) {
         return extractClaimBody(token, Claims::getExpiration);
+    }
+
+    private <T> T extractClaimHeader(String token, Function<JwsHeader, T> claimsResolver) {
+        final Jws<Claims> jwsClaims = extractAllClaims(token);
+        return claimsResolver.apply(jwsClaims.getHeader());
     }
 
     private <T> T extractClaimBody(String token, Function<Claims, T> claimsResolver) {
