@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {DataGrid} from "@mui/x-data-grid";
 import {Snackbar} from "@mui/material";
 import {AddCar} from "./AddCar";
+import {EditCar} from "./EditCar";
 
 export function Carlist() {
 
@@ -50,6 +51,22 @@ export function Carlist() {
             .catch(err => console.error(err));
     }
 
+    const updateCar = (car, url) => {
+        fetch(url, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(car)
+        })
+            .then(response => {
+                if (response.ok) {
+                    fetchCars();
+                } else {
+                    alert('Failed to update car');
+                }
+            })
+            .catch(err => console.error(err));
+    }
+
     useEffect(() => {
         fetchCars();
     }, []);
@@ -62,15 +79,27 @@ export function Carlist() {
         {field: 'price', headerName: 'Price', width: 150},
         {field: 'registerNumber', headerName: 'Register Number', width: 150},
         {
-            field: '_links.self.href',
-            headerName: 'Actions',
+            field: '_links.car.href',
+            headerName: 'Action1',
             width: 150,
+            sortable: false,
+            filterable: false,
+            renderCell: (row) => (
+                <EditCar car={row} updateCar={updateCar}/>
+            )
+        },
+        {
+            field: '_links.self.href',
+            headerName: 'Action2',
+            width: 150,
+            sortable: false,
+            filterable: false,
             renderCell: (row) => (
                 <div>
                     <button onClick={() => deleteCar(row.id)}>Delete</button>
                 </div>
             )
-        }
+        },
     ]
 
     return (
