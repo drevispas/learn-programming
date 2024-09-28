@@ -16,15 +16,16 @@ export function Carlist() {
             <table>
                 <tbody>
                 {
-                    cars.map((car, index)=> {
+                    cars.map((car, index) =>
                         <tr key={index}>
                             <td>{car.brand}</td>
                             <td>{car.model}</td>
                             <td>{car.color}</td>
-                            <td>{car.year}</td>
+                            <td>{car.manufacturingYear}</td>
                             <td>{car.price}</td>
+                            <td>{car.registerNumber}</td>
                         </tr>
-                    })
+                    )
                 }
                 </tbody>
             </table>
