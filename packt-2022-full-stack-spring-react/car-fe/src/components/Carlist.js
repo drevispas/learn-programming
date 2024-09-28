@@ -1,9 +1,11 @@
 import {useEffect, useState} from "react";
 import {DataGrid} from "@mui/x-data-grid";
+import {Snackbar} from "@mui/material";
 
 export function Carlist() {
 
     const [cars, setCars] = useState([]);
+    const [openSnackbar, setOpenSnackbar] = useState(false);
 
     const fetchCars = () => {
         fetch('http://localhost:8080/api/cars')
@@ -14,12 +16,16 @@ export function Carlist() {
 
     const deleteCar = (url) => {
         console.log('Deleting car with url: ' + url);
+        if (!window.confirm('Are you sure you want to delete?')) {
+            return;
+        }
         fetch(url, {
             method: 'DELETE'
         })
             .then(response => {
                 if (response.ok) {
                     fetchCars();
+                    setOpenSnackbar(true);
                 } else {
                     alert('Failed to delete car');
                 }
@@ -51,10 +57,14 @@ export function Carlist() {
     ]
 
     return (
-        <div style={{height:500, width:'100%'}}>
+        <div style={{height: 500, width: '100%'}}>
             <DataGrid columns={columns} rows={cars}
                       getRowId={row => row._links.self.href}
                       disableRowSelectionOnClick={true}
+            />
+            <Snackbar open={openSnackbar} autoHideDuration={6000}
+                      onClose={() => setOpenSnackbar(false)}
+                      message="Car deleted successfully"
             />
         </div>
     )
