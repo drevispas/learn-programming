@@ -1,10 +1,18 @@
-import {useEffect, useState} from "react";
-import {DataGrid} from "@mui/x-data-grid";
+import React, {useEffect, useState} from "react";
+import { DataGrid, GridToolbarContainer, GridToolbarExport, gridClasses } from '@mui/x-data-grid';
 import {Snackbar} from "@mui/material";
 import {AddCar} from "./AddCar";
 import {EditCar} from "./EditCar";
 
-export function Carlist() {
+function CustomToolbar() {
+    return (
+        <GridToolbarContainer className={gridClasses.toolbarContainer}>
+            <GridToolbarExport />
+        </GridToolbarContainer>
+    );
+}
+
+function Carlist() {
 
     const [cars, setCars] = useState([]);
     const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -103,18 +111,23 @@ export function Carlist() {
     ]
 
     return (
-        <>
+        <React.Fragment>
             <AddCar addCar={addCar}/>
             <div style={{height: 500, width: '100%'}}>
-                <DataGrid columns={columns} rows={cars}
-                          getRowId={row => row._links.self.href}
-                          disableRowSelectionOnClick={true}
+                <DataGrid
+                    rows={cars}
+                    columns={columns}
+                    disableSelectionOnClick={true}
+                    getRowId={row => row._links.self.href}
+                    components={{ Toolbar: CustomToolbar }}
                 />
                 <Snackbar open={openSnackbar} autoHideDuration={6000}
                           onClose={() => setOpenSnackbar(false)}
                           message="Car deleted successfully"
                 />
             </div>
-        </>
+        </React.Fragment>
     )
 }
+
+export default Carlist;

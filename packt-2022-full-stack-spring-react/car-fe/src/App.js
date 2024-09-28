@@ -1,7 +1,7 @@
 import logo from './logo.svg';
 import './App.css';
 import {AppBar, Toolbar, Typography} from "@mui/material";
-import {Carlist} from "./components/Carlist";
+import Carlist from "./components/Carlist";
 
 function App() {
   return (
