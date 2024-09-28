@@ -1,6 +1,7 @@
 import {useEffect, useState} from "react";
 import {DataGrid} from "@mui/x-data-grid";
 import {Snackbar} from "@mui/material";
+import {AddCar} from "./AddCar";
 
 export function Carlist() {
 
@@ -33,6 +34,22 @@ export function Carlist() {
             .catch(err => console.error(err));
     }
 
+    const addCar = (car) => {
+        fetch('http://localhost:8080/api/cars', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(car)
+        })
+            .then(response => {
+                if (response.ok) {
+                    fetchCars();
+                } else {
+                    alert('Failed to add car')
+                }
+            })
+            .catch(err => console.error(err));
+    }
+
     useEffect(() => {
         fetchCars();
     }, []);
@@ -57,15 +74,18 @@ export function Carlist() {
     ]
 
     return (
-        <div style={{height: 500, width: '100%'}}>
-            <DataGrid columns={columns} rows={cars}
-                      getRowId={row => row._links.self.href}
-                      disableRowSelectionOnClick={true}
-            />
-            <Snackbar open={openSnackbar} autoHideDuration={6000}
-                      onClose={() => setOpenSnackbar(false)}
-                      message="Car deleted successfully"
-            />
-        </div>
+        <>
+            <AddCar addCar={addCar}/>
+            <div style={{height: 500, width: '100%'}}>
+                <DataGrid columns={columns} rows={cars}
+                          getRowId={row => row._links.self.href}
+                          disableRowSelectionOnClick={true}
+                />
+                <Snackbar open={openSnackbar} autoHideDuration={6000}
+                          onClose={() => setOpenSnackbar(false)}
+                          message="Car deleted successfully"
+                />
+            </div>
+        </>
     )
 }
