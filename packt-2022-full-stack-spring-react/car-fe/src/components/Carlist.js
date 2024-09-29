@@ -4,6 +4,7 @@ import {IconButton, Snackbar} from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import {AddCar} from "./AddCar";
 import {EditCar} from "./EditCar";
+import {API_URL} from "../constants";
 
 function CustomToolbar() {
     return (
@@ -19,7 +20,8 @@ function Carlist() {
     const [openSnackbar, setOpenSnackbar] = useState(false);
 
     const fetchCars = () => {
-        fetch('http://localhost:8080/api/cars')
+        const token = sessionStorage.getItem('jwt');
+        fetch(API_URL, {headers: {'Authorization': token}})
             .then(response => response.json())
             .then(data => setCars(data._embedded.cars))
             .catch(err => console.error(err))
@@ -30,8 +32,9 @@ function Carlist() {
         if (!window.confirm('Are you sure you want to delete?')) {
             return;
         }
+        const token = sessionStorage.getItem('jwt');
         fetch(url, {
-            method: 'DELETE'
+            method: 'DELETE', headers: {'Authorization': token}
         })
             .then(response => {
                 if (response.ok) {
@@ -45,9 +48,10 @@ function Carlist() {
     }
 
     const addCar = (car) => {
-        fetch('http://localhost:8080/api/cars', {
+        const token = sessionStorage.getItem('jwt');
+        fetch(API_URL, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {'Content-Type': 'application/json', 'Authorization': token},
             body: JSON.stringify(car)
         })
             .then(response => {
@@ -61,9 +65,10 @@ function Carlist() {
     }
 
     const updateCar = (car, url) => {
+        const token = sessionStorage.getItem('jwt');
         fetch(url, {
             method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
+            headers: {'Content-Type': 'application/json', 'Authorization': token},
             body: JSON.stringify(car)
         })
             .then(response => {
