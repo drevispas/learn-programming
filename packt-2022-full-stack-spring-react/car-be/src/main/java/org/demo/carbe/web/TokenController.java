@@ -10,13 +10,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
-@RequestMapping("/token")
+@RequestMapping("/auth/token")
 @RestController
 public class TokenController {
 
     private final TokenService tokenService;
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<TokenResponse> createToken(@RequestBody TokenRequest tokenRequest) {
         var accessToken = tokenService.generateToken(tokenRequest.username, tokenRequest.password);
         var body = TokenResponse.builder()
