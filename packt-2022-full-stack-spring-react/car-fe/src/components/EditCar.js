@@ -1,4 +1,5 @@
-import {Button, Dialog, DialogActions, DialogContent} from "@mui/material";
+import {Button, Dialog, DialogActions, DialogContent, IconButton, Stack, TextField, Toolbar} from "@mui/material";
+import EditButton from "@mui/icons-material/Edit";
 import {useState} from "react";
 
 export function EditCar(props) {
@@ -37,22 +38,19 @@ export function EditCar(props) {
 
     return (
         <div>
-            <button onClick={handleOpen}>Edit</button>
+            <IconButton onClick={handleOpen}>
+                <EditButton color={"primary"}/>
+            </IconButton>
             <Dialog open={open} onClose={handleClose}>
                 <DialogContent>
-                    <input type="text" placeholder="Brand" name="brand"
-                           value={car.brand} onChange={handleChange}/>
-                    <input type="text" placeholder="Model" name="model"
-                           value={car.model} onChange={handleChange}/>
-                    <input type="text" placeholder="Color" name="color"
-                           value={car.color} onChange={handleChange}/>
-                    <input type="text" placeholder="Manufacturing year" name="manufacturingYear"
-                           value={car.manufacturingYear} onChange={handleChange}/>
-                    <input type="text" placeholder="Price" name="price"
-                           value={car.price} onChange={handleChange}/>
-                    <input type="text" placeholder="Register number" name="registerNumber"
-                           value={car.registerNumber} onChange={handleChange}/>
-                    <button onClick={handleSave}>Save</button>
+                    <Stack spacing={2} mt={1}>
+                        <TextField label={"Brand"} name={"brand"} value={car.brand} onChange={handleChange} variant={"standard"} autoFocus />
+                        <TextField label={"Model"} name={"model"} value={car.model} onChange={handleChange} variant={"standard"} />
+                        <TextField label={"Color"} name={"color"} value={car.color} onChange={handleChange} variant={"standard"} />
+                        <TextField label={"Manufacturing year"} name={"manufacturing year"} value={car.manufacturingYear} onChange={handleChange} variant={"standard"} />
+                        <TextField label={"Price"} name={"price"} value={car.price} onChange={handleChange} variant={"standard"} />
+                        <TextField label={"Register number"} name={"register number"} value={car.registerNumber} onChange={handleChange} variant={"standard"} />
+                    </Stack>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose}>Cancel</Button>

@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import { DataGrid, GridToolbarContainer, GridToolbarExport, gridClasses } from '@mui/x-data-grid';
-import {Snackbar} from "@mui/material";
+import {IconButton, Snackbar} from "@mui/material";
+import DeleteIcon from '@mui/icons-material/Delete';
 import {AddCar} from "./AddCar";
 import {EditCar} from "./EditCar";
 
@@ -104,7 +105,9 @@ function Carlist() {
             filterable: false,
             renderCell: (row) => (
                 <div>
-                    <button onClick={() => deleteCar(row.id)}>Delete</button>
+                    <IconButton onClick={() => deleteCar(row.id)}>
+                        <DeleteIcon color={"error"}/>
+                    </IconButton>
                 </div>
             )
         },
