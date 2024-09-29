@@ -17,12 +17,6 @@ public class TokenController {
     private final TokenService tokenService;
 
     @PostMapping("/create")
-//    public TokenResponse createToken(@RequestBody TokenRequest tokenRequest) {
-//        return TokenResponse.builder()
-//                .accessToken(tokenService.generateToken(tokenRequest.username, tokenRequest.password))
-//                .build();
-//    }
-
     public ResponseEntity<TokenResponse> createToken(@RequestBody TokenRequest tokenRequest) {
         var accessToken = tokenService.generateToken(tokenRequest.username, tokenRequest.password);
         var body = TokenResponse.builder()
