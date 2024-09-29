@@ -2,6 +2,8 @@ package org.demo.carbe.web;
 
 import lombok.*;
 import org.demo.carbe.service.TokenService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,10 +17,22 @@ public class TokenController {
     private final TokenService tokenService;
 
     @PostMapping("/create")
-    public TokenResponse createToken(@RequestBody TokenRequest tokenRequest) {
-        return TokenResponse.builder()
-                .accessToken(tokenService.generateToken(tokenRequest.username, tokenRequest.password))
+//    public TokenResponse createToken(@RequestBody TokenRequest tokenRequest) {
+//        return TokenResponse.builder()
+//                .accessToken(tokenService.generateToken(tokenRequest.username, tokenRequest.password))
+//                .build();
+//    }
+
+    public ResponseEntity<TokenResponse> createToken(@RequestBody TokenRequest tokenRequest) {
+        var accessToken = tokenService.generateToken(tokenRequest.username, tokenRequest.password);
+        var body = TokenResponse.builder()
+                .accessToken(accessToken)
                 .build();
+        // Return the token in the header as well for the client to be able to read it
+        return ResponseEntity.ok()
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.AUTHORIZATION)
+                .body(body);
     }
 
     @Data
