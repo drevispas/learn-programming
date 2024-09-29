@@ -1,4 +1,4 @@
-import {Dialog, DialogActions, DialogContent} from "@mui/material";
+import {Button, Dialog, DialogActions, DialogContent} from "@mui/material";
 import {useState} from "react";
 
 export function EditCar(props) {
@@ -55,8 +55,8 @@ export function EditCar(props) {
                     <button onClick={handleSave}>Save</button>
                 </DialogContent>
                 <DialogActions>
-                    <button onClick={handleClose}>Cancel</button>
-                    <button onClick={handleSave}>Save</button>
+                    <Button onClick={handleClose}>Cancel</Button>
+                    <Button onClick={handleSave}>Save</Button>
                 </DialogActions>
             </Dialog>
         </div>

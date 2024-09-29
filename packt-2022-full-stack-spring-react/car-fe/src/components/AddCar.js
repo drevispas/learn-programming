@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {Dialog, DialogActions, DialogContent, DialogTitle} from "@mui/material";
+import {Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack} from "@mui/material";
 
 export function AddCar(props) {
     const [open, setOpen] = useState(false);
@@ -28,7 +28,9 @@ export function AddCar(props) {
 
     return (
         <div>
-            <button onClick={handleOpen}>Add car</button>
+            <Stack mt={2} mb={2}>
+                <Button onClick={handleOpen} variant={"contained"}>New Car</Button>
+            </Stack>
             <Dialog open={open} onClose={handleClose}>
                 <DialogTitle>Add car</DialogTitle>
                 <DialogContent>
@@ -46,8 +48,8 @@ export function AddCar(props) {
                            value={car.registerNumber} onChange={handleChange}/>
                 </DialogContent>
                 <DialogActions>
-                    <button onClick={handleClose}>Cancel</button>
-                    <button onClick={handleSave}>Save</button>
+                    <Button onClick={handleClose}>Cancel</Button>
+                    <Button onClick={handleSave}>Save</Button>
                 </DialogActions>
             </Dialog>
         </div>
