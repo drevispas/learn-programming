@@ -10,8 +10,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.CorsConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
 @RequiredArgsConstructor
 @Configuration
@@ -21,8 +24,8 @@ public class WebAuthorizationConfig {
     private final JwtFilter jwtFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-    @Bean
-    @Order(1)
+    //    @Bean
+//    @Order(1)
     public SecurityFilterChain formLoginSecurityFilterChain(HttpSecurity http) throws Exception {
         http.cors(corsCustomizer);
         http.csrf(AbstractHttpConfigurer::disable);
@@ -41,9 +44,9 @@ public class WebAuthorizationConfig {
         return http.build();
     }
 
-    @Bean
-    @Order(2)
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    //    @Bean
+//    @Order(2)
+    public SecurityFilterChain jwtSecurityFilterChain(HttpSecurity http) throws Exception {
         http.cors(corsCustomizer);
         http.csrf(AbstractHttpConfigurer::disable);
         // the authorization rules at the endpoints
@@ -61,16 +64,22 @@ public class WebAuthorizationConfig {
         return http.build();
     }
 
-    // Switch to this bean to allow all requests to pass through
-//    @Bean
-//    public SecurityFilterChain openedSecurityFilterChain(HttpSecurity http) throws Exception {
-//        return http
-//                .cors(corsCustomizer)
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .authorizeHttpRequests(authorizeRequests ->
-//                        authorizeRequests
-//                                .anyRequest().permitAll()
-//                )
-//                .build();
-//    }
+    @Bean
+    public SecurityFilterChain keycloackSecurityFilterChain(HttpSecurity http, ClientRegistrationRepository clientRegistrationRepository) throws Exception {
+        return http
+                .cors(corsCustomizer)
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorizeRequests ->
+                        authorizeRequests.anyRequest().authenticated()
+                )
+                .oauth2Login(Customizer.withDefaults())
+                .logout(logout -> logout.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository)))
+                .build();
+    }
+
+    private LogoutSuccessHandler oidcLogoutSuccessHandler(ClientRegistrationRepository clientRegistrationRepository) {
+        OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler = new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
+        oidcLogoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}/home");
+        return oidcLogoutSuccessHandler;
+    }
 }

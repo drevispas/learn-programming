@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: car-be
+
+  datasource:
+    url: jdbc:mariadb://localhost:3306/car
+    username: user
+    password: user
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    defer-datasource-initialization: true
+
+  jackson:
+    serialization:
+      FAIL_ON_EMPTY_BEANS: false
+
+  sql:
+    init:
+      mode: always
+
+  data:
+    rest:
+      base-path: /api
+
+  security:
+    oauth2:
+      client:
+        registration:
+          wincl-dashboard:
+            client-id: opsnow_client_wincl
+            client-secret: ZpySXyuqPmSJmC75FumKGDUZ4clIQ7RG
+            scope: openid
+        provider:
+            # keycloak base url: http://localhost:4080/realms/opsnow
+            wincl-dashboard:
+                issuer-uri: http://localhost:4080/realms/opsnow
+
+logging:
+  level:
+    root: INFO
+    net.ttddyy.dsproxy.listener: debug
+    org.springframework.security: DEBUG
+
+decorator:
+  datasource:
+    datasource-proxy:
+      format-sql: false
+
+app:
+  jwt:
+    secretKey: 5JzoMbk6E5qIqHSuBTgeQCARtUsxAkBiHwdjXOSW8kWdXzYmP3X51C0
+    validityInMs: 600000
