@@ -29,6 +29,7 @@ public class JwtHelper {
         Date expiryDate = new Date(System.currentTimeMillis() + jwtProperties.getValidityInMs());
         return Jwts.builder()
                 .claims(claims)
+                .issuer(jwtProperties.getIssuer())
                 .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(expiryDate)

@@ -50,7 +50,7 @@ decorator:
     datasource-proxy:
       format-sql: false
 
-app:
-  jwt:
-    secretKey: 5JzoMbk6E5qIqHSuBTgeQCARtUsxAkBiHwdjXOSW8kWdXzYmP3X51C0
-    validityInMs: 600000
+jwt:
+  issuer: wincl-dashboard
+  secretKey: 5JzoMbk6E5qIqHSuBTgeQCARtUsxAkBiHwdjXOSW8kWdXzYmP3X51C0
+  validityInMs: 600000

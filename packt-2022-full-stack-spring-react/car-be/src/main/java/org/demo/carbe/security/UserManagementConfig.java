@@ -30,7 +30,7 @@ public class UserManagementConfig {
 //        return new InMemoryUserDetailsManager(userDetails);
 //    }
 
-    @Bean
+    @Bean("jdbcUserDetailsService")
     public UserDetailsService jdbcUserDetailsService(DataSource dataSource) {
         String usersByUsernameQuery = "select username, password, enabled from spring.users where username = ?";
         String authoritiesByUsernameQuery = "select username, authority from spring.authorities where username = ?";

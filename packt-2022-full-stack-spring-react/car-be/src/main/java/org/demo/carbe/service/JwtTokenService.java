@@ -37,4 +37,9 @@ public class JwtTokenService implements TokenService {
 //        }
         return jwtHelper.createToken(Collections.emptyMap(), userDetails.getUsername());
     }
+
+    @Override
+    public String generateToken(String username) {
+        return jwtHelper.createToken(Collections.emptyMap(), username);
+    }
 }

@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.demo.carbe.security.jwt.JwtHelper;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,15 +24,19 @@ import java.io.IOException;
 import java.util.Objects;
 
 @Slf4j
-@RequiredArgsConstructor
 @Component
-public class JwtFilter extends OncePerRequestFilter {
+public class JdbcJwtFilter extends OncePerRequestFilter {
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER_PREFIX = "Bearer ";
 
     private final UserDetailsService userDetailsService;
     private final JwtHelper jwtHelper;
+
+    public JdbcJwtFilter(@Qualifier("jdbcUserDetailsService") UserDetailsService userDetailsService, JwtHelper jwtHelper) {
+        this.userDetailsService = userDetailsService;
+        this.jwtHelper = jwtHelper;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
