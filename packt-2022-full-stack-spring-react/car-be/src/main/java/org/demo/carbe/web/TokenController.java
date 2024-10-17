@@ -5,6 +5,7 @@ import org.demo.carbe.service.TokenService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +31,7 @@ public class TokenController {
 
     @GetMapping("/wrapper")
     public ResponseEntity<TokenResponse> createWrapperToken(@AuthenticationPrincipal OidcUser oidcUser) {
+        compareWithContextForJustTest(oidcUser);
         var accessToken = tokenService.generateToken(oidcUser.getPreferredUsername());
         var body = TokenResponse.builder()
                 .accessToken(accessToken)
@@ -39,6 +41,12 @@ public class TokenController {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.AUTHORIZATION)
                 .body(body);
+    }
+
+    private void compareWithContextForJustTest(OidcUser oidcUser) {
+        OidcUser contextUser = (OidcUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        System.out.println("\n***\noidcUser.getPreferredUsername() = " + oidcUser.getPreferredUsername());
+        System.out.println("\n***\ncontextUser.getPreferredUsername() = " + contextUser.getPreferredUsername());
     }
 
     @Data
