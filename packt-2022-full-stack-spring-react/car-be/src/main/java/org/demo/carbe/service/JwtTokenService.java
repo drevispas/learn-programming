@@ -23,12 +23,14 @@ public class JwtTokenService implements TokenService {
 
     @Override
     public String generateToken(String username, String password) {
+        // Authenticate the user by selecting the user from the database
         log.info("Generating token for user: {}", username);
         // This will throw an exception if the user is not found
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username, password)
         );
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
         // This check is not necessary actually because the userDetailsService.loadUserByUsername(username) will throw an exception if the user is not found
 //        if (userDetails == null || !userDetails.getUsername().equals(username)) {
 //            throw new BadCredentialsException("User not found");

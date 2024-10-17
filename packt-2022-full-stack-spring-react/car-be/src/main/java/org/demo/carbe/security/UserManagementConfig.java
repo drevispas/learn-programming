@@ -56,6 +56,7 @@ public class UserManagementConfig {
     }
 
     @Bean
+    // DaoAuthenticationProvider is injected here
     public AuthenticationManager authenticationManager(AuthenticationProvider authenticationProvider) {
         return new ProviderManager(authenticationProvider);
     }

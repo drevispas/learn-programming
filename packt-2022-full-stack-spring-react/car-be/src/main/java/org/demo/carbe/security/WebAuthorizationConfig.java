@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.demo.carbe.security.filter.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,6 +22,27 @@ public class WebAuthorizationConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
+    @Order(1)
+    public SecurityFilterChain formLoginSecurityFilterChain(HttpSecurity http) throws Exception {
+        http.cors(corsCustomizer);
+        http.csrf(AbstractHttpConfigurer::disable);
+        // the authorization rules at the endpoints
+        http
+                .securityMatcher("/home", "/login")
+                .authorizeHttpRequests(authorizeHttpRequests ->
+                        authorizeHttpRequests
+                                .requestMatchers("/login").permitAll()
+                                .anyRequest().authenticated()
+                )
+                .formLogin(formLogin -> formLogin
+                        .defaultSuccessUrl("/home", true)
+                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS));
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(corsCustomizer);
         http.csrf(AbstractHttpConfigurer::disable);
@@ -41,14 +63,14 @@ public class WebAuthorizationConfig {
 
     // Switch to this bean to allow all requests to pass through
 //    @Bean
-    public SecurityFilterChain openedSecurityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .cors(corsCustomizer)
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(authorizeRequests ->
-                        authorizeRequests
-                                .anyRequest().permitAll()
-                )
-                .build();
-    }
+//    public SecurityFilterChain openedSecurityFilterChain(HttpSecurity http) throws Exception {
+//        return http
+//                .cors(corsCustomizer)
+//                .csrf(AbstractHttpConfigurer::disable)
+//                .authorizeHttpRequests(authorizeRequests ->
+//                        authorizeRequests
+//                                .anyRequest().permitAll()
+//                )
+//                .build();
+//    }
 }
