@@ -51,6 +51,8 @@ public class TodoService {
 
     @Transactional
     public void delete(Long id) {
+        // check if todo exists
+        getTodoById(id);
         todoRepository.deleteById(id);
     }
 }

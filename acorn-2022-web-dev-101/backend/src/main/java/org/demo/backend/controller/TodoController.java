@@ -1,12 +1,11 @@
 package org.demo.backend.controller;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.demo.backend.model.Todo;
 import org.demo.backend.service.TodoService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,88 +21,61 @@ public class TodoController {
 
     private final TodoService todoService;
 
-    @GetMapping("/{id}")
-    public TodoResponse<TodoResponseData> getTodoById(@PathVariable Long id) {
-        return TodoResponse.<TodoResponseData>builder()
-                .data(new TodoResponseData(todoService.getTodoById(id)))
-                .build();
-    }
 
-    @GetMapping
-    public TodoResponse<List<TodoResponseData>> getTodos(@RequestParam String userId) {
-        return TodoResponse.<List<TodoResponseData>>builder()
-                .data(todoService.getTodos(userId).stream().map(TodoResponseData::new).collect(Collectors.toList()))
-                .build();
-
-    }
-
-    @PostMapping
-    public TodoResponse<TodoResponseData> create(@RequestBody TodoCreateRequest request) {
-        return TodoResponse.<TodoResponseData>builder()
-                .data(new TodoResponseData(todoService.create(TodoCreateRequest.toModel(request))))
-                .build();
-    }
-
-    @PutMapping
-    public TodoResponse<TodoResponseData> update(@RequestBody TodoUpdateRequest request) {
-        return TodoResponse.<TodoResponseData>builder()
-                .data(new TodoResponseData(todoService.update(TodoUpdateRequest.toModel(request))))
-                .build();
-    }
-
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        todoService.delete(id);
-    }
-
-    @Getter
-    @Setter
-    public static class TodoCreateRequest {
-        @NotBlank
-        private String title;
-        private String description;
+    public record TodoCreateRequest(@NotBlank String title, String description) {
 
         public static Todo toModel(TodoCreateRequest request) {
             return Todo.builder()
-                    .userId(TEMP_USER_ID)
-                    .title(request.getTitle())
-                    .description(request.getDescription())
+                    .userId(TodoController.TEMP_USER_ID)
+                    .title(request.title())
+                    .description(request.description())
                     .completed(false)
                     .build();
         }
     }
 
-    @Getter
-    @Setter
-    public static class TodoUpdateRequest {
-        private Long id;
-        private String title;
-        private String description;
-        private Boolean completed;
+    public record TodoUpdateRequest(Long id, String title, String description, Boolean completed) {
 
         public static Todo toModel(TodoUpdateRequest request) {
             return Todo.builder()
-                    .id(request.getId())
+                    .id(request.id())
                     .userId(TEMP_USER_ID)
-                    .title(request.getTitle())
-                    .description(request.getDescription())
-                    .completed(request.completed)
+                    .title(request.title())
+                    .description(request.description())
+                    .completed(request.completed())
                     .build();
         }
     }
 
-    @Getter
-    public static class TodoResponseData {
-        private Long id;
-        private String title;
-        private String description;
-        private Boolean completed;
-
+    public record TodoResponseData(Long id, String title, String description, Boolean completed) {
         public TodoResponseData(Todo todo) {
-            this.id = todo.getId();
-            this.title = todo.getTitle();
-            this.description = todo.getDescription();
-            this.completed = todo.getCompleted();
+            this(todo.getId(), todo.getTitle(), todo.getDescription(), todo.getCompleted());
         }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<TodoResponseData>> getTodoById(@PathVariable Long id) {
+        return ApiResponse.ok(new TodoResponseData(todoService.getTodoById(id)));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<TodoResponseData>>> getTodos() {
+        return ApiResponse.ok(todoService.getTodos(TEMP_USER_ID).stream().map(TodoResponseData::new).collect(Collectors.toList()));
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<TodoResponseData>> create(@RequestBody TodoCreateRequest request) {
+        return ApiResponse.created(new TodoResponseData(todoService.create(TodoCreateRequest.toModel(request))));
+    }
+
+    @PutMapping
+    public ResponseEntity<ApiResponse<TodoResponseData>> update(@RequestBody TodoUpdateRequest request) {
+        return ApiResponse.ok(new TodoResponseData(todoService.update(TodoUpdateRequest.toModel(request))));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        todoService.delete(id);
+        return ApiResponse.noContent();
     }
 }
