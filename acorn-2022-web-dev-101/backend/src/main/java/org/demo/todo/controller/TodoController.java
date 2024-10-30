@@ -1,10 +1,10 @@
-package org.demo.backend.controller;
+package org.demo.todo.controller;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.demo.backend.model.Todo;
-import org.demo.backend.service.TodoService;
+import org.demo.todo.model.Todo;
+import org.demo.todo.service.TodoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

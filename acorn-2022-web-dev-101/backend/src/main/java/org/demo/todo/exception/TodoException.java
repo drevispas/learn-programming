@@ -1,4 +1,4 @@
-package org.demo.backend.exception;
+package org.demo.todo.exception;
 
 // sealed interface of custom exceptions containing sub exceptions
 public sealed interface TodoException

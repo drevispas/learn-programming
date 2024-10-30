@@ -1,11 +1,11 @@
-package org.demo.backend.model;
+package org.demo.todo.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.demo.backend.entity.BaseEntity;
+import org.demo.todo.entity.BaseEntity;
 
 @ToString(callSuper = true)
 @SuperBuilder

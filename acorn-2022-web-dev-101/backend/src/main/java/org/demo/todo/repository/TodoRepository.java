@@ -1,7 +1,7 @@
-package org.demo.backend.repository;
+package org.demo.todo.repository;
 
 import jakarta.validation.constraints.NotBlank;
-import org.demo.backend.model.Todo;
+import org.demo.todo.model.Todo;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

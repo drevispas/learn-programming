@@ -1,6 +1,6 @@
-package org.demo.backend.controller;
+package org.demo.todo.controller;
 
-import org.demo.backend.exception.TodoException;
+import org.demo.todo.exception.TodoException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;

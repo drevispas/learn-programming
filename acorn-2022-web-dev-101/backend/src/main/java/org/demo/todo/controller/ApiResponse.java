@@ -1,4 +1,4 @@
-package org.demo.backend.controller;
+package org.demo.todo.controller;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;

@@ -1,11 +1,11 @@
-package org.demo.backend.service;
+package org.demo.todo.service;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.demo.backend.exception.TodoException;
-import org.demo.backend.model.Todo;
-import org.demo.backend.repository.TodoRepository;
+import org.demo.todo.exception.TodoException;
+import org.demo.todo.model.Todo;
+import org.demo.todo.repository.TodoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
