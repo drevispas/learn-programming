@@ -16,9 +16,18 @@ function call(path, method, body) {
     }
     console.log("API call: ", url, options);
     return fetch(url, options)
-        .then(response => response.json())
+        .then(response => {
+            console.log("API call response: ", response);
+            if (response.status === 204) {
+                return {};
+            }
+            return response.json();
+        })
         .then(json => {
             console.log("API call succeeded: ", json);
+            if (json === undefined) {
+                return;
+            }
             return json.data
         })
         .catch(error => {

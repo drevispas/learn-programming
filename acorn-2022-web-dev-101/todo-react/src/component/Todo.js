@@ -8,11 +8,11 @@ export const Todo = (props) => {
     const [readOnly, setReadOnly] = useState(true);
 
     const onClickDelete = () => {
-        props.deleteItem(props.id);
+        props.deleteItem(props.item.id);
     }
 
     const onClickDone = () => {
-        props.toggleDone(props.id);
+        props.toggleDone(props.item.id);
     }
 
     const turnOffReadOnly = () => {

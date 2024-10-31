@@ -3,7 +3,7 @@ import {Todo} from "./component/Todo";
 import {useEffect, useState} from "react";
 import {Container, List, Paper} from "@mui/material";
 import {AddTodo} from "./component/AddTodo";
-import {addTodo, getTodos, updateTodoById} from "./service/ApiService";
+import {addTodo, deleteTodoById, getTodos, updateTodoById} from "./service/ApiService";
 
 function App() {
 
@@ -28,15 +28,18 @@ function App() {
     }
 
     const deleteItem = (id) => {
-        setItems(prevItems => {
-            return prevItems.filter((item, i) => i !== id)
-        })
+        console.log("Delete item: ", id);
+        deleteTodoById(id).then(r => {
+            setItems(prevItems => {
+                return prevItems.filter((item) => item.id !== id)
+            })
+        });
     }
 
     const toggleDone = (id) => {
         setItems(prevItems => {
-            return prevItems.map((item, i) => {
-                if (i === id) {
+            return prevItems.map((item) => {
+                if (item.id === id) {
                     return {...item, done: !item.done}
                 }
                 return item;
