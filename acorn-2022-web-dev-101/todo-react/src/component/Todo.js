@@ -2,6 +2,11 @@ import {Checkbox, IconButton, InputBase, ListItem, ListItemSecondaryAction, List
 import {DeleteOutlined} from "@mui/icons-material";
 
 export const Todo = (props) => {
+
+    const onClickDelete = () => {
+        props.deleteItem(props.id);
+    }
+
     return (
         <ListItem>
             <Checkbox checked={props.item.done}/>
@@ -13,7 +18,7 @@ export const Todo = (props) => {
                     multiline={true}
                 />
             </ListItemText>
-            <IconButton aria-label={"Delete Todo"}>
+            <IconButton aria-label={"Delete Todo"} onClick={onClickDelete}>
                 <DeleteOutlined/>
             </IconButton>
         </ListItem>

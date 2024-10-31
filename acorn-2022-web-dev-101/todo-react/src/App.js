@@ -6,13 +6,17 @@ import {AddTodo} from "./component/AddTodo";
 
 function App() {
 
-    const [items, setItems] = useState([
-        {title: "title1", done: false}, {title: "title2", done: true}
-    ]);
+    const [items, setItems] = useState([]);
 
     const addItem = (text) => {
         setItems(prevItems => {
             return [...prevItems, {title: text, done: false}]
+        })
+    }
+
+    const deleteItem = (index) => {
+        setItems(prevItems => {
+            return prevItems.filter((item, i) => i !== index)
         })
     }
 
@@ -23,7 +27,7 @@ function App() {
                 <Paper style={{margin: 16}}>
                     <List>
                         {items.map((item, index) =>
-                            <Todo item={item} id={index}/>
+                            <Todo item={item} id={index} deleteItem={deleteItem}/>
                         )}
                     </List>
                 </Paper>
