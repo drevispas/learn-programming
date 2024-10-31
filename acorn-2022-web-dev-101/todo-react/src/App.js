@@ -3,7 +3,7 @@ import {Todo} from "./component/Todo";
 import {useEffect, useState} from "react";
 import {Container, List, Paper} from "@mui/material";
 import {AddTodo} from "./component/AddTodo";
-import {getTodos, updateTodoById} from "./service/ApiService";
+import {addTodo, getTodos, updateTodoById} from "./service/ApiService";
 
 function App() {
 
@@ -19,9 +19,12 @@ function App() {
     }, []);
 
     const addItem = (text) => {
-        setItems(prevItems => {
-            return [...prevItems, {title: text, done: false}]
-        })
+        const item = {title: text, done: false};
+        addTodo(item).then(r => {
+            setItems(prevItems => {
+                return [...prevItems, {title: text, done: false}]
+            })
+        });
     }
 
     const deleteItem = (id) => {
