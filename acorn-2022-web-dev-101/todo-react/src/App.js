@@ -10,14 +10,20 @@ function App() {
         {title: "title1", done: false}, {title: "title2", done: true}
     ]);
 
+    const addItem = (text) => {
+        setItems(prevItems => {
+            return [...prevItems, {title: text, done: false}]
+        })
+    }
+
     return (
         <div className="App">
             <Container maxWidth={"md"}>
-                <AddTodo/>
+                <AddTodo addItem={addItem}/>
                 <Paper style={{margin: 16}}>
                     <List>
                         {items.map((item, index) =>
-                            <Todo title={item.title} done={item.done} id={index}/>
+                            <Todo item={item} id={index}/>
                         )}
                     </List>
                 </Paper>
