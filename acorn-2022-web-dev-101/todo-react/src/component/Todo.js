@@ -6,6 +6,7 @@ export const Todo = (props) => {
             <Checkbox checked={props.done}/>
             <ListItemText>
                 <InputBase
+                    id={props.id}
                     value={props.title}
                     fullWidth={true}
                     multiline={true}

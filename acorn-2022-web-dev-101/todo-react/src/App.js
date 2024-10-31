@@ -1,7 +1,8 @@
 import './App.css';
 import {Todo} from "./component/Todo";
 import {useState} from "react";
-import {List, Paper} from "@mui/material";
+import {Container, List, Paper} from "@mui/material";
+import {AddTodo} from "./component/AddTodo";
 
 function App() {
 
@@ -11,13 +12,16 @@ function App() {
 
     return (
         <div className="App">
-            <Paper style={{margin:16, padding: 16}}>
-                <List>
-                    {items.map((item, index) =>
-                        <Todo title={item.title} done={item.done} id={index}/>
-                    )}
-                </List>
-            </Paper>
+            <Container maxWidth={"md"}>
+                <AddTodo/>
+                <Paper style={{margin: 16}}>
+                    <List>
+                        {items.map((item, index) =>
+                            <Todo title={item.title} done={item.done} id={index}/>
+                        )}
+                    </List>
+                </Paper>
+            </Container>
         </div>
     );
 }
