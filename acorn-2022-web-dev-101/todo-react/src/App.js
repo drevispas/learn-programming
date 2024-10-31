@@ -20,6 +20,28 @@ function App() {
         })
     }
 
+    const toggleDone = (index) => {
+        setItems(prevItems => {
+            return prevItems.map((item, i) => {
+                if (i === index) {
+                    return {...item, done: !item.done}
+                }
+                return item;
+            })
+        })
+    }
+
+    const editItem = (index, text) => {
+        setItems(prevItems => {
+            return prevItems.map((item, i) => {
+                if (i === index) {
+                    return {...item, title: text}
+                }
+                return item;
+            })
+        })
+    }
+
     return (
         <div className="App">
             <Container maxWidth={"md"}>
@@ -27,7 +49,7 @@ function App() {
                 <Paper style={{margin: 16}}>
                     <List>
                         {items.map((item, index) =>
-                            <Todo item={item} id={index} deleteItem={deleteItem}/>
+                            <Todo item={item} id={index} deleteItem={deleteItem} toggleDone={toggleDone} editItem={editItem}/>
                         )}
                     </List>
                 </Paper>
