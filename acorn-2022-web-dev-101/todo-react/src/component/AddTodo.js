@@ -6,18 +6,15 @@ export const AddTodo = (props) => {
     const [text, setText] = useState("");
 
     const onTextChange = (event) => {
-        console.log(event.target.value);
         setText(event.target.value);
     }
 
     const onButtonClick = () => {
-        console.log(text);
         props.addItem(text);
     }
 
     const onKeyPress = (event) => {
         if (event.key === 'Enter') {
-            console.log(text);
             props.addItem(text);
         }
     }

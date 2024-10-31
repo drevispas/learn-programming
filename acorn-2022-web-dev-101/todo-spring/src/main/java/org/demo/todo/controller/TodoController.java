@@ -36,9 +36,9 @@ public class TodoController {
 
     public record TodoUpdateRequest(Long id, String title, String description, Boolean completed) {
 
-        public static Todo toModel(TodoUpdateRequest request) {
+        public static Todo toModel(Long id, TodoUpdateRequest request) {
             return Todo.builder()
-                    .id(request.id())
+                    .id(id)
                     .userId(TEMP_USER_ID)
                     .title(request.title())
                     .description(request.description())
@@ -68,9 +68,9 @@ public class TodoController {
         return ApiResponse.created(new TodoResponseData(todoService.create(TodoCreateRequest.toModel(request))));
     }
 
-    @PutMapping
-    public ResponseEntity<ApiResponse<TodoResponseData>> update(@RequestBody TodoUpdateRequest request) {
-        return ApiResponse.ok(new TodoResponseData(todoService.update(TodoUpdateRequest.toModel(request))));
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<TodoResponseData>> update(@PathVariable Long id, @RequestBody TodoUpdateRequest request) {
+        return ApiResponse.ok(new TodoResponseData(todoService.update(TodoUpdateRequest.toModel(id, request))));
     }
 
     @DeleteMapping("/{id}")

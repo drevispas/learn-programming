@@ -4,6 +4,7 @@ import {useState} from "react";
 
 export const Todo = (props) => {
 
+    const [text, setText] = useState(props.item.title);
     const [readOnly, setReadOnly] = useState(true);
 
     const onClickDelete = () => {
@@ -23,12 +24,15 @@ export const Todo = (props) => {
     }
 
     const onChangeText = (event) => {
-        props.editItem(props.id, event.target.value);
+        setText(event.target.value);
     }
 
     const onKeyPress = (event) => {
         if (event.key === 'Enter') {
             turnOnReadOnly();
+            if (text !== props.item.title) {
+                props.editItem(props.item.id, text);
+            }
         }
     }
 
@@ -37,8 +41,8 @@ export const Todo = (props) => {
             <Checkbox checked={props.item.done} onClick={onClickDone}/>
             <ListItemText>
                 <InputBase
-                    id={props.id}
-                    value={props.item.title}
+                    id={props.item.id}
+                    value={text}
                     fullWidth={true}
                     multiline={true}
                     readOnly={readOnly}

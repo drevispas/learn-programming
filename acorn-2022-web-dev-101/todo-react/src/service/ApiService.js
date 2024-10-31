@@ -1,0 +1,63 @@
+import {API_TODO_URL} from "../api-configs";
+
+function call(path, method, body) {
+    const options = {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }
+    if (body) {
+        options.body = JSON.stringify(body);
+    }
+    let url = `${API_TODO_URL}`;
+    if (path) {
+        url = `${url}/${path}`;
+    }
+    console.log("API call: ", url, options);
+    return fetch(url, options)
+        .then(response => response.json())
+        .then(json => {
+            console.log("API call succeeded: ", json);
+            return json.data
+        })
+        .catch(error => {
+            console.log("API call failed: ", error);
+        });
+}
+
+function get(path) {
+    return call(path, 'GET');
+}
+
+function post(path, body) {
+    return call(path, 'POST', body);
+}
+
+function put(path, body) {
+    return call(path, 'PUT', body);
+}
+
+function del(path) {
+    return call(path, 'DELETE');
+}
+
+export function getTodos() {
+    return get('');
+}
+
+export function getTodoById(id) {
+    return get(id);
+}
+
+export function addTodo(todo) {
+    return post('', todo);
+}
+
+export function updateTodoById(id, todo) {
+    return put(id, todo);
+}
+
+export function deleteTodoById(id) {
+    return del(id);
+}

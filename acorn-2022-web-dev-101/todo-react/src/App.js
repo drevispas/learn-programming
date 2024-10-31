@@ -1,12 +1,22 @@
 import './App.css';
 import {Todo} from "./component/Todo";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {Container, List, Paper} from "@mui/material";
 import {AddTodo} from "./component/AddTodo";
+import {getTodos, updateTodoById} from "./service/ApiService";
 
 function App() {
 
     const [items, setItems] = useState([]);
+
+    // Fetch todo list from API and set it to state
+    useEffect(() => {
+        getTodos().then(todos => {
+            setItems(todos.map(item => {
+                return {id: item.id, title: item.title, done: item.completed}
+            }))
+        });
+    }, []);
 
     const addItem = (text) => {
         setItems(prevItems => {
@@ -14,16 +24,16 @@ function App() {
         })
     }
 
-    const deleteItem = (index) => {
+    const deleteItem = (id) => {
         setItems(prevItems => {
-            return prevItems.filter((item, i) => i !== index)
+            return prevItems.filter((item, i) => i !== id)
         })
     }
 
-    const toggleDone = (index) => {
+    const toggleDone = (id) => {
         setItems(prevItems => {
             return prevItems.map((item, i) => {
-                if (i === index) {
+                if (i === id) {
                     return {...item, done: !item.done}
                 }
                 return item;
@@ -31,15 +41,18 @@ function App() {
         })
     }
 
-    const editItem = (index, text) => {
-        setItems(prevItems => {
-            return prevItems.map((item, i) => {
-                if (i === index) {
-                    return {...item, title: text}
-                }
-                return item;
-            })
-        })
+    const editItem = (id, text) => {
+        const item = {id: id, title: text};
+        updateTodoById(id, item).then(r => {
+            setItems(prevItems => {
+                return prevItems.map((item) => {
+                    if (item.id === id) {
+                        return {...item, title: text}
+                    }
+                    return item;
+                })
+            });
+        });
     }
 
     return (
@@ -48,8 +61,8 @@ function App() {
                 <AddTodo addItem={addItem}/>
                 <Paper style={{margin: 16}}>
                     <List>
-                        {items.map((item, index) =>
-                            <Todo item={item} id={index} deleteItem={deleteItem} toggleDone={toggleDone} editItem={editItem}/>
+                        {items.map((item) =>
+                            <Todo item={item} deleteItem={deleteItem} toggleDone={toggleDone} editItem={editItem}/>
                         )}
                     </List>
                 </Paper>
