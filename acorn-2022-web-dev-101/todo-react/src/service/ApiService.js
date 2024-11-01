@@ -14,24 +14,23 @@ function call(path, method, body) {
     if (path) {
         url = `${url}/${path}`;
     }
-    console.log("API call: ", url, options);
+    console.log("API request: ", url, options);
     return fetch(url, options)
         .then(response => {
-            console.log("API call response: ", response);
             if (response.status === 204) {
                 return {};
             }
             return response.json();
         })
         .then(json => {
-            console.log("API call succeeded: ", json);
+            console.log("API response: ", json);
             if (json === undefined) {
                 return;
             }
             return json.data
         })
         .catch(error => {
-            console.log("API call failed: ", error);
+            console.log("API failed: ", error);
         });
 }
 
@@ -59,12 +58,12 @@ export function getTodoById(id) {
     return get(id);
 }
 
-export function addTodo(todo) {
-    return post('', todo);
+export function addTodo(item) {
+    return post('', item);
 }
 
-export function updateTodoById(id, todo) {
-    return put(id, todo);
+export function updateTodoById(id, item) {
+    return put(id, item);
 }
 
 export function deleteTodoById(id) {

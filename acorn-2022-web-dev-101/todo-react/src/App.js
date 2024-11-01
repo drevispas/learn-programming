@@ -11,54 +11,37 @@ function App() {
 
     // Fetch todo list from API and set it to state
     useEffect(() => {
-        getTodos().then(todos => {
-            setItems(todos.map(item => {
-                return {id: item.id, title: item.title, done: item.completed}
+        getTodos().then(items => {
+            setItems(items.map(item => {
+                return {id: item.id, title: item.title, completed: item.completed}
             }))
         });
     }, []);
 
-    const addItem = (text) => {
-        const item = {title: text, done: false};
-        addTodo(item).then(r => {
-            setItems(prevItems => {
-                return [...prevItems, {title: text, done: false}]
-            })
+    const addItem = (newItem) => {
+        newItem.completed = false;
+        addTodo(newItem).then(r => {
+            setItems(prevItems => [...prevItems, newItem])
         });
     }
 
     const deleteItem = (id) => {
         console.log("Delete item: ", id);
         deleteTodoById(id).then(r => {
-            setItems(prevItems => {
-                return prevItems.filter((item) => item.id !== id)
-            })
+            setItems(prevItems => prevItems.filter((item) => item.id !== id))
         });
     }
 
-    const toggleDone = (id) => {
-        setItems(prevItems => {
-            return prevItems.map((item) => {
-                if (item.id === id) {
-                    return {...item, done: !item.done}
+    const editItem = (editedItem) => {
+        console.log("Edit item: ", editedItem);
+        updateTodoById(editedItem.id, editedItem).then(r => {
+            setItems(prevItems => prevItems.map(item => {
+                if (item.id === editedItem.id) {
+                    return editedItem;
                 }
                 return item;
-            })
+            }))
         })
-    }
-
-    const editItem = (id, text) => {
-        const item = {id: id, title: text};
-        updateTodoById(id, item).then(r => {
-            setItems(prevItems => {
-                return prevItems.map((item) => {
-                    if (item.id === id) {
-                        return {...item, title: text}
-                    }
-                    return item;
-                })
-            });
-        });
     }
 
     return (
@@ -68,7 +51,7 @@ function App() {
                 <Paper style={{margin: 16}}>
                     <List>
                         {items.map((item) =>
-                            <Todo item={item} deleteItem={deleteItem} toggleDone={toggleDone} editItem={editItem}/>
+                            <Todo item={item} deleteItem={deleteItem} editItem={editItem}/>
                         )}
                     </List>
                 </Paper>

@@ -1,21 +1,21 @@
-import {Button, Grid, Grid2, TextField} from "@mui/material";
+import {Button, Grid, TextField} from "@mui/material";
 import {useState} from "react";
 
 export const AddTodo = (props) => {
 
-    const [text, setText] = useState("");
+    const [newItem, setNewItem] = useState({});
 
     const onTextChange = (event) => {
-        setText(event.target.value);
+        setNewItem({title: event.target.value});
     }
 
     const onButtonClick = () => {
-        props.addItem(text);
+        props.addItem(newItem);
     }
 
     const onKeyPress = (event) => {
         if (event.key === 'Enter') {
-            props.addItem(text);
+            onButtonClick();
         }
     }
 

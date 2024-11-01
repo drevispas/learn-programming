@@ -1,54 +1,55 @@
-import {Checkbox, IconButton, InputBase, ListItem, ListItemSecondaryAction, ListItemText} from "@mui/material";
+import {Checkbox, IconButton, InputBase, ListItem, ListItemText} from "@mui/material";
 import {DeleteOutlined} from "@mui/icons-material";
 import {useState} from "react";
 
 export const Todo = (props) => {
 
-    const [text, setText] = useState(props.item.title);
+    const [editedItem, setEditedItem] = useState(props.item);
     const [readOnly, setReadOnly] = useState(true);
 
     const onClickDelete = () => {
         props.deleteItem(props.item.id);
     }
 
-    const onClickDone = () => {
-        props.toggleDone(props.item.id);
+    const onClickCompleted = (event) => {
+        setEditedItem((prevItem) => ({...prevItem, completed: event.target.checked}));
+        props.editItem({...editedItem, completed: event.target.checked});
     }
 
-    const turnOffReadOnly = () => {
+    const turnOffReadOnlyTitle = () => {
         setReadOnly(false);
     }
 
-    const turnOnReadOnly = () => {
+    const turnOnReadOnlyTitle = () => {
         setReadOnly(true);
     }
 
-    const onChangeText = (event) => {
-        setText(event.target.value);
+    const onChangeTitle = (event) => {
+        setEditedItem((prevItem) => ({...prevItem, title: event.target.value}))
     }
 
-    const onKeyPress = (event) => {
+    const onKeyPressTitle = (event) => {
         if (event.key === 'Enter') {
-            turnOnReadOnly();
-            if (text !== props.item.title) {
-                props.editItem(props.item.id, text);
+            turnOnReadOnlyTitle();
+            if (editedItem.title !== props.item.title) {
+                props.editItem(editedItem);
             }
         }
     }
 
     return (
         <ListItem>
-            <Checkbox checked={props.item.done} onClick={onClickDone}/>
+            <Checkbox checked={editedItem.completed} onClick={onClickCompleted}/>
             <ListItemText>
                 <InputBase
                     id={props.item.id}
-                    value={text}
+                    value={editedItem.title}
                     fullWidth={true}
                     multiline={true}
                     readOnly={readOnly}
-                    onClick={turnOffReadOnly}
-                    onChange={onChangeText}
-                    onKeyDown={onKeyPress}
+                    onClick={turnOffReadOnlyTitle}
+                    onChange={onChangeTitle}
+                    onKeyDown={onKeyPressTitle}
                 />
             </ListItemText>
             <IconButton aria-label={"Delete Todo"} onClick={onClickDelete}>
