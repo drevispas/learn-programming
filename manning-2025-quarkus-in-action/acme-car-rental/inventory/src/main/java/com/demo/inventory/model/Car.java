@@ -6,4 +6,12 @@ public record Car(
         String manufacturer,
         String model
 ) {
+
+    public Car(String licensePlateNumber, String manufacturer, String model) {
+        this(null, licensePlateNumber, manufacturer, model);
+    }
+
+    public Car withId(Long id) {
+        return new Car(id, this.licensePlateNumber, this.manufacturer, this.model);
+    }
 }
