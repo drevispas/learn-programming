@@ -2,8 +2,12 @@ package com.demo.reservation.rest;
 
 import com.demo.reservation.inventory.Car;
 import com.demo.reservation.inventory.InventoryClient;
+import com.demo.reservation.rental.Rental;
+import com.demo.reservation.rental.RentalClient;
 import com.demo.reservation.reservation.Reservation;
 import com.demo.reservation.reservation.ReservationRepository;
+import io.quarkus.logging.Log;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -15,18 +19,27 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestQuery;
 
 @Slf4j
-@RequiredArgsConstructor
 @Path("reservations")
 @Produces(MediaType.APPLICATION_JSON)
 public class ReservationResource {
 
     private final ReservationRepository reservationRepository;
     private final InventoryClient inventoryClient;
+    private final RentalClient rentalClient;
+
+    public ReservationResource(
+            ReservationRepository reservationRepository,
+            InventoryClient inventoryClient,
+            @RestClient RentalClient rentalClient) {
+        this.reservationRepository = reservationRepository;
+        this.inventoryClient = inventoryClient;
+        this.rentalClient = rentalClient;
+    }
 
     @GET
     @Path("availability")
@@ -55,8 +68,16 @@ public class ReservationResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @POST
     public Reservation make(Reservation reservation) {
+        Log.info("Making reservation: " + reservation);
+        Log.infof("Reservation start date: %s", reservation.startDate());
         // save the reservation
-        return reservationRepository.save(reservation);
+        Reservation result = reservationRepository.save(reservation);
+        String userId = "x";
+        if (reservation.startDate().equals(LocalDate.now())) {
+            Rental rental = rentalClient.start(userId, result.id());
+            Log.info("Successfully started rental: " + rental);
+        }
+        return result;
     }
 
     @GET
