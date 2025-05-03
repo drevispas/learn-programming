@@ -11,7 +11,7 @@ public record Reservation(
 ) {
 
     public boolean isReserved(LocalDate startDate, LocalDate endDate) {
-        Log.infof("Checking if reservation {} is reserved between {} and {}", this, startDate, endDate);
+        Log.infof("Checking if reservation %s is reserved between %s and %s", this, startDate, endDate);
         return (!(this.startDate.isAfter(endDate) || this.endDate.isBefore(startDate)));
     }
 

@@ -7,4 +7,8 @@ public record Car(
         String model
 ) {
 
+    // empty constructor for deserialization
+    public Car() {
+        this(null, null, null, null);
+    }
 }

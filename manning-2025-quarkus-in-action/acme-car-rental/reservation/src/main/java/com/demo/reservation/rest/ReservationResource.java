@@ -7,6 +7,7 @@ import com.demo.reservation.rental.RentalClient;
 import com.demo.reservation.reservation.Reservation;
 import com.demo.reservation.reservation.ReservationRepository;
 import io.quarkus.logging.Log;
+import io.smallrye.graphql.client.GraphQLClient;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -34,7 +35,7 @@ public class ReservationResource {
 
     public ReservationResource(
             ReservationRepository reservationRepository,
-            InventoryClient inventoryClient,
+            @GraphQLClient("inventory") InventoryClient inventoryClient,
             @RestClient RentalClient rentalClient) {
         this.reservationRepository = reservationRepository;
         this.inventoryClient = inventoryClient;
