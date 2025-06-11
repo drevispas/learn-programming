@@ -1,6 +1,7 @@
 package com.demo.reservation.rest;
 
 import com.demo.reservation.inventory.Car;
+import com.demo.reservation.inventory.GraphQLInventoryClient;
 import com.demo.reservation.inventory.InventoryClient;
 import com.demo.reservation.rental.Rental;
 import com.demo.reservation.rental.RentalClient;
@@ -8,7 +9,6 @@ import com.demo.reservation.reservation.Reservation;
 import com.demo.reservation.reservation.ReservationRepository;
 import io.quarkus.logging.Log;
 import io.smallrye.graphql.client.GraphQLClient;
-import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -35,7 +35,7 @@ public class ReservationResource {
 
     public ReservationResource(
             ReservationRepository reservationRepository,
-            @GraphQLClient("inventory") InventoryClient inventoryClient,
+            @GraphQLClient("inventory") GraphQLInventoryClient inventoryClient,
             @RestClient RentalClient rentalClient) {
         this.reservationRepository = reservationRepository;
         this.inventoryClient = inventoryClient;

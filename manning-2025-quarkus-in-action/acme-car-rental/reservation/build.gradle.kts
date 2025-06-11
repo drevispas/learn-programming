@@ -24,6 +24,8 @@ dependencies {
     implementation("io.quarkus:quarkus-rest")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
+    // mockito for quarkus
+    testImplementation("io.quarkus:quarkus-junit5-mockito")
 }
 
 group = "com.demo"
