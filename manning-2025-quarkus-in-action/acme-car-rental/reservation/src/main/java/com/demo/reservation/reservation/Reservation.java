@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 public record Reservation(
         Long id,
+        String userId,
         Long carId,
         LocalDate startDate,
         LocalDate endDate
@@ -16,6 +17,6 @@ public record Reservation(
     }
 
     public Reservation withId(Long id) {
-        return new Reservation(id, this.carId, this.startDate, this.endDate);
+        return new Reservation(id, userId, this.carId, this.startDate, this.endDate);
     }
 }

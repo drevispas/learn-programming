@@ -9,17 +9,20 @@ import com.demo.reservation.reservation.Reservation;
 import com.demo.reservation.reservation.ReservationRepository;
 import io.quarkus.logging.Log;
 import io.smallrye.graphql.client.GraphQLClient;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.SecurityContext;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestQuery;
@@ -32,6 +35,8 @@ public class ReservationResource {
     private final ReservationRepository reservationRepository;
     private final InventoryClient inventoryClient;
     private final RentalClient rentalClient;
+    @Inject
+    SecurityContext securityContext;
 
     public ReservationResource(
             ReservationRepository reservationRepository,
@@ -85,5 +90,14 @@ public class ReservationResource {
     public List<Reservation> list() {
         // list all reservations
         return reservationRepository.findAll();
+    }
+
+    @GET
+    @Path("all")
+    public List<Reservation> allReservations() {
+        String userId = securityContext.getUserPrincipal().getName() != null ? securityContext.getUserPrincipal().getName() : null;
+        return reservationRepository.findAll().stream()
+                .filter(reservation -> userId == null || Objects.equals(reservation.userId(), userId))
+                .toList();
     }
 }
