@@ -18,6 +18,7 @@ class ReservationRepositoryTest {
     void testCreateReservation() {
         Reservation reservation = new Reservation(
                 null,
+                null,
                 123L,
                 LocalDate.of(2023, 10, 1),
                 LocalDate.of(2023, 10, 5));

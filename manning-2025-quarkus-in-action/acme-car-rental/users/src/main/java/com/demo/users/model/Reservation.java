@@ -1,4 +1,4 @@
-package com.demo.reservation.reservation;
+package com.demo.users.model;
 
 import io.quarkus.logging.Log;
 import java.time.LocalDate;

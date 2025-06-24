@@ -47,6 +47,13 @@ public class ReservationResource {
         this.rentalClient = rentalClient;
     }
 
+    /**
+     * List all available cars for the given period.
+     *
+     * @param startDate start date of the period
+     * @param endDate   end date of the period
+     * @return list of available cars
+     */
     @GET
     @Path("availability")
     public Collection<Car> availability(
@@ -71,33 +78,53 @@ public class ReservationResource {
         return availableCarsMap.values();
     }
 
+    /**
+     * Make a reservation for the given car and period.
+     *
+     * @param reservation reservation to make
+     * @return made reservation
+     */
     @Consumes(MediaType.APPLICATION_JSON)
     @POST
     public Reservation make(Reservation reservation) {
         Log.info("Making reservation: " + reservation);
         Log.infof("Reservation start date: %s", reservation.startDate());
         // save the reservation
-        Reservation result = reservationRepository.save(reservation);
-        String userId = "x";
-        if (reservation.startDate().equals(LocalDate.now())) {
-            Rental rental = rentalClient.start(userId, result.id());
+        Reservation authorizedReservation = reservation.withUserId(getUserId());
+        Reservation result = reservationRepository.save(authorizedReservation);
+        if (authorizedReservation.startDate().equals(LocalDate.now())) {
+            Rental rental = rentalClient.start(authorizedReservation.userId(), result.id());
             Log.info("Successfully started rental: " + rental);
         }
         return result;
     }
 
+    /**
+     * List all reservations.
+     *
+     * @return list of reservations
+     */
     @GET
     public List<Reservation> list() {
         // list all reservations
         return reservationRepository.findAll();
     }
 
+    /**
+     * List all reservations for the current user.
+     *
+     * @return list of reservations
+     */
     @GET
     @Path("all")
     public List<Reservation> allReservations() {
-        String userId = securityContext.getUserPrincipal().getName() != null ? securityContext.getUserPrincipal().getName() : null;
+        String userId = getUserId();
         return reservationRepository.findAll().stream()
                 .filter(reservation -> userId == null || Objects.equals(reservation.userId(), userId))
                 .toList();
+    }
+
+    private String getUserId() {
+        return securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
     }
 }
