@@ -1,5 +1,6 @@
 package com.demo.users;
 
+import com.demo.users.model.Reservation;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 import jakarta.inject.Inject;
@@ -9,18 +10,24 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
 import java.time.LocalDate;
+import java.util.Collection;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestQuery;
 
 @Path("/")
-public class ReservationResource {
+public class ReservationsResource {
 
     @CheckedTemplate
     public static class Templates {
+
         public static native TemplateInstance index(
                 LocalDate startDate,
                 LocalDate endDate,
                 String name
+        );
+
+        public static native TemplateInstance listofreservations(
+                Collection<Reservation> reservations
         );
     }
 
@@ -41,5 +48,13 @@ public class ReservationResource {
         }
         String name = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : "unknown";
         return Templates.index(startDate, endDate, name);
+    }
+
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    @Path("/get")
+    public TemplateInstance get() {
+        Collection<Reservation> reservations = reservationClient.getAllReservations();
+        return Templates.listofreservations(reservations);
     }
 }

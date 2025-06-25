@@ -17,5 +17,8 @@
   <p>For logged-in user: {name}</p>
   <a href="/logout">Log out</a>
 </header>
+
+<h2>List of reservations</h2>
+<div id="reservations" hx-get="/get" hx-trigger="load"></div>
 </body>
 </html>
