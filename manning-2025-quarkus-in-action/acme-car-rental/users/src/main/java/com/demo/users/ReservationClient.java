@@ -1,5 +1,6 @@
 package com.demo.users;
 
+import com.demo.users.model.Car;
 import com.demo.users.model.Reservation;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -22,5 +23,5 @@ public interface ReservationClient {
 
     @GET
     @Path("availability")
-    Collection<Reservation> availability(@RestQuery LocalDate startDate, @RestQuery LocalDate endDate);
+    Collection<Car> availability(@RestQuery LocalDate startDate, @RestQuery LocalDate endDate);
 }

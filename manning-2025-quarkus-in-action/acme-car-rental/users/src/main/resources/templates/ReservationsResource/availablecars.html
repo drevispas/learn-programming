@@ -1,0 +1,32 @@
+{@com.demo.users.model.Car[] car}
+{@java.time.LocalDate startDate}
+{@java.time.LocalDate endDate}
+<div id="carlist">
+  <table>
+    <thread>
+      <tr>
+        <th>Car ID</th>
+        <th>Plate number</th>
+        <th>Manufacturer</th>
+        <th>Model</th>
+        <th>Reservation</th>
+      </tr>
+    </thread>
+    {#for c in cars}
+        <tr>
+          <td>{c.id}</td>
+          <td>{c.licensePlateNumber}</td>
+          <td>{c.manufacturer}</td>
+          <td>{c.model}</td>
+          <td>
+            <form hx-post="/reserve" hx-target="#reservations">
+              <input type="hidden" name="startDate" value="{startDate}">
+              <input type="hidden" name="endDate" value="{endDate}">
+              <input type="hidden" name="carId" value="{c.id}">
+              <button type="submit">Reserve</button>
+            </form>
+          </td>
+        </tr>
+    {/for}
+  </table>
+</div>

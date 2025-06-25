@@ -20,5 +20,15 @@
 
 <h2>List of reservations</h2>
 <div id="reservations" hx-get="/get" hx-trigger="load"></div>
+
+<h2>Available cars to rent</h2>
+<form hx-get="/available" hx-target="#availability">
+  <p>Start date:<input id="startDateInput" type="date" name="startDate" value="{startDate}"/></p>
+  <p>End date:<input id="endDateInput" type="date" name="endDate" value="{endDate}"/></p>
+  <input type="submit" value="Update list"/>
+</form>
+<div id="availability" hx-get="/available" hx-trigger="load, update-available-cars-list from:body"
+hx-include="[id='startDateInput'],[id='endDateInput']">
+</div>
 </body>
 </html>
