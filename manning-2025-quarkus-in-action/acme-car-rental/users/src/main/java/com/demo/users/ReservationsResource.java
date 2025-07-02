@@ -5,14 +5,17 @@ import com.demo.users.model.Reservation;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Objects;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.RestQuery;
@@ -85,6 +88,17 @@ public class ReservationsResource {
             @RestForm Long carId) {
         Reservation reservation = new Reservation(null, null, carId, startDate, endDate);
         reservationClient.make(reservation);
+        return RestResponse.ResponseBuilder
+                .ok(getReservations())
+                .header("HX-Trigger-After-Swap", "update-available-cars-list")
+                .build();
+    }
+
+    @DELETE
+    @Produces(MediaType.TEXT_HTML)
+    @Path("/cancel")
+    public RestResponse<TemplateInstance> cancel(@RestQuery("reservationId") Long reservationId) {
+        reservationClient.cancel(reservationId);
         return RestResponse.ResponseBuilder
                 .ok(getReservations())
                 .header("HX-Trigger-After-Swap", "update-available-cars-list")

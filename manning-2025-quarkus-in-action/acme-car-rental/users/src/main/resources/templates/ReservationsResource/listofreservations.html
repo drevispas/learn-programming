@@ -15,6 +15,12 @@
           <td>{r.carId}</td>
           <td>{r.startDate}</td>
           <td>{r.endDate}</td>
+          <td>
+            <form hx-delete="/cancel" hx-target="#reservations">
+              <input type="hidden" name="reservationId" value="{r.id}">
+              <button type="submit">Cancel</button>
+            </form>
+          </td>
         </tr>
     {/for}
   </table>

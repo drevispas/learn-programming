@@ -19,9 +19,13 @@
 </header>
 
 <h2>List of reservations</h2>
-<div id="reservations" hx-get="/get" hx-trigger="load"></div>
+<div id="reservations" hx-get="/get" hx-trigger="load, update-reservations-list from:body">
+  "/get" 결과 template이 div 본문에 삽입됩니다.
+</div>
 
 <h2>Available cars to rent</h2>
+<!-- 시작/종료날짜 선택 후 "Update list" 버튼을 누르면 "/available" 경로로 GET 요청이 발생합니다. -->
+<!-- hx-target 은 자신 외의 html element 에게 응답이 load되도록 합니다. -->
 <form hx-get="/available" hx-target="#availability">
   <p>Start date:<input id="startDateInput" type="date" name="startDate" value="{startDate}"/></p>
   <p>End date:<input id="endDateInput" type="date" name="endDate" value="{endDate}"/></p>
