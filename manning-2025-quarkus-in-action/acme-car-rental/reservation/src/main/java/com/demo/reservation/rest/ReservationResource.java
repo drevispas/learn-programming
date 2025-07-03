@@ -11,9 +11,11 @@ import io.quarkus.logging.Log;
 import io.smallrye.graphql.client.GraphQLClient;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestQuery;
@@ -122,6 +125,21 @@ public class ReservationResource {
         return reservationRepository.findAll().stream()
                 .filter(reservation -> userId == null || Objects.equals(reservation.userId(), userId))
                 .toList();
+    }
+
+    @DELETE
+    @Path("{id}")
+    public void cancel(@PathParam("id") Long id) {
+        Log.infof("Cancelling reservation with id %d", id);
+        // find the reservation
+        Optional<Reservation> reservation = reservationRepository.findById(id);
+        if (reservation.isEmpty()) {
+            Log.warnf("Reservation with id %d not found", id);
+            return;
+        }
+        // delete the reservation
+        reservationRepository.deleteById(reservation.get().id());
+        Log.infof("Cancelled reservation with id %d", id);
     }
 
     private String getUserId() {
