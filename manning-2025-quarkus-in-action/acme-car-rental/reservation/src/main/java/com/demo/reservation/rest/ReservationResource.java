@@ -10,6 +10,7 @@ import com.demo.reservation.reservation.ReservationRepository;
 import io.quarkus.logging.Log;
 import io.smallrye.graphql.client.GraphQLClient;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -35,17 +36,14 @@ import org.jboss.resteasy.reactive.RestQuery;
 @Produces(MediaType.APPLICATION_JSON)
 public class ReservationResource {
 
-    private final ReservationRepository reservationRepository;
     private final InventoryClient inventoryClient;
     private final RentalClient rentalClient;
     @Inject
     SecurityContext securityContext;
 
     public ReservationResource(
-            ReservationRepository reservationRepository,
             @GraphQLClient("inventory") GraphQLInventoryClient inventoryClient,
             @RestClient RentalClient rentalClient) {
-        this.reservationRepository = reservationRepository;
         this.inventoryClient = inventoryClient;
         this.rentalClient = rentalClient;
     }
@@ -66,7 +64,7 @@ public class ReservationResource {
         // list all cars startDate the inventory
         List<Car> availableCars = inventoryClient.listAllCars();
         // list all reservations
-        List<Reservation> reservations = reservationRepository.findAll();
+        List<Reservation> reservations = Reservation.listAll();
         // available cars: not in the reservations + reserved but not in the period
         Map<Long, Car> availableCarsMap = new HashMap<>();
         for (Car car : availableCars) {
@@ -75,7 +73,7 @@ public class ReservationResource {
         for (Reservation reservation : reservations) {
             log.info("Reservation: {}", reservation);
             if (reservation.isReserved(startDate, endDate)) {
-                availableCarsMap.remove(reservation.carId());
+                availableCarsMap.remove(reservation.carId);
             }
         }
         return availableCarsMap.values();
@@ -89,17 +87,18 @@ public class ReservationResource {
      */
     @Consumes(MediaType.APPLICATION_JSON)
     @POST
+    @Transactional
     public Reservation make(Reservation reservation) {
         Log.info("Making reservation: " + reservation);
-        Log.infof("Reservation start date: %s", reservation.startDate());
+        Log.infof("Reservation start date: %s", reservation.startDate);
         // save the reservation
         Reservation authorizedReservation = reservation.withUserId(getUserId());
-        Reservation result = reservationRepository.save(authorizedReservation);
-        if (authorizedReservation.startDate().equals(LocalDate.now())) {
-            Rental rental = rentalClient.start(authorizedReservation.userId(), result.id());
+        authorizedReservation.persist();
+        if (authorizedReservation.startDate.equals(LocalDate.now())) {
+            Rental rental = rentalClient.start(authorizedReservation.userId, authorizedReservation.id);
             Log.info("Successfully started rental: " + rental);
         }
-        return result;
+        return authorizedReservation;
     }
 
     /**
@@ -110,7 +109,7 @@ public class ReservationResource {
     @GET
     public List<Reservation> list() {
         // list all reservations
-        return reservationRepository.findAll();
+        return Reservation.listAll();
     }
 
     /**
@@ -122,23 +121,24 @@ public class ReservationResource {
     @Path("all")
     public List<Reservation> allReservations() {
         String userId = getUserId();
-        return reservationRepository.findAll().stream()
-                .filter(reservation -> userId == null || Objects.equals(reservation.userId(), userId))
+        return Reservation.<Reservation>streamAll()
+                .filter(reservation -> userId == null || Objects.equals(reservation.userId, userId))
                 .toList();
     }
 
     @DELETE
     @Path("{id}")
+    @Transactional
     public void cancel(@PathParam("id") Long id) {
         Log.infof("Cancelling reservation with id %d", id);
         // find the reservation
-        Optional<Reservation> reservation = reservationRepository.findById(id);
+        Optional<Reservation> reservation = Reservation.findByIdOptional(id);
         if (reservation.isEmpty()) {
             Log.warnf("Reservation with id %d not found", id);
             return;
         }
         // delete the reservation
-        reservationRepository.deleteById(reservation.get().id());
+        reservation.get().delete();
         Log.infof("Cancelled reservation with id %d", id);
     }
 
