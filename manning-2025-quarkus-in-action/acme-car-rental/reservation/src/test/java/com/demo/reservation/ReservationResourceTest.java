@@ -37,7 +37,6 @@ class ReservationResourceTest {
     void testReservationIds() {
         Reservation reservation = new Reservation(
                 null,
-                null,
                 123L,
                 LocalDate.of(2023, 10, 1),
                 LocalDate.of(2023, 10, 5));
@@ -74,7 +73,6 @@ class ReservationResourceTest {
 
         // Reserve a car
         Reservation reservation = new Reservation(
-                null,
                 null,
                 availableCar.id(),
                 LocalDate.parse(startDate),
