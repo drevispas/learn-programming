@@ -6,10 +6,15 @@ import com.demo.inventory.model.CarResponse;
 import com.demo.inventory.model.InsertCarRequest;
 import com.demo.inventory.model.InventoryService;
 import com.demo.inventory.model.RemoveCarRequest;
+import com.demo.inventory.repository.CarRepository;
 import io.quarkus.grpc.GrpcService;
+import io.quarkus.logging.Log;
+import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.Optional;
 
 @GrpcService
@@ -17,46 +22,56 @@ public class GrpcInventoryService implements InventoryService {
 
     @Inject
     CarInventory carInventory;
+    @Inject
+    CarRepository carRepository;
 
     @Override
+    @Blocking
+    @Transactional
     public Uni<CarResponse> add(InsertCarRequest request) {
-        Car car = carInventory.registerCar(new Car(request.getLicensePlateNumber(), request.getManufacturer(), request.getModel()));
+        Car car = new Car(null, request.getLicensePlateNumber(), request.getManufacturer(), request.getModel());
+        carRepository.persist(car);
         return Uni.createFrom().item(CarResponse.newBuilder()
-                .setLicensePlateNumber(car.licensePlateNumber())
-                .setManufacturer(car.manufacturer())
-                .setModel(car.model())
-                .setId(car.id())
+                .setLicensePlateNumber(car.getLicensePlateNumber())
+                .setManufacturer(car.getManufacturer())
+                .setModel(car.getModel())
+                .setId(car.getId())
                 .build()
         );
     }
 
-//    @Override
-//    public Multi<CarResponse> add(Multi<InsertCarRequest> requests) {
-//        return requests.map(request ->
-//                new Car(request.getLicensePlateNumber(), request.getManufacturer(), request.getModel())
-//        ).onItem().invoke(car ->
-//                carInventory.registerCar(car)
-//        ).map(car -> CarResponse.newBuilder()
-//                .setLicensePlateNumber(car.licensePlateNumber())
-//                .setManufacturer(car.manufacturer())
-//                .setModel(car.model())
-//                .setId(car.id())
-//                .build()
-//        );
-//    }
+    @Override
+    @Blocking
+    public Multi<CarResponse> addMultiple(Multi<InsertCarRequest> requests) {
+        return requests.map(request ->
+                new Car(null, request.getLicensePlateNumber(), request.getManufacturer(), request.getModel())
+        ).onItem().invoke(car ->
+            QuarkusTransaction.requiringNew().run(() -> {
+                carRepository.persist(car);
+                Log.info("Persisted car: " + car);
+            })
+        ).map(car -> CarResponse.newBuilder()
+                .setLicensePlateNumber(car.getLicensePlateNumber())
+                .setManufacturer(car.getManufacturer())
+                .setModel(car.getModel())
+                .setId(car.getId())
+                .build()
+        );
+    }
 
     @Override
+    @Blocking
+    @Transactional
     public Uni<CarResponse> remove(RemoveCarRequest request) {
-        Optional<Car> car = carInventory.listCars().stream()
-                .filter(c -> c.licensePlateNumber().equals(request.getLicensePlateNumber()))
-                .findFirst();
+        Optional<Car> car = carRepository.findByLicensePlateNumberOptional(request.getLicensePlateNumber());
         if (car.isPresent()) {
-            carInventory.removeCar(request.getLicensePlateNumber());
+            Car removedCar = car.get();
+            carRepository.delete(removedCar);
             return Uni.createFrom().item(CarResponse.newBuilder()
-                    .setLicensePlateNumber(car.get().licensePlateNumber())
-                    .setManufacturer(car.get().manufacturer())
-                    .setModel(car.get().model())
-                    .setId(car.get().id())
+                    .setLicensePlateNumber(removedCar.getLicensePlateNumber())
+                    .setManufacturer(removedCar.getManufacturer())
+                    .setModel(removedCar.getModel())
+                    .setId(removedCar.getId())
                     .build()
             );
         } else {

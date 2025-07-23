@@ -37,7 +37,7 @@ public class CarInventory {
 
     public boolean removeCar(String licensePlateNumber) {
         Optional<Car> toBeRemoved = listCars().stream()
-                .filter(car -> car.licensePlateNumber().equals(licensePlateNumber))
+                .filter(car -> car.getLicensePlateNumber().equals(licensePlateNumber))
                 .findAny();
         return toBeRemoved.map(cars::remove).orElse(false);
     }
