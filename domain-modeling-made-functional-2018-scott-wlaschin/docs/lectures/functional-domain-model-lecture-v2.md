@@ -5,7 +5,7 @@
 
 **목표**: 컴파일 타임에 버그를 잡는 견고한 시스템 구축
 
-**도구**: Java 25 (Record, Sealed Interface, Pattern Matching, `with` 구문)
+**도구**: Java 25 (Record, Sealed Interface, Pattern Matching, `with` 구문 *Preview*)
 
 ---
 
@@ -292,15 +292,17 @@ public record OrderAmount(BigDecimal value) {}
 - `getter`, `equals`, `hashCode`, `toString` 자동 생성
 - Setter는 없음 (값을 바꾸려면 새 객체 생성)
 
-#### `with` 구문으로 상태 변경 (Java 25)
+#### `with` 구문으로 상태 변경 (Java 25 Preview)
 
 Java 25의 **Derived Record Creation (JEP 468)** `with` 구문을 사용하면 불변성을 유지하면서도 직관적으로 "상태를 변경"할 수 있습니다.
+
+> ⚠️ **주의**: `with` 구문은 **Preview Feature**입니다. 컴파일 시 `--enable-preview` 플래그가 필요하며, 정식 출시 전 변경될 수 있습니다. 프로덕션 환경에서는 아래의 대안 코드를 권장합니다.
 
 ```java
 public record Order(OrderId id, OrderStatus status, Money total) {
     // 상태를 변경한 "새로운" 주문 객체 반환
     public Order withStatus(OrderStatus newStatus) {
-        return this with { status = newStatus; };
+        return this with { status = newStatus; };  // Preview
     }
 }
 
@@ -310,6 +312,20 @@ Order paidOrder = unpaidOrder with { status = OrderStatus.PAID; };
 
 // unpaidOrder는 여전히 UNPAID (불변!)
 // paidOrder는 새로운 객체로 PAID
+```
+
+**대안: Preview 없이 사용하는 방법 (Java 17+)**
+
+```java
+public record Order(OrderId id, OrderStatus status, Money total) {
+    // 수동으로 with 메서드 구현
+    public Order withStatus(OrderStatus newStatus) {
+        return new Order(this.id, newStatus, this.total);
+    }
+}
+
+// 사용
+Order paidOrder = unpaidOrder.withStatus(OrderStatus.PAID);
 ```
 
 > ⚠️ **흔한 실수**: "Entity는 상태가 변하니까 mutable이어야 하지 않나?"
@@ -693,6 +709,9 @@ Java Record의 **Compact Constructor**를 사용하면 객체가 생성되는 �
 ```java
 package com.ecommerce.domain.types;
 
+import java.math.BigDecimal;
+import java.util.Objects;
+
 // 1. 이메일 주소
 public record EmailAddress(String value) {
     // Compact Constructor: 파라미터 괄호 없이 작성
@@ -794,6 +813,8 @@ public record Quantity(int value) {
 package com.ecommerce.domain.types;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 // === 공통 타입 ===
@@ -818,6 +839,71 @@ public record Money(BigDecimal amount, Currency currency) {
             throw new IllegalArgumentException("통화가 다릅니다");
         }
         return new Money(this.amount.add(other.amount), this.currency);
+    }
+
+    /**
+     * 금액을 뺍니다. 결과가 음수면 생성자에서 IllegalArgumentException 발생.
+     * 안전한 뺄셈이 필요하면 canSubtract()로 먼저 확인하거나 subtractSafe()를 사용하세요.
+     */
+    public Money subtract(Money other) {
+        if (this.currency != other.currency) {
+            throw new IllegalArgumentException("통화가 다릅니다");
+        }
+        // 결과가 음수면 생성자의 음수 체크에서 예외 발생
+        return new Money(this.amount.subtract(other.amount), this.currency);
+    }
+
+    /** 뺄셈이 가능한지 확인 (결과가 0 이상인지) */
+    public boolean canSubtract(Money other) {
+        if (this.currency != other.currency) {
+            return false;
+        }
+        return this.amount.compareTo(other.amount) >= 0;
+    }
+
+    /** 안전한 뺄셈 - 결과가 음수면 Optional.empty() 반환 */
+    public Optional<Money> subtractSafe(Money other) {
+        if (!canSubtract(other)) {
+            return Optional.empty();
+        }
+        return Optional.of(new Money(this.amount.subtract(other.amount), this.currency));
+    }
+
+    public Money multiply(int factor) {
+        return new Money(this.amount.multiply(BigDecimal.valueOf(factor)), this.currency);
+    }
+
+    public Money multiply(BigDecimal factor) {
+        return new Money(this.amount.multiply(factor), this.currency);
+    }
+
+    public Money divide(int divisor) {
+        return new Money(
+            this.amount.divide(BigDecimal.valueOf(divisor), 2, RoundingMode.HALF_UP),
+            this.currency
+        );
+    }
+
+    public Money divide(BigDecimal divisor) {
+        return new Money(this.amount.divide(divisor, 2, RoundingMode.HALF_UP), this.currency);
+    }
+
+    public boolean isLessThan(Money other) {
+        if (this.currency != other.currency) {
+            throw new IllegalArgumentException("통화가 다릅니다");
+        }
+        return this.amount.compareTo(other.amount) < 0;
+    }
+
+    public boolean isGreaterThan(Money other) {
+        if (this.currency != other.currency) {
+            throw new IllegalArgumentException("통화가 다릅니다");
+        }
+        return this.amount.compareTo(other.amount) > 0;
+    }
+
+    public boolean isNegativeOrZero() {
+        return this.amount.compareTo(BigDecimal.ZERO) <= 0;
     }
 }
 
@@ -1256,7 +1342,7 @@ public record FixedAmountDiscount(Money discountAmount) implements CouponType {
 }
 
 // Case 2: 정률 할인 (예: 10% 할인)
-public record PercentageDiscount(Percentage rate) implements CouponType {
+public record PercentageDiscount(DiscountRate rate) implements CouponType {
     @Override
     public Money calculateDiscount(Money originalPrice) {
         return originalPrice.multiply(rate.value()).divide(100);
@@ -1410,6 +1496,8 @@ public String handlePaymentResult(PaymentResult result) {
 
 ### 3.7 Optional의 올바른 사용
 
+> 📝 Optional과 NULL 문제의 심화 내용은 **Chapter 4.1**을 참고하세요.
+
 #### Optional 안티패턴
 
 ```java
@@ -1417,7 +1505,7 @@ public String handlePaymentResult(PaymentResult result) {
 public record Order(OrderId id, Optional<Coupon> coupon) {}
 
 // ✅ 별도 타입으로 분리
-public sealed interface Order permits OrderWithCoupon, OrderWithoutCoupon {}
+public sealed interface CouponChoice permits OrderWithCoupon, OrderWithoutCoupon {}
 
 // ❌ 파라미터로 Optional 사용 금지
 public void process(Optional<Coupon> coupon) {}
@@ -1627,6 +1715,103 @@ shipping.cancel();  // 컴파일 에러! 메서드 없음
 
 ---
 
+### 4.4 Phantom Type 패턴: 보이지 않는 타입 제약
+
+#### 💡 비유: 도장
+
+> **Phantom Type은 문서의 도장과 같습니다.**
+> 문서 내용은 바뀌지 않지만, "검토 완료" 도장이 찍히면 다음 단계로 넘어갈 수 있습니다.
+> 도장은 문서의 실제 데이터가 아니지만, 프로세스 상태를 표시합니다.
+
+```java
+// Phantom Type을 사용한 상태 표현
+public sealed interface EmailState {}
+public record Unverified() implements EmailState {}
+public record Verified() implements EmailState {}
+
+// 상태를 제네릭 파라미터로 "표시"만 함 (런타임에 영향 없음)
+public record Email<S extends EmailState>(String value) {
+    public static Email<Unverified> unverified(String value) {
+        // 기본 검증 (형식만)
+        if (!value.contains("@")) {
+            throw new IllegalArgumentException("이메일 형식 오류");
+        }
+        return new Email<>(value);
+    }
+}
+
+// 검증 서비스
+public class EmailVerificationService {
+    // Unverified 이메일만 받아서 Verified로 변환
+    public Email<Verified> verify(Email<Unverified> email, String code) {
+        if (verifyCode(email.value(), code)) {
+            return new Email<>(email.value());  // 같은 값, 다른 타입!
+        }
+        throw new VerificationFailedException();
+    }
+}
+
+// 회원 가입 완료 - Verified 이메일만 받음
+public class MemberService {
+    public Member register(Email<Verified> email, String name) {
+        return new Member(MemberId.generate(), email.value(), name);
+    }
+}
+```
+
+#### 사용 예시
+
+```java
+Email<Unverified> rawEmail = Email.unverified("user@example.com");
+
+// ❌ 컴파일 에러! Unverified로는 회원 가입 불가
+memberService.register(rawEmail, "홍길동");
+
+// ✅ 검증 후 사용
+Email<Verified> verifiedEmail = verificationService.verify(rawEmail, "123456");
+memberService.register(verifiedEmail, "홍길동");  // OK!
+```
+
+---
+
+### 4.5 Optional 안티패턴 심화
+
+Chapter 3.7에서 소개한 Optional 안티패턴을 실무 관점에서 더 자세히 살펴봅니다.
+
+#### 안티패턴 1: Optional을 컬렉션처럼 사용
+
+```java
+// ❌ 복잡하고 의도가 불명확
+Optional<Customer> customer = findCustomer(id);
+if (customer.isPresent()) {
+    Customer c = customer.get();
+    // ...
+}
+
+// ✅ 패턴 매칭 스타일로 명확하게
+findCustomer(id)
+    .ifPresentOrElse(
+        customer -> processCustomer(customer),
+        () -> handleNotFound()
+    );
+```
+
+#### 안티패턴 2: Optional 체이닝 남용
+
+```java
+// ❌ 너무 긴 체이닝은 가독성 저하
+return order.flatMap(Order::getCustomer)
+            .flatMap(Customer::getAddress)
+            .flatMap(Address::getCity)
+            .orElse("Unknown");
+
+// ✅ 도메인 타입으로 "없음"을 명시적으로 표현
+public sealed interface ShippingAddress permits
+    KnownAddress, UnknownAddress {}
+```
+
+---
+
 ### 퀴즈 Chapter 4
 
 #### Q4.1 [개념 확인] `ShippingOrder`에 `cancel()` 메서드가 없으면 어떤 효과가 있나요?
@@ -1644,6 +1829,33 @@ A. 생성자에서 if문 체크
 B. `createOrder(VerifiedEmail email, ...)` 시그니처 사용
 C. @NotNull 어노테이션
 D. 런타임 예외
+
+---
+
+#### Q4.3 [코드 분석] Phantom Type
+
+다음 코드에서 `Email<Verified>`와 `Email<Unverified>`의 런타임 차이는?
+
+```java
+Email<Unverified> raw = Email.unverified("a@b.com");
+Email<Verified> verified = verificationService.verify(raw, "123456");
+```
+
+A. 내부 데이터 구조가 다르다
+B. 런타임에는 차이가 없고 컴파일 타임에만 구분된다
+C. Verified는 추가 검증 데이터를 저장한다
+D. 메모리 사용량이 다르다
+
+---
+
+#### Q4.4 [설계 문제] Optional vs 전용 타입
+
+"주문에 쿠폰이 적용될 수도 있고 안 될 수도 있다"를 모델링할 때 가장 적합한 방식은?
+
+A. `Optional<Coupon> coupon` 필드 사용
+B. `@Nullable Coupon coupon` 어노테이션
+C. `sealed interface CouponStatus permits WithCoupon, WithoutCoupon`
+D. `boolean hasCoupon` 플래그와 `Coupon coupon` 필드
 
 ---
 
@@ -1674,7 +1886,7 @@ D. 런타임 예외
                            ↓
                       [Pay] → PaidOrder
                            ↓
-                   OrderPlacedEvent
+                   OrderPlaced
 ```
 
 ---
@@ -1683,16 +1895,30 @@ D. 런타임 예외
 
 ```java
 // 1. 명령 (Command) - 사용자의 의도 (검증 전)
-public record PlaceOrderCommand(String customerId, List<UnvalidatedOrderLine> lines) {}
+public record UnvalidatedOrderLine(String productId, int quantity) {}
+
+public record PlaceOrderCommand(
+    String customerId,
+    List<UnvalidatedOrderLine> lines,
+    String shippingAddress,
+    String couponCode
+) {}
 
 // 2. 검증 후 - 유효한 상태
-public record ValidatedOrder(CustomerId customerId, List<ValidatedOrderLine> lines) {}
+public record ValidatedOrderLine(ProductId productId, Quantity quantity, Money unitPrice) {}
+
+public record ValidatedOrder(
+    CustomerId customerId,
+    List<ValidatedOrderLine> lines,
+    ShippingAddress shippingAddress,
+    CouponCode couponCode
+) {}
 
 // 3. 가격 계산 후
 public record PricedOrder(CustomerId customerId, Money totalAmount) {}
 
 // 4. 이벤트 - 확정된 과거
-public record OrderPlacedEvent(OrderId orderId, Money totalAmount, LocalDateTime occurredAt) {}
+public record OrderPlaced(OrderId orderId, Money totalAmount, LocalDateTime occurredAt) {}
 ```
 
 > ⚠️ **흔한 실수**: Record 알맹이 꺼내기/포장 미흡
@@ -1720,11 +1946,11 @@ public record OrderPlacedEvent(OrderId orderId, Money totalAmount, LocalDateTime
 
 ```java
 public class PlaceOrderWorkflow {
-    public Result<OrderPlacedEvent, OrderError> execute(PlaceOrderCommand command) {
+    public Result<OrderPlaced, OrderError> execute(PlaceOrderCommand command) {
         return validateOrder.apply(command)
             .map(priceOrder::apply)
             .flatMap(processPayment::apply)
-            .map(this::createOrderPlacedEvent);
+            .map(this::createOrderPlaced);
     }
 }
 ```
@@ -1823,6 +2049,8 @@ void methodC() { throw new SomeException(); }  // 바로 catch로 점프!
 ```java
 package com.ecommerce.common;
 
+import java.util.function.Function;
+
 // 성공(S) 또는 실패(F)를 담는 컨테이너
 public sealed interface Result<S, F> permits Success, Failure {
 
@@ -1841,6 +2069,14 @@ public sealed interface Result<S, F> permits Success, Failure {
 
     static <S, F> Result<S, F> failure(F error) {
         return new Failure<>(error);
+    }
+
+    // 실패 값을 변환 (성공이면 그대로)
+    default <NewF> Result<S, NewF> mapError(Function<F, NewF> mapper) {
+        return switch (this) {
+            case Success<S, F> s -> (Result<S, NewF>) s;
+            case Failure<S, F> f -> Result.failure(mapper.apply(f.error()));
+        };
     }
 }
 
@@ -1919,7 +2155,7 @@ Result<PaidOrder, OrderError> result = validateOrder(input)
 > ```java
 > String r = switch (result) {
 >     case Success<Integer> s -> s.value();  // ❌ Integer인데 String 기대
->     case Failure<Integer> f -> f.message();
+>     case Failure<String> f -> f.error();
 > };
 >
 > // ✅ String.valueOf(s.value())로 변환 필요
@@ -1959,9 +2195,7 @@ public class PlaceOrderWorkflow {
     }
 
     private Result<PricedOrder, OrderError> applyCoupon(ValidatedOrder order) {
-        return order.couponCode()
-            .map(code -> couponService.validate(code))
-            .orElse(Result.success(null))
+        return couponService.validate(order.couponCode())
             .map(coupon -> priceOrder(order, coupon));
     }
 
@@ -2080,11 +2314,12 @@ Result<Order, Error> result = validateName(input)
     .flatMap(this::validatePhone);  // 이메일 실패하면 여기 안 감
 
 // Validation: 모든 에러 수집
-Validation<Order, List<Error>> result = Validation.combine(
+Validation<Order, List<Error>> result = Validation.combine3(
     validateName(input),
     validateEmail(input),
-    validatePhone(input)
-).map(Order::new);  // 모든 검증 결과를 모아서 처리
+    validatePhone(input),
+    Order::new
+);  // 모든 검증 결과를 모아서 처리
 ```
 
 ---
@@ -2104,14 +2339,37 @@ Validation<Order, List<Error>> result = Validation.combine(
 > 병렬 처리(Applicative): 세 창구 동시 처리, 결과 모아서 판단
 
 ```java
-// Validation 타입 정의
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
+/**
+ * Validation 타입 - 에러를 수집하는 Applicative 패턴 구현.
+ * E 타입 파라미터는 에러 컬렉션 타입 (보통 List<SomeError>)을 나타냅니다.
+ */
 public sealed interface Validation<S, E> permits Valid, Invalid {
+    // 성공
     static <S, E> Validation<S, E> valid(S value) {
         return new Valid<>(value);
     }
 
-    static <S, E> Validation<S, List<E>> invalid(E error) {
+    // 실패 (에러 컬렉션 전달)
+    static <S, E> Validation<S, E> invalid(E errors) {
+        return new Invalid<>(errors);
+    }
+
+    // 단일 에러로 Invalid 생성 (편의 메서드)
+    static <S, E> Validation<S, List<E>> invalidOne(E error) {
         return new Invalid<>(List.of(error));
+    }
+
+    // 성공 값 변환 (실패면 그대로)
+    default <NewS> Validation<NewS, E> map(Function<S, NewS> mapper) {
+        return switch (this) {
+            case Valid<S, E> v -> new Valid<>(mapper.apply(v.value()));
+            case Invalid<S, E> i -> new Invalid<>(i.errors());
+        };
     }
 
     // 여러 Validation 결합
@@ -2135,10 +2393,53 @@ public sealed interface Validation<S, E> permits Valid, Invalid {
             };
         };
     }
+
+    // 3개 결합
+    static <A, B, C, R, E> Validation<R, List<E>> combine3(
+        Validation<A, List<E>> va,
+        Validation<B, List<E>> vb,
+        Validation<C, List<E>> vc,
+        TriFunction<A, B, C, R> combiner
+    ) {
+        return combine(
+            combine(va, vb, Pair::new),
+            vc,
+            (ab, c) -> combiner.apply(ab.first(), ab.second(), c)
+        );
+    }
+
+    // 4개 결합
+    static <A, B, C, D, R, E> Validation<R, List<E>> combine4(
+        Validation<A, List<E>> va,
+        Validation<B, List<E>> vb,
+        Validation<C, List<E>> vc,
+        Validation<D, List<E>> vd,
+        QuadFunction<A, B, C, D, R> combiner
+    ) {
+        return combine(
+            combine(va, vb, Pair::new),
+            combine(vc, vd, Pair::new),
+            (ab, cd) -> combiner.apply(
+                ab.first(), ab.second(),
+                cd.first(), cd.second()
+            )
+        );
+    }
 }
 
 public record Valid<S, E>(S value) implements Validation<S, E> {}
-public record Invalid<S, E>(List<E> errors) implements Validation<S, E> {}
+public record Invalid<S, E>(E errors) implements Validation<S, E> {}
+public record Pair<A, B>(A first, B second) {}
+
+@FunctionalInterface
+public interface TriFunction<A, B, C, R> {
+    R apply(A a, B b, C c);
+}
+
+@FunctionalInterface
+public interface QuadFunction<A, B, C, D, R> {
+    R apply(A a, B b, C c, D d);
+}
 ```
 
 ---
@@ -2438,18 +2739,26 @@ public class OrderDto {
     public BigDecimal amount;
 }
 
+// 도메인 요약 모델
+public record OrderSummary(OrderId orderId, Money amount) {}
+
 // 변환: DTO -> Domain (입력)
-public Result<Order, Error> toDomain(OrderDto dto) {
-    return OrderId.create(dto.orderId)
-        .combine(Money.create(dto.amount))
-        .map(Order::new);
+public Result<OrderSummary, String> toDomain(OrderDto dto) {
+    try {
+        return Result.success(new OrderSummary(
+            new OrderId(dto.orderId),
+            new Money(dto.amount, Currency.KRW)
+        ));
+    } catch (IllegalArgumentException e) {
+        return Result.failure(e.getMessage());
+    }
 }
 
 // 변환: Domain -> DTO (출력)
-public OrderDto toDto(Order order) {
+public OrderDto toDto(OrderSummary order) {
     OrderDto dto = new OrderDto();
-    dto.orderId = order.id().value();
-    dto.amount = order.total().amount();
+    dto.orderId = order.orderId().value();
+    dto.amount = order.amount().amount();
     return dto;
 }
 ```
@@ -2505,7 +2814,7 @@ public class PaymentGatewayAdapter {
 ```java
 // [Controller] - 문지기 역할
 @PostMapping("/users")
-public Result<Void> registerUser(@RequestBody UserDTO dto) {
+public Result<Void, String> registerUser(@RequestBody UserDTO dto) {
     // 1. 여기서 변환 및 1차 검증
     User user = UserMapper.toDomain(dto);
 
@@ -2514,14 +2823,14 @@ public Result<Void> registerUser(@RequestBody UserDTO dto) {
 }
 
 // [Service] - 비즈니스 로직 전담
-public Result<Void> register(User user) {
+public Result<Void, String> register(User user) {
     // 이미 'User' 타입이므로 이름이 비었거나 나이가 음수일 확률 0%
     // 중복 가입 여부 등 '비즈니스 로직'에만 집중!
     if (userRepository.exists(user.username())) {
-        return new Failure<>("이미 존재하는 유저입니다.");
+        return Result.failure("이미 존재하는 유저입니다.");
     }
     userRepository.save(user);
-    return new Success<>(null);
+    return Result.success(null);
 }
 ```
 
@@ -2741,19 +3050,34 @@ public class PlaceOrderUseCase {
 
     @Transactional
     public Result<OrderPlaced, OrderError> execute(PlaceOrderCommand cmd) {
-        // 1. 부수효과: DB에서 데이터 조회
-        Customer customer = customerRepository.findById(cmd.customerId()).orElseThrow();
+        // 1. 검증 및 보강 (예시)
+        ValidatedOrder validated = validateOrder(cmd);
+        Coupon coupon = findCoupon(cmd);
 
         // 2. 순수 로직: 가격 계산 (테스트 쉬움)
-        PricedOrder priced = domainService.calculatePrice(order, coupon);
+        PricedOrder priced = domainService.calculatePrice(validated, coupon);
 
         // 3. 부수효과: 결제
         PaymentResult payment = paymentGateway.charge(priced.totalAmount());
 
         // 4. 부수효과: 저장
+        Order order = createOrder(validated, payment);
         Order savedOrder = orderRepository.save(order);
 
         return Result.success(new OrderPlaced(savedOrder.id()));
+    }
+
+    // 예시용 스텁
+    private ValidatedOrder validateOrder(PlaceOrderCommand cmd) {
+        throw new UnsupportedOperationException("검증 로직 생략");
+    }
+
+    private Coupon findCoupon(PlaceOrderCommand cmd) {
+        throw new UnsupportedOperationException("쿠폰 조회 로직 생략");
+    }
+
+    private Order createOrder(ValidatedOrder order, PaymentResult payment) {
+        throw new UnsupportedOperationException("주문 생성 로직 생략");
     }
 }
 ```
@@ -2895,6 +3219,16 @@ public sealed interface MemberGrade permits Bronze, Silver, Gold, Vip {
 
 public record Bronze() implements MemberGrade {
     @Override public int discountRate() { return 0; }
+    @Override public boolean hasFreeShipping() { return false; }
+}
+
+public record Silver() implements MemberGrade {
+    @Override public int discountRate() { return 5; }
+    @Override public boolean hasFreeShipping() { return false; }
+}
+
+public record Gold() implements MemberGrade {
+    @Override public int discountRate() { return 8; }
     @Override public boolean hasFreeShipping() { return false; }
 }
 
@@ -3298,7 +3632,7 @@ void register(User user)    // User 타입이면 이미 검증 완료
 | 1  | C  | B  | B  | B  | B   |
 | 2  | C  | B  | C  | A  | C   |
 | 3  | B  | A  | B  | C  | B   |
-| 4  | C  | B  | -  | -  | -   |
+| 4  | C  | B  | B  | C  | -   |
 | 5  | B  | -  | -  | -  | -   |
 | 6  | C  | B  | C  | -  | -   |
 | 7  | B  | C  | C  | D  | B   |
@@ -3332,6 +3666,8 @@ void register(User user)    // User 타입이면 이미 검증 완료
 **Chapter 4**
 - Q4.1: C - 타입으로 "배송 중엔 취소 불가" 규칙을 강제
 - Q4.2: B - VerifiedEmail만 주문할 수 있는 타입 설계
+- Q4.3: B - Phantom Type은 컴파일 타임에만 존재하며, 런타임에는 타입 소거로 동일
+- Q4.4: C - sealed interface로 "있음/없음"을 명시적인 타입으로 표현
 
 **Chapter 5**
 - Q5.1: B - 검증 전후의 데이터가 다른 보장을 가지므로
@@ -3372,3 +3708,23 @@ void register(User user)    // User 타입이면 이미 검증 완료
 ---
 
 *이 교재는 Scott Wlaschin의 "Domain Modeling Made Functional"을 Java 25와 이커머스 도메인에 맞춰 재구성한 것입니다.*
+
+---
+
+## Appendix E: 컴파일 가능한 샘플 프로젝트
+
+실제 컴파일 가능한 예제를 보고 싶다면 아래 샘플 프로젝트를 참고하세요.
+
+- 경로: `docs/samples/functional-domain-modeling`
+- 빌드: `mvn -q -f docs/samples/functional-domain-modeling/pom.xml test`
+- Java 버전: 21+ (Record, Sealed Interface, Pattern Matching 사용)
+
+> 📝 **Java 버전 참고사항**:
+> - **Java 21+**: Record, Sealed Interface, Pattern Matching 정식 지원
+> - **Java 25 Preview**: `with` 구문 (JEP 468) - `--enable-preview` 플래그 필요
+> - 샘플 프로젝트는 Java 21+로 실행 가능하며, `with` 구문 대신 수동 `withXxx()` 메서드를 사용합니다
+
+샘플에는 다음이 포함됩니다:
+- `Money`, `OrderLine`, `ValidatedOrder` 등 핵심 도메인 타입
+- `Result`, `Validation` 구현체
+- 간단한 `PlaceOrder` 워크플로우와 테스트
