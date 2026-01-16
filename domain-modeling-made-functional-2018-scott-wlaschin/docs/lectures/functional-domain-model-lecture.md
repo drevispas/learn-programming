@@ -45,6 +45,7 @@
 2. Ubiquitous Language가 코드 품질에 미치는 영향을 설명할 수 있다
 3. 불변성(Immutability)의 장점을 이해하고 Java Record로 구현할 수 있다
 4. 함수형 사고방식이 도메인 모델링에 주는 이점을 파악한다
+5. Event Storming을 통해 도메인을 탐험하는 방법을 익힌다
 
 ---
 
@@ -351,6 +352,33 @@ public Result<PaidOrder, OrderError> processOrder(UnvalidatedOrder input) {
         .flatMap(this::processPayment); // 결제 처리
 }
 ```
+
+---
+
+### 1.5 도메인 탐험: Event Storming
+
+#### 코딩보다 먼저 해야 할 일
+
+도메인 모델링은 클래스 다이어그램을 그리는 것에서 시작하지 않습니다. **이벤트 스토밍(Event Storming)** 이라는 협업 워크숍을 통해 비즈니스 흐름을 파악하는 것이 먼저입니다.
+
+**핵심 질문**: "우리 시스템에서 어떤 흥미로운 일이 발생합니까?"
+
+#### 도메인 이벤트(Domain Event)
+
+도메인 이벤트는 비즈니스적으로 의미 있는 사건을 과거형으로 기술합니다.
+
+- **주문됨 (OrderPlaced)**
+- **결제됨 (PaymentReceived)**
+- **배송 시작됨 (ShippingStarted)**
+- **배송 완료됨 (ItemDelivered)**
+
+#### 워크플로우 발견
+
+이벤트를 시간 순서대로 나열하면 자연스럽게 워크플로우가 드러납니다.
+
+> `주문됨` → (결제 프로세스) → `결제됨` → (배송 프로세스) → `배송 시작됨`
+
+이 흐름이 바로 우리가 구현할 파이프라인의 청사진이 됩니다. 각 단계(프로세스)는 입력을 받아 이벤트를 발생시키는 함수로 모델링할 수 있습니다.
 
 ---
 
@@ -1754,7 +1782,7 @@ D. DB 제약조건
 ## Chapter 5: 워크플로우를 함수 파이프라인으로
 
 ### 학습 목표
-1. 비즈니스 프로세스를 Input → Process → Output 구조로 이해한다
+1. 비즈니스 프로세스를 **Command → Process → Event** 구조로 이해한다
 2. 상태 전이를 타입 변환으로 표현할 수 있다
 3. 함수 합성으로 복잡한 워크플로우를 구성할 수 있다
 4. 각 단계의 책임을 명확히 분리할 수 있다
@@ -1771,14 +1799,20 @@ D. DB 제약조건
 > - **차체** → 도색 → **도색된 차체**
 > - **도색된 차체** → 조립 → **완성차**
 >
-> 소프트웨어도 마찬가지:
-> - **UnvalidatedOrder** → validate → **ValidatedOrder**
-> - **ValidatedOrder** → price → **PricedOrder**
-> - **PricedOrder** → pay → **PaidOrder**
+> 소프트웨어도 마찬가지입니다. 우리는 입력을 받아 변환하고, 최종 결과를 만들어냅니다.
+> 함수형 아키텍처에서 가장 중요한 패턴은 **Command(명령)** 를 받아 **Event(사건)** 를 발생시키는 것입니다.
 
 ```
 주문 프로세스:
-  UnvalidatedOrder → ValidatedOrder → PricedOrder → PaidOrder
+  PlaceOrderCommand (요청)
+      ↓
+  [Validate] → ValidatedOrder
+      ↓
+  [Price] → PricedOrder
+      ↓
+  [Pay] → PaidOrder
+      ↓
+  OrderPlacedEvent (결과)
 ```
 
 ---
@@ -1786,21 +1820,21 @@ D. DB 제약조건
 ### 5.2 워크플로우 타입 설계
 
 ```java
-// 1. 검증 전 (외부 데이터)
-public record UnvalidatedOrder(
+// 1. 명령 (Command) - 사용자의 의도
+public record PlaceOrderCommand(
     String customerId,
     List<UnvalidatedOrderLine> lines,
     String couponCode
 ) {}
 
-// 2. 검증 후 (도메인 타입)
+// 2. 검증 후 (도메인 타입) - 유효한 상태
 public record ValidatedOrder(
     CustomerId customerId,
     List<ValidatedOrderLine> lines,
     Optional<CouponCode> couponCode
 ) {}
 
-// 3. 가격 계산 후
+// 3. 가격 계산 후 - 계산된 상태
 public record PricedOrder(
     CustomerId customerId,
     List<PricedOrderLine> lines,
@@ -1809,12 +1843,12 @@ public record PricedOrder(
     Money totalAmount
 ) {}
 
-// 4. 결제 완료
-public record PaidOrder(
+// 4. 이벤트 (Event) - 확정된 과거
+public record OrderPlacedEvent(
     OrderId orderId,
     CustomerId customerId,
     Money totalAmount,
-    LocalDateTime paidAt
+    LocalDateTime occurredAt
 ) {}
 ```
 
@@ -1838,10 +1872,10 @@ public record PaidOrder(
 ```java
 public class PlaceOrderWorkflow {
     public Result<OrderPlacedEvent, OrderError> execute(
-        UnvalidatedOrder input,
+        PlaceOrderCommand command,
         PaymentMethod paymentMethod
     ) {
-        return validateOrder.apply(input)
+        return validateOrder.apply(command)
             .map(priceOrder::apply)
             .flatMap(priced -> processPayment.apply(priced, paymentMethod))
             .map(this::createOrderPlacedEvent);
@@ -1857,7 +1891,7 @@ public class PlaceOrderWorkflow {
 // 검증 단계
 public class OrderValidator implements ValidateOrder {
     @Override
-    public Result<ValidatedOrder, ValidationError> apply(UnvalidatedOrder input) {
+    public Result<ValidatedOrder, ValidationError> apply(PlaceOrderCommand command) {
         // 고객 ID 검증
         // 상품 존재 확인
         // 배송지 검증
@@ -1881,7 +1915,7 @@ public class OrderPricer implements PriceOrder {
 ### 퀴즈 Chapter 5
 
 #### Q5.1 [개념 확인] 워크플로우 타입
-`UnvalidatedOrder`와 `ValidatedOrder`를 분리하는 이유는?
+`PlaceOrderCommand`와 `ValidatedOrder`를 분리하는 이유는?
 
 A. 메모리 절약
 B. 검증 전후의 데이터가 다른 보장을 가지므로
@@ -2108,8 +2142,8 @@ Result<PaidOrder, OrderError> result = validateOrder(input)
 ```java
 public class PlaceOrderWorkflow {
 
-    public Result<OrderPlaced, OrderError> execute(UnvalidatedOrder input) {
-        return validateOrder(input)
+    public Result<OrderPlaced, OrderError> execute(PlaceOrderCommand command) {
+        return validateOrder(command)
             .flatMap(this::checkInventory)
             .flatMap(this::applyCoupon)
             .flatMap(this::processPayment)
@@ -2117,8 +2151,8 @@ public class PlaceOrderWorkflow {
     }
 
     // 각 단계가 Result 반환
-    private Result<ValidatedOrder, OrderError> validateOrder(UnvalidatedOrder input) {
-        if (input.lines().isEmpty()) {
+    private Result<ValidatedOrder, OrderError> validateOrder(PlaceOrderCommand command) {
+        if (command.lines().isEmpty()) {
             return Result.failure(new OrderError.EmptyOrder());
         }
         // ... 검증 로직
@@ -2351,13 +2385,13 @@ public record Invalid<S, E>(List<E> errors) implements Validation<S, E> {}
 public class OrderValidationService {
 
     public Validation<ValidatedOrder, List<ValidationError>> validateOrder(
-        UnvalidatedOrder input
+        PlaceOrderCommand command
     ) {
         // 각 필드 독립적으로 검증
-        var customerValidation = validateCustomerId(input.customerId());
-        var linesValidation = validateOrderLines(input.lines());
-        var addressValidation = validateAddress(input.shippingAddress());
-        var couponValidation = validateCoupon(input.couponCode());
+        var customerValidation = validateCustomerId(command.customerId());
+        var linesValidation = validateOrderLines(command.lines());
+        var addressValidation = validateAddress(command.shippingAddress());
+        var couponValidation = validateCoupon(command.couponCode());
 
         // 모든 검증 결과 결합
         return Validation.combine4(
@@ -2634,90 +2668,45 @@ public class JpaOrderRepository implements OrderRepository {
 
 ---
 
-### 8.2 DTO와 Domain 분리
+### 8.2 신뢰 경계 (Trust Boundary)와 DTO
 
-#### 비유: 영양제와 식품
+#### 도메인 코어를 보호하라
 
-> **Domain 모델은 영양제입니다.**
->
-> 순수한 비타민 성분만 들어있습니다.
-> 불필요한 첨가물이 없습니다.
->
-> **DTO는 포장된 식품입니다.**
->
-> 유통기한, 바코드, 영양성분표 등 추가 정보가 있습니다.
-> 외부와 소통하기 위한 형식입니다.
+도메인 모델은 항상 유효한 상태만 가져야 합니다(Chapter 2, 4). 하지만 외부 세계(DB, UI, API)에서 들어오는 데이터는 믿을 수 없습니다.
+
+**신뢰 경계**:
+- **외부**: 신뢰할 수 없는 데이터 (JSON, String, Raw Data)
+- **경계**: 유효성 검사 및 변환 (DTO -> Domain Object)
+- **내부**: 신뢰할 수 있는 도메인 객체 (불변, 유효함)
+
+#### DTO의 역할
+
+도메인 객체를 그대로 JSON으로 직렬화하거나 DB에 저장하면 안 됩니다.
+- **DTO**: 데이터 전송만을 위한 깡통 객체 (public fields allowed)
+- **Domain Object**: 비즈니스 규칙이 있는 불변 객체
 
 ```java
-// Domain 모델: 순수한 비즈니스 로직
-public record Order(
-    OrderId id,
-    CustomerId customerId,
-    List<OrderLine> lines,
-    Money totalAmount,
-    OrderStatus status
-) {}
-
-// API Response DTO: 외부 통신용
-public record OrderResponse(
-    String orderId,
-    String customerName,
-    List<OrderLineResponse> items,
-    String totalAmount,
-    String currency,
-    String status,
-    String statusDescription,
-    String createdAt,
-    String estimatedDelivery
-) {}
-
-// DB Entity: JPA 매핑용
-@Entity
-@Table(name = "orders")
-public class OrderEntity {
-    @Id private Long id;
-    @Column(name = "customer_id") private Long customerId;
-    @Column(name = "total_amount") private BigDecimal totalAmount;
-    @Column(name = "status") private String status;
-    @Column(name = "created_at") private LocalDateTime createdAt;
-    // getters, setters...
+// DTO: 외부 통신용
+public class OrderDto {
+    public String orderId;
+    public BigDecimal amount;
+    // ...
 }
 
-// Mapper: 변환 담당
-public class OrderMapper {
+// 변환: DTO -> Domain (입력)
+public Result<Order, Error> toDomain(OrderDto dto) {
+    // 여기서 검증 실패하면 도메인으로 진입 불가
+    return OrderId.create(dto.orderId)
+        .combine(Money.create(dto.amount))
+        .map(Order::new);
+}
 
-    public Order toDomain(OrderEntity entity) {
-        return new Order(
-            new OrderId(entity.getId()),
-            new CustomerId(entity.getCustomerId()),
-            mapLines(entity.getLines()),
-            Money.krw(entity.getTotalAmount()),
-            mapStatus(entity.getStatus())
-        );
-    }
-
-    public OrderEntity toEntity(Order order) {
-        OrderEntity entity = new OrderEntity();
-        entity.setId(order.id().value());
-        entity.setCustomerId(order.customerId().value());
-        entity.setTotalAmount(order.totalAmount().amount());
-        entity.setStatus(mapStatusToString(order.status()));
-        return entity;
-    }
-
-    public OrderResponse toResponse(Order order, Customer customer) {
-        return new OrderResponse(
-            order.id().toString(),
-            customer.name(),
-            mapLinesToResponse(order.lines()),
-            order.totalAmount().toString(),
-            "KRW",
-            getStatusCode(order.status()),
-            getStatusDescription(order.status()),
-            order.createdAt().toString(),
-            calculateEstimatedDelivery(order)
-        );
-    }
+// 변환: Domain -> DTO (출력)
+public OrderDto toDto(Order order) {
+    OrderDto dto = new OrderDto();
+    dto.orderId = order.id().value();
+    dto.amount = order.total().amount();
+    return dto;
 }
 ```
 
@@ -2925,7 +2914,47 @@ public class JpaOrderRepository implements OrderRepository {
 
 ---
 
-### 9.2 부수효과 격리
+### 9.2 함수형 의존성 주입 (Dependency Injection)
+
+#### 인터페이스 없는 DI
+
+전통적인 방식은 인터페이스를 만들고 `@Autowired`로 구현체를 주입받습니다. 함수형 프로그래밍에서는 **함수를 파라미터로 전달**하는 것만으로 충분합니다.
+
+```java
+// 의존성: 환율 계산 함수 (인터페이스가 아닌 함수형 인터페이스)
+public interface GetExchangeRate {
+    BigDecimal get(Currency from, Currency to);
+}
+
+// 비즈니스 로직
+public class PriceService {
+    // 의존성을 메서드 파라미터로 받음
+    public Money convertPrice(Money price, Currency to, GetExchangeRate getRate) {
+        BigDecimal rate = getRate.get(price.currency(), to);
+        return new Money(price.amount().multiply(rate), to);
+    }
+}
+```
+
+#### 커링(Currying)과 부분 적용(Partial Application)
+
+매번 의존성을 넘기는 것이 귀찮다면, 함수를 리턴하는 함수(고차 함수)를 사용해 의존성을 미리 주입(설정)해둘 수 있습니다.
+
+```java
+// 설정 단계 (Composition Root)
+GetExchangeRate realExchangeRate = new RealExchangeRateApi();
+
+// 의존성 주입: 함수를 부분 적용하여 새로운 함수 생성
+Function<Money, Money> krwConverter = 
+    price -> priceService.convertPrice(price, Currency.KRW, realExchangeRate);
+
+// 사용 단계: 의존성을 몰라도 됨
+Money krw = krwConverter.apply(usd100);
+```
+
+---
+
+### 9.3 부수효과 격리
 
 #### 비유: 회계사와 금고
 
@@ -3006,7 +3035,7 @@ public class PlaceOrderUseCase {
 
 ---
 
-### 9.3 순수 함수와 테스트
+### 9.4 순수 함수와 테스트
 
 #### 비유: 계산기
 
