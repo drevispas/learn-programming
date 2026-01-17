@@ -5,7 +5,8 @@
       "Bash(git commit:*)",
       "WebSearch",
       "WebFetch(domain:gemini.google.com)",
-      "Bash(mvn:*)"
+      "Bash(mvn:*)",
+      "Bash(git mv:*)"
     ]
   }
 }
