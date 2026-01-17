@@ -81,6 +81,17 @@ public sealed interface Validation<S, E> permits Valid, Invalid {
             (ab, cd) -> combiner.apply(ab.first(), ab.second(), cd.first(), cd.second())
         );
     }
+
+    // fold: Validation을 Result로 변환
+    default <R> R fold(
+        java.util.function.Function<S, R> onValid,
+        java.util.function.Function<E, R> onInvalid
+    ) {
+        return switch (this) {
+            case Valid<S, E> v -> onValid.apply(v.value());
+            case Invalid<S, E> i -> onInvalid.apply(i.errors());
+        };
+    }
 }
 
 record Valid<S, E>(S value) implements Validation<S, E> {}

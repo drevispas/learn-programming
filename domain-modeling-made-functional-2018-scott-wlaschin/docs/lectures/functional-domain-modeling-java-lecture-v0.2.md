@@ -292,28 +292,52 @@ public record OrderAmount(BigDecimal value) {}
 - `getter`, `equals`, `hashCode`, `toString` 자동 생성
 - Setter는 없음 (값을 바꾸려면 새 객체 생성)
 
-#### `withXxx` 메서드로 상태 변경 (Java 17+)
+#### `withXxx` 메서드로 상태 변경 (Wither 패턴)
 
-불변 Record에서 값을 "변경"하려면 새 객체를 생성해야 합니다. 수동으로 `withXxx()` 메서드를 구현합니다.
+불변 Record에서 특정 필드만 변경하려면 모든 필드를 복사하여 새로운 객체를 생성해야 합니다. 이를 편리하게 하기 위해 `withXxx()` 메서드를 직접 구현하는 **Wither 패턴**을 사용합니다.
 
-> ⚠️ **JEP 468 미포함 안내**: Derived Record Creation (`with` expression)은 Java 25에 **포함되지 않았습니다**.
-> 따라서 아래와 같이 수동으로 `withXxx()` 메서드를 작성해야 합니다.
+> 💡 **현황 공유: JEP 468 (Derived Record Creation)**
+>
+> 많은 기대를 모았던 `with` 표현식은 Java 25 LTS 버전에서도 아직 **기본 제공되지 않거나 문법이 확정되지 않았습니다**. 
+>
+> ```java
+> // ❌ [Java 25 기준 실패] 컴파일 에러 발생
+> var updated = user with { age = 31; }; 
+> ```
+>
+> 따라서 현재는 아래와 같이 수동으로 **Wither 메서드**를 작성하는 것이 가장 안전하고 표준적인 방법입니다.
 
 ```java
-public record Order(OrderId id, OrderStatus status, Money total) {
-    // 상태를 변경한 "새로운" 주문 객체 반환
-    public Order withStatus(OrderStatus newStatus) {
-        return new Order(this.id, newStatus, this.total);
+public record User(String name, int age, String email) {
+    // [Wither 패턴] 특정 필드만 바꾼 새 객체를 반환하는 메서드들
+    public User withAge(int age) {
+        return new User(this.name, age, this.email);
+    }
+    
+    public User withName(String name) {
+        return new User(name, this.age, this.email);
+    }
+
+    public User withEmail(String email) {
+        return new User(this.name, this.age, email);
     }
 }
 
-// 사용
-Order unpaidOrder = new Order(orderId, OrderStatus.UNPAID, amount);
-Order paidOrder = unpaidOrder.withStatus(OrderStatus.PAID);
+// 사용 예시
+User user1 = new User("Alice", 30, "alice@example.com");
 
-// unpaidOrder는 여전히 UNPAID (불변!)
-// paidOrder는 새로운 객체로 PAID
+// age만 변경된 새로운 객체 생성
+User user2 = user1.withAge(31); 
+
+// 여러 필드를 체이닝하여 변경
+User user3 = user1.withName("Bob")
+                  .withEmail("bob@example.com");
 ```
+
+**핵심 포인트**:
+- **불변성 유지**: `user1`은 절대 변하지 않습니다.
+- **명시적 의도**: `withAge`라는 이름을 통해 "나이가 변경된 새로운 상태"임을 명확히 드러냅니다.
+- **컴파일 타임 안전성**: 필드 이름이 바뀌면 `withXxx` 메서드에서 즉시 컴파일 에러가 발생하여 안전합니다.
 
 > ⚠️ **흔한 실수**: "Entity는 상태가 변하니까 mutable이어야 하지 않나?"
 >

@@ -1,1 +1,7 @@
 com/ecommerce/sample/WorkflowTest.class
+com/ecommerce/sample/WorkflowTest$ResultTests.class
+com/ecommerce/sample/WorkflowTest$ValidationWorkflowTests.class
+com/ecommerce/sample/WorkflowTest$LegacyWorkflowTests.class
+com/ecommerce/sample/WorkflowTest$SumTypeTests.class
+com/ecommerce/sample/WorkflowTest$DomainErrorTests.class
+com/ecommerce/sample/WorkflowTest$ValidationTests.class

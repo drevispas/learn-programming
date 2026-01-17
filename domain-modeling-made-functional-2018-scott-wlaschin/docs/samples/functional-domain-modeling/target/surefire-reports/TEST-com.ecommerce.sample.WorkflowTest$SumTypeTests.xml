@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.ecommerce.sample.WorkflowTest" time="0.091" tests="0" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.ecommerce.sample.WorkflowTest$SumTypeTests" time="0.024" tests="7" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="25"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -57,4 +57,11 @@
     <property name="sun.io.unicode.encoding" value="UnicodeBig"/>
     <property name="java.class.version" value="69.0"/>
   </properties>
+  <testcase name="order_status_unpaid" classname="com.ecommerce.sample.WorkflowTest$SumTypeTests" time="0.007"/>
+  <testcase name="coupon_type_fixed_discount" classname="com.ecommerce.sample.WorkflowTest$SumTypeTests" time="0.009"/>
+  <testcase name="payment_method_exhaustive_switch" classname="com.ecommerce.sample.WorkflowTest$SumTypeTests" time="0.001"/>
+  <testcase name="coupon_type_percentage_discount" classname="com.ecommerce.sample.WorkflowTest$SumTypeTests" time="0.0"/>
+  <testcase name="coupon_type_fixed_discount_capped_at_original_price" classname="com.ecommerce.sample.WorkflowTest$SumTypeTests" time="0.0"/>
+  <testcase name="order_status_exhaustive_switch" classname="com.ecommerce.sample.WorkflowTest$SumTypeTests" time="0.002"/>
+  <testcase name="payment_method_credit_card" classname="com.ecommerce.sample.WorkflowTest$SumTypeTests" time="0.0"/>
 </testsuite>
