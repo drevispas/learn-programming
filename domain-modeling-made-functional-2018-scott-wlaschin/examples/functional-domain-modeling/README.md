@@ -3,28 +3,62 @@
 이 프로젝트는 강의 "Java로 정복하는 함수형 도메인 모델링"의 핵심 개념을 실행 가능한 코드로 구현한 예제입니다.
 
 ## 요구사항
-- Java 21+
-- Maven 3.9+
+- Java 25+
+- Maven 3.9+ 또는 Gradle 8.5+
 
 ## 빌드 및 테스트
 
+### Maven
 ```bash
+# 프로젝트 루트에서 실행
 mvn -q -f examples/functional-domain-modeling/pom.xml test
+
+# 특정 테스트 클래스 실행
+mvn -q -f examples/functional-domain-modeling/pom.xml test -Dtest=WorkflowTest
+```
+
+### Gradle (KTS)
+```bash
+# 프로젝트 디렉토리에서 실행
+cd examples/functional-domain-modeling
+./gradlew test
+
+# 특정 테스트 클래스 실행
+./gradlew test --tests "com.ecommerce.sample.WorkflowTest"
 ```
 
 ## 프로젝트 구조
 
 ```
-src/main/java/com/ecommerce/sample/
-├── DomainTypes.java        # Value Objects (Money, CustomerId, ProductId 등)
-├── Member.java             # Wither 패턴 예제 (불변 객체 수정)
-├── Result.java             # Railway-Oriented Programming의 Result 타입
-├── Validation.java         # 에러 수집을 위한 Applicative Functor
-├── SumTypes.java           # Sum Type 예제 (PaymentMethod, OrderStatus, CouponType)
-├── DomainErrors.java       # 도메인 특화 에러 타입 (OrderError)
-├── PhantomTypes.java       # Phantom Type 패턴 예제 (Email<Verified>)
-├── OrderStateMachine.java  # 상태 머신 패턴 예제
-└── Workflow.java           # 주문 워크플로우 파이프라인
+src/main/java/com/ecommerce/
+├── sample/                    # 교육용 패턴 예제
+│   ├── DomainTypes.java       # Value Objects (Money, CustomerId, ProductId 등)
+│   ├── Member.java            # Wither 패턴 예제 (불변 객체 수정)
+│   ├── Result.java            # Railway-Oriented Programming의 Result 타입
+│   ├── Validation.java        # 에러 수집을 위한 Applicative Functor
+│   ├── SumTypes.java          # Sum Type 예제 (PaymentMethod, OrderStatus, CouponType)
+│   ├── DomainErrors.java      # 도메인 특화 에러 타입 (OrderError)
+│   ├── PhantomTypes.java      # Phantom Type 패턴 예제 (Email<Verified>)
+│   ├── OrderStateMachine.java # 상태 머신 패턴 예제
+│   ├── Workflow.java          # 주문 워크플로우 파이프라인
+│   └── ArchitecturePatterns.java # 아키텍처 패턴 데모
+├── domain/                    # Bounded Context별 도메인 모델
+│   ├── order/                 # 주문 컨텍스트
+│   ├── member/                # 회원 컨텍스트
+│   ├── product/               # 상품 컨텍스트
+│   ├── payment/               # 결제 컨텍스트
+│   └── coupon/                # 쿠폰 컨텍스트
+├── application/               # Use Case (Imperative Shell)
+│   ├── PlaceOrderUseCase.java # 주문 생성 워크플로우
+│   ├── PlaceOrderCommand.java # 주문 입력 DTO
+│   ├── PlaceOrderError.java   # 주문 에러 Union Type
+│   ├── CancelOrderUseCase.java
+│   ├── ApplyCouponUseCase.java
+│   └── OrderDomainService.java
+└── shared/                    # 공통 타입
+    ├── Result.java            # 모나딕 Result 타입
+    ├── Validation.java        # 에러 수집용 Validation
+    └── types/                 # Money, Currency 등
 ```
 
 ## 핵심 개념
@@ -112,11 +146,36 @@ Result<ValidatedOrder, List<OrderError>> result = Validation.combine4(
 ).fold(Result::success, Result::failure);
 ```
 
+### 8. Bounded Contexts (Ch.10)
+DDD의 Bounded Context를 패키지로 분리하여 도메인 경계 명확화
+
+```
+domain/
+├── order/    # Order, OrderId, OrderLine, OrderStatus, OrderError
+├── member/   # Member, MemberId, MemberGrade, Points, MemberError
+├── product/  # DisplayProduct, InventoryProduct, ProductId, ProductError
+├── payment/  # PaymentMethod, PaymentResult, PaymentError, TransactionId
+└── coupon/   # Coupon, CouponId, CouponType, CouponStatus, CouponError
+```
+
+각 컨텍스트는 독립적인 Value Object, Error Type, Repository를 가짐
+
 ## 테스트 코드
 
-`WorkflowTest.java`와 `LectureConceptTest.java`에서 모든 핵심 기능을 검증합니다:
+### Sample 패키지 테스트
 - **LectureConceptTest**: Wither 패턴, Phantom Type 등 기본 개념 검증
 - **WorkflowTest**: 전체 주문 워크플로우 및 ROP, Validation 로직 검증
+- **ArchitecturePatternsTest**: 아키텍처 패턴 데모
+
+### Domain 패키지 테스트
+- **OrderDomainTest**: 주문 도메인 로직 검증
+- **MemberDomainTest**: 회원 도메인 로직 검증
+- **ProductDomainTest**: 상품 도메인 로직 검증
+- **PaymentDomainTest**: 결제 도메인 로직 검증
+- **CouponDomainTest**: 쿠폰 도메인 로직 검증
+
+### Application 패키지 테스트
+- **PlaceOrderUseCaseTest**: 주문 생성 Use Case 통합 테스트
 
 ## 강의 문서와의 대응
 
@@ -130,3 +189,4 @@ Result<ValidatedOrder, List<OrderError>> result = Validation.combine4(
 | Ch 6: Result 타입 | Result.java | 구현됨 |
 | Ch 6: Domain Error | DomainErrors.java | 구현됨 |
 | Ch 7: Validation | Validation.java, Workflow.java | 구현됨 |
+| Ch 10: Bounded Contexts | domain/*, application/* | 구현됨 |

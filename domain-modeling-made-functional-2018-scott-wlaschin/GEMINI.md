@@ -1,7 +1,7 @@
 # Functional Domain Modeling in Java
 
 ## Project Overview
-This project is a Java implementation of the concepts from the book/lecture "Domain Modeling Made Functional" by Scott Wlaschin. It demonstrates how to apply functional programming principles (immutability, type systems, composition) in a standard Java 21+ environment.
+This project is a Java implementation of the concepts from the book/lecture "Domain Modeling Made Functional" by Scott Wlaschin. It demonstrates how to apply functional programming principles (immutability, type systems, composition) in a standard Java 25+ environment.
 
 ## Architecture
 The project follows the "Functional Core, Imperative Shell" pattern:
