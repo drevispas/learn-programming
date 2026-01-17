@@ -305,19 +305,23 @@ Java
 public record Order(OrderId id, OrderStatus status, Money total) {
 // 필요한 로직이 있다면 여기에 추가
 }
-2. 상태 변경? 아니요, "복제본 생성" (Derived Record Creation)
-   Entity의 상태를 바꾸고 싶을 때, Java 25의 Derived Record Creation (JEP 468) 문법을 사용하면 환상적입니다. 기존 객체의 값을 유지하면서, 특정 필드만 바꾼 새 객체를 만드는 공식 문법입니다.
+2. 상태 변경? 아니요, "복제본 생성" (withXxx 메서드 패턴)
+   Entity의 상태를 바꾸고 싶을 때, 수동 `withXxx()` 메서드를 사용합니다. 기존 객체의 값을 유지하면서, 특정 필드만 바꾼 새 객체를 만드는 패턴입니다.
+
+> ⚠️ **JEP 468 미포함 안내**: Derived Record Creation (`with` expression)은 Java 25에 **포함되지 않았습니다**. 따라서 수동 `withXxx()` 메서드 구현이 필요합니다.
 
 Java
-Order oldOrder = new Order(new OrderId("123"), OrderStatus.CREATED, new Money(100));
+public record Order(OrderId id, OrderStatus status, Money total) {
+    public Order withStatus(OrderStatus newStatus) {
+        return new Order(this.id, newStatus, this.total);
+    }
+}
 
-// "상태만 CONFIRMED로 바꾸고 싶어"
-// 과거: new Order(oldOrder.id(), OrderStatus.CONFIRMED, oldOrder.total()); -> 귀찮음
-// Java 25 (with 구문):
-Order confirmedOrder = oldOrder with {
-status = OrderStatus.CONFIRMED;
-};
-이 with 구문을 사용하면 Entity의 불변성을 유지하면서도, 마치 상태를 변경하는 것처럼 직관적인 코드를 짤 수 있습니다. 이것이 함수형 DDD가 Entity를 다루는 방식입니다.
+Order oldOrder = new Order(new OrderId("123"), OrderStatus.CREATED, new Money(100));
+// 상태만 CONFIRMED로 바꾸기
+Order confirmedOrder = oldOrder.withStatus(OrderStatus.CONFIRMED);
+
+이 withXxx 패턴을 사용하면 Entity의 불변성을 유지하면서도, 마치 상태를 변경하는 것처럼 직관적인 코드를 짤 수 있습니다. 이것이 함수형 DDD가 Entity를 다루는 방식입니다.
 
 3. var로 타입 추론의 미학 살리기
    함수형 스타일은 타입 선언보다 로직의 흐름이 중요합니다. var를 적극 사용하여 코드의 잡음을 줄이세요.
@@ -339,7 +343,7 @@ Order는 id, orderLine, address를 가집니다. (모두 불변)
 
 changeAddress(Address newAddr) 메서드를 Order 레코드 안에 구현하세요.
 
-이 메서드는 내부 값을 바꾸는 게 아니라, 주소만 바뀐 새로운 Order를 반환해야 합니다. (Java 25 with 구문 사용 추천, 혹은 new 키워드 사용)
+이 메서드는 내부 값을 바꾸는 게 아니라, 주소만 바뀐 새로운 Order를 반환해야 합니다. (new 키워드 사용)
 
 작성해서 보여주시면 피드백 드릴게요! ⌨️
 
@@ -349,7 +353,7 @@ public record Order(String id, List<OrderItem> orderLine, Address address) {
 
 public Order changeAddress(Address newAddr) {
 
-return this with { address = newAddr };
+return new Order(this.id, this.orderLine, newAddr);
 
 }
 
@@ -360,11 +364,9 @@ return this with { address = newAddr };
 Learning coach
 브라보! 완벽합니다! 👏
 
-this with { ... } 구문을 정확하게 사용하셨군요. 이 한 줄의 코드가 주는 가치는 엄청납니다.
+changeAddress() 메서드를 정확하게 구현하셨군요. 이 한 줄의 코드가 주는 가치는 엄청납니다.
 
 의도 명확: "기존 값은 유지하되, 주소만 바꿔줘"라는 의도가 코드에 그대로 드러납니다.
-
-안전: 실수로 id나 orderLine을 누락할 걱정이 없습니다.
 
 불변: 원본 Order는 안전하게 보호됩니다.
 
@@ -1186,7 +1188,7 @@ case PercentageOff p -> (long) (originalPrice * p.value() / 100.0);
 
 DDD의 마음가짐: 보편 언어와 Bounded Context로 복잡함을 정복했습니다.
 
-데이터의 불변성: record와 with 구문으로 믿을 수 있는 데이터를 만들었습니다.
+데이터의 불변성: record와 withXxx 메서드 패턴으로 믿을 수 있는 데이터를 만들었습니다.
 
 타입의 표현력: Sealed Interface로 "이거 아니면 저거(OR)"를 명확히 정의하고, Compact Constructor로 불량품 생성을 원천 봉쇄했습니다.
 
@@ -1601,22 +1603,22 @@ java.util.List<OrderLine> lines,
 Money totalAmount,
 OrderStatus status
 ) {
-// [Java 25] Derived Record Creation (with 구문)
+// [withXxx 메서드 패턴] JEP 468 미포함으로 수동 구현 필요
 // [State Change] 상태를 변경한 '새로운' 객체 반환
 public Order markPaid() {
-return this with {
-status = new Paid(java.time.Instant.now());
-};
+    return new Order(id, lines, totalAmount, new Paid(java.time.Instant.now()));
 }
 
     // [Pure Function] 비즈니스 로직
     public Order addItem(OrderLine line) {
         var newLines = new java.util.ArrayList<>(lines);
         newLines.add(line);
-        return this with { 
-            lines = java.util.Collections.unmodifiableList(newLines);
-            totalAmount = totalAmount.add(line.calculateTotal());
-        };
+        return new Order(
+            id,
+            java.util.Collections.unmodifiableList(newLines),
+            totalAmount.add(line.calculateTotal()),
+            status
+        );
     }
 }
 
@@ -1780,7 +1782,7 @@ Sum Type & Exhaustive: OrderStatus (Pending | Paid | Shipped), Switch 문에서 
 
 Immutability: 모든 곳에 record 사용, setter 없음.
 
-State Change & Record With: order.markPaid()에서 this with { ... } 사용 (Java 25).
+State Change: order.markPaid()에서 withXxx 메서드 패턴 사용 (새 객체 반환).
 
 Railway & Either: Result<T>를 사용하여 map, flatMap으로 에러 처리 없이 로직 연결.
 

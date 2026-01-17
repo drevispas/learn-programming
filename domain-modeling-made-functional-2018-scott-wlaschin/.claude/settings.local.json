@@ -6,7 +6,9 @@
       "WebSearch",
       "WebFetch(domain:gemini.google.com)",
       "Bash(mvn:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "WebFetch(domain:www.baeldung.com)",
+      "WebFetch(domain:openjdk.org)"
     ]
   }
 }

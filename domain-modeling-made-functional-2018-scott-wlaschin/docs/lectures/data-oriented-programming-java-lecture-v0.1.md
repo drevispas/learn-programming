@@ -1,13 +1,29 @@
 # Java로 정복하는 데이터 지향 프로그래밍
-## Data-Oriented Programming in Java - 이커머스 실전 교재
+## 참조: Data-Oriented Programming in Java
 
-**대상**: 이커머스 개발자 (회원, 상품, 주문, 결제, 쿠폰 도메인)
+**대상**: 백엔드 자바 개발자
 
 **목표**: 복잡성을 수학적으로 제어하고, 컴파일러에게 검증을 위임하는 견고한 시스템 구축
 
-**도구**: Java 17+ (Record, Sealed Interface, Pattern Matching)
+**도구**: Java 25 (Record, Sealed Interface, Pattern Matching, Record Patterns)
 
 **원전**: *Data-Oriented Programming in Java* by Chris Kiehl
+
+---
+
+## Java 17 → Java 25 DOP 관련 변경 사항
+
+| 버전 | 핵심 기능 | JEP | 상태 | DOP 영향 |
+|------|----------|-----|------|---------|
+| **Java 21** | Record Patterns | 440 | Final | ⭐ 핵심 - 패턴에서 레코드 분해 |
+| **Java 21** | Pattern Matching for switch | 441 | Final | ⭐ 핵심 - switch 표현식 완성 |
+| **Java 21** | Sequenced Collections | 431 | Final | 유용 - `getFirst()`, `getLast()` |
+| **Java 22** | Unnamed Variables & Patterns (`_`) | 456 | Final | 중요 - 사용하지 않는 변수 표시 |
+| **Java 25** | Primitive Types in Patterns | 507 | Preview | 보통 - 기본 타입 패턴 매칭 |
+| **Java 25** | Scoped Values | 506 | Final | 보통 - 불변 컨텍스트 전달 |
+
+> ⚠️ **중요**: JEP 468 (Derived Record Creation / `with` expression)은 Java 25에 **포함되지 않았습니다**.
+> 따라서 Record의 값을 변경한 새 객체를 만들려면 수동 `withXxx()` 메서드가 여전히 필요합니다.
 
 ---
 
@@ -769,6 +785,9 @@ public record Category(
 ### 2.5 값 변경 패턴: with 메서드
 
 불변 객체에서 값을 "변경"하려면 새 객체를 만들어야 합니다.
+
+> 💡 **JEP 468 미포함 안내**: Java 25까지도 `with` expression (Derived Record Creation)은 정식 기능으로
+> 포함되지 않았습니다. 따라서 아래와 같이 수동으로 `withXxx()` 메서드를 작성해야 합니다.
 
 ```java
 public record Order(
@@ -4025,10 +4044,10 @@ public record Order(OrderId id, AppliedCoupon coupon) {}
 
 ## Appendix B: DOP Java 치트시트
 
-### B.1 Record 기본 문법
+### B.1 Record 기본 문법 (Java 16+)
 
 ```java
-// 기본 Record
+// 기본 Record (Java 16+)
 public record Point(int x, int y) {}
 
 // Compact Constructor (검증)
@@ -4047,7 +4066,7 @@ public record UserId(long value) {
     }
 }
 
-// with 패턴
+// with 패턴 (수동 구현 - JEP 468 미포함으로 필수)
 public record Order(OrderId id, OrderStatus status) {
     public Order withStatus(OrderStatus newStatus) {
         return new Order(this.id, newStatus);
@@ -4055,7 +4074,7 @@ public record Order(OrderId id, OrderStatus status) {
 }
 ```
 
-### B.2 Sealed Interface 문법
+### B.2 Sealed Interface 문법 (Java 17+)
 
 ```java
 // 기본 Sealed Interface
@@ -4072,10 +4091,10 @@ sealed interface PaymentStatus {
 }
 ```
 
-### B.3 Pattern Matching
+### B.3 Pattern Matching (Java 21+)
 
 ```java
-// switch expression
+// Record Patterns in switch (Java 21+ JEP 440, 441)
 String describe(Shape shape) {
     return switch (shape) {
         case Circle(var r) -> "원 (반지름: " + r + ")";
@@ -4084,7 +4103,7 @@ String describe(Shape shape) {
     };
 }
 
-// 가드 조건
+// 가드 조건 (Java 21+)
 String categorize(Shape shape) {
     return switch (shape) {
         case Circle(var r) when r > 10 -> "큰 원";
@@ -4094,7 +4113,16 @@ String categorize(Shape shape) {
     };
 }
 
-// instanceof 패턴
+// Unnamed Variables (Java 22+ JEP 456) - 사용하지 않는 변수에 _ 사용
+String getPaymentId(OrderStatus status) {
+    return switch (status) {
+        case Paid(_, var paymentId) -> paymentId;  // 첫 번째 필드는 무시
+        case Unpaid _ -> "N/A";  // 전체 변수를 무시
+        case Shipping _, Delivered _, Cancelled _ -> "N/A";
+    };
+}
+
+// instanceof 패턴 (Java 21+)
 if (status instanceof Completed(var txId)) {
     System.out.println("완료: " + txId);
 }
@@ -4124,21 +4152,57 @@ result
     .flatMap(email -> sendEmail(email));
 ```
 
-### B.5 불변 컬렉션
+### B.5 불변 컬렉션 (Java 9+)
 
 ```java
-// 불변 리스트 생성
+// 불변 리스트 생성 (Java 9+)
 List<String> immutable = List.of("a", "b", "c");
 
-// 기존 리스트를 불변으로 복사
+// 기존 리스트를 불변으로 복사 (Java 10+)
 List<String> copied = List.copyOf(mutableList);
 
-// 불변 맵
+// 불변 맵 (Java 9+)
 Map<String, Integer> map = Map.of("a", 1, "b", 2);
 
-// 불변 Set
+// 불변 Set (Java 9+)
 Set<String> set = Set.of("x", "y", "z");
+
+// Sequenced Collections (Java 21+ JEP 431)
+List<String> list = List.of("a", "b", "c");
+String first = list.getFirst();  // "a"
+String last = list.getLast();    // "c"
+List<String> reversed = list.reversed();  // ["c", "b", "a"]
 ```
+
+### B.6 Java 25 DOP 기능
+
+```java
+// Primitive Types in Patterns (Java 25 Preview - JEP 507)
+// --enable-preview 플래그 필요
+int categorize(Object obj) {
+    return switch (obj) {
+        case Integer i when i > 0 -> 1;
+        case Integer i when i < 0 -> -1;
+        case Integer _ -> 0;
+        default -> throw new IllegalArgumentException();
+    };
+}
+
+// Scoped Values (Java 25+ JEP 506) - 불변 컨텍스트 전달
+// ThreadLocal 대신 불변 값 전달에 적합
+static final ScopedValue<User> CURRENT_USER = ScopedValue.newInstance();
+
+void processRequest(User user) {
+    ScopedValue.runWhere(CURRENT_USER, user, () -> {
+        // 이 스코프 내에서 CURRENT_USER.get()으로 접근 가능
+        handleRequest();
+    });
+}
+```
+
+> ⚠️ **JEP 468 (Derived Record Creation) 미포함 안내**:
+> `with` expression (`record with { field = value; }`)은 Java 25에 포함되지 않았습니다.
+> Record 필드 변경 시 수동 `withXxx()` 메서드 또는 생성자를 사용하세요.
 
 ---
 

@@ -5,7 +5,7 @@
 
 **목표**: 컴파일 타임에 버그를 잡는 견고한 시스템 구축
 
-**도구**: Java 25 (Record, Sealed Interface, Pattern Matching, `with` 구문 *Preview*)
+**도구**: Java 25 (Record, Sealed Interface, Pattern Matching, Record Patterns)
 
 ---
 
@@ -292,40 +292,27 @@ public record OrderAmount(BigDecimal value) {}
 - `getter`, `equals`, `hashCode`, `toString` 자동 생성
 - Setter는 없음 (값을 바꾸려면 새 객체 생성)
 
-#### `with` 구문으로 상태 변경 (Java 25 Preview)
+#### `withXxx` 메서드로 상태 변경 (Java 17+)
 
-Java 25의 **Derived Record Creation (JEP 468)** `with` 구문을 사용하면 불변성을 유지하면서도 직관적으로 "상태를 변경"할 수 있습니다.
+불변 Record에서 값을 "변경"하려면 새 객체를 생성해야 합니다. 수동으로 `withXxx()` 메서드를 구현합니다.
 
-> ⚠️ **주의**: `with` 구문은 **Preview Feature**입니다. 컴파일 시 `--enable-preview` 플래그가 필요하며, 정식 출시 전 변경될 수 있습니다. 프로덕션 환경에서는 아래의 대안 코드를 권장합니다.
+> ⚠️ **JEP 468 미포함 안내**: Derived Record Creation (`with` expression)은 Java 25에 **포함되지 않았습니다**.
+> 따라서 아래와 같이 수동으로 `withXxx()` 메서드를 작성해야 합니다.
 
 ```java
 public record Order(OrderId id, OrderStatus status, Money total) {
     // 상태를 변경한 "새로운" 주문 객체 반환
-    public Order withStatus(OrderStatus newStatus) {
-        return this with { status = newStatus; };  // Preview
-    }
-}
-
-// 사용
-Order unpaidOrder = new Order(orderId, OrderStatus.UNPAID, amount);
-Order paidOrder = unpaidOrder with { status = OrderStatus.PAID; };
-
-// unpaidOrder는 여전히 UNPAID (불변!)
-// paidOrder는 새로운 객체로 PAID
-```
-
-**대안: Preview 없이 사용하는 방법 (Java 17+)**
-
-```java
-public record Order(OrderId id, OrderStatus status, Money total) {
-    // 수동으로 with 메서드 구현
     public Order withStatus(OrderStatus newStatus) {
         return new Order(this.id, newStatus, this.total);
     }
 }
 
 // 사용
+Order unpaidOrder = new Order(orderId, OrderStatus.UNPAID, amount);
 Order paidOrder = unpaidOrder.withStatus(OrderStatus.PAID);
+
+// unpaidOrder는 여전히 UNPAID (불변!)
+// paidOrder는 새로운 객체로 PAID
 ```
 
 > ⚠️ **흔한 실수**: "Entity는 상태가 변하니까 mutable이어야 하지 않나?"
@@ -335,7 +322,7 @@ Order paidOrder = unpaidOrder.withStatus(OrderStatus.PAID);
 > 하지만 **ID(주민등록번호)**가 같으니 같은 사람으로 취급합니다.
 >
 > ```java
-> Person olderMe = youngMe with { age = 20; };
+> Person olderMe = youngMe.withAge(20);  // withAge() 메서드로 새 객체 생성
 > // youngMe와 olderMe가 동시에 존재! 시간 여행 가능!
 > ```
 
@@ -2697,7 +2684,8 @@ public record Order(
         if (!(status instanceof Unpaid || status instanceof Paid)) {
             throw new IllegalStateException("취소 불가능한 상태");
         }
-        return this with { status = new Cancelled(LocalDateTime.now(), reason); };
+        return new Order(id, customerId, lines, totalAmount,
+                        new Cancelled(LocalDateTime.now(), reason));
     }
 }
 
@@ -3505,9 +3493,9 @@ public record Money(BigDecimal amount) {
     public Money add(Money o) { return new Money(amount.add(o.amount)); }
 }
 
-// Java 25 with 구문 (Derived Record Creation)
+// withXxx 메서드로 상태 변경 (JEP 468 미포함으로 수동 구현 필요)
 Order oldOrder = new Order(id, status, total);
-Order newOrder = oldOrder with { status = OrderStatus.PAID; };
+Order newOrder = oldOrder.withStatus(OrderStatus.PAID);
 ```
 
 ### Sealed Interface (Sum Type)
@@ -3720,9 +3708,10 @@ void register(User user)    // User 타입이면 이미 검증 완료
 - Java 버전: 21+ (Record, Sealed Interface, Pattern Matching 사용)
 
 > 📝 **Java 버전 참고사항**:
-> - **Java 21+**: Record, Sealed Interface, Pattern Matching 정식 지원
-> - **Java 25 Preview**: `with` 구문 (JEP 468) - `--enable-preview` 플래그 필요
-> - 샘플 프로젝트는 Java 21+로 실행 가능하며, `with` 구문 대신 수동 `withXxx()` 메서드를 사용합니다
+> - **Java 21+**: Record, Sealed Interface, Pattern Matching, Record Patterns 정식 지원
+> - **Java 22+**: Unnamed Variables & Patterns (`_`) 정식 지원 (JEP 456)
+> - **Java 25**: JEP 468 (`with` 구문)은 **포함되지 않았습니다** - 수동 `withXxx()` 메서드 필요
+> - 샘플 프로젝트는 Java 21+로 실행 가능하며, 수동 `withXxx()` 메서드를 사용합니다
 
 샘플에는 다음이 포함됩니다:
 - `Money`, `OrderLine`, `ValidatedOrder` 등 핵심 도메인 타입
