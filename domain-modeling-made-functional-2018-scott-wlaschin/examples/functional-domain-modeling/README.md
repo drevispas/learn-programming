@@ -9,7 +9,7 @@
 ## 빌드 및 테스트
 
 ```bash
-mvn -q -f docs/samples/functional-domain-modeling/pom.xml test
+mvn -q -f examples/functional-domain-modeling/pom.xml test
 ```
 
 ## 프로젝트 구조

@@ -3727,8 +3727,8 @@ void register(User user)    // User 타입이면 이미 검증 완료
 
 실제 컴파일 가능한 예제를 보고 싶다면 아래 샘플 프로젝트를 참고하세요.
 
-- 경로: `docs/samples/functional-domain-modeling`
-- 빌드: `mvn -q -f docs/samples/functional-domain-modeling/pom.xml test`
+- 경로: `examples/functional-domain-modeling`
+- 빌드: `mvn -q -f examples/functional-domain-modeling/pom.xml test`
 - Java 버전: 21+ (Record, Sealed Interface, Pattern Matching 사용)
 
 > 📝 **Java 버전 참고사항**:
