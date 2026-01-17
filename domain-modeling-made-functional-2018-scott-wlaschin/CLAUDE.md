@@ -37,7 +37,7 @@ cd examples/functional-domain-modeling
 docs/lectures/           # Lecture documents (Korean)
 examples/functional-domain-modeling/
   src/main/java/com/ecommerce/
-    sample/              # Educational pattern examples
+    sample/              # Educational pattern examples (start here)
     domain/              # Bounded contexts (order, member, product, payment, coupon)
     application/         # Use cases (imperative shell)
     shared/              # Cross-cutting types (Result, Validation, Money)
@@ -72,7 +72,7 @@ Email<Verified> verify(Email<Unverified> email);
 
 **Wither Pattern**: Immutable object modification via `withXxx()` methods on records.
 
-**Validation**: Applicative functor in `Validation.java` for collecting all errors rather than fail-fast.
+**Validation**: Applicative functor in `Validation.java` for collecting all errors rather than fail-fast. Use `Validation.combine4()` to collect all validation errors at once.
 
 ### Error Handling Convention
 - Business logic uses `Result<S, F>` - no exceptions for expected failures
@@ -81,6 +81,15 @@ Email<Verified> verify(Email<Unverified> email);
 
 ## Key Entry Points
 
-- `sample/` package: Start here to understand individual patterns
-- `PlaceOrderUseCase.java`: Full workflow integrating all patterns
-- `WorkflowTest.java`: Tests demonstrating complete order flow
+**Individual Patterns** (`sample/` package):
+- `Member.java` - Wither pattern for immutable updates
+- `DomainTypes.java` - Value Objects with compact constructor validation
+- `SumTypes.java` - Sum types (PaymentMethod, OrderStatus, CouponType)
+- `PhantomTypes.java` - Compile-time state enforcement
+- `OrderStateMachine.java` - State machine with type-safe transitions
+- `Result.java` / `Validation.java` - ROP and error accumulation
+
+**Full Workflow**:
+- `PlaceOrderUseCase.java` - Complete workflow integrating all patterns
+- `WorkflowTest.java` - Tests demonstrating end-to-end order flow
+- `OrderDomainService.java` - Pure domain logic extraction
