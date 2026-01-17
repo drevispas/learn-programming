@@ -54,12 +54,17 @@ public sealed interface EmailVerification
          * @return 성공 시 VerifiedEmail, 실패 시 EmailError
          */
         public Result<VerifiedEmail, EmailError> verify(String inputCode) {
+            // Step 1: 만료 시간 검사
             if (LocalDateTime.now().isAfter(expiresAt)) {
                 return Result.failure(new EmailError.CodeExpired());
             }
+            // Step 2: 인증 코드 일치 여부 확인
             if (!verificationCode.equals(inputCode)) {
                 return Result.failure(new EmailError.InvalidCode());
             }
+            // Step 3: 상태 전환 (Unverified → Verified)
+            // [State Transition] 반환 타입이 VerifiedEmail - 상태 전환이 타입으로 표현됨
+            // [Key Point] UnverifiedEmail에서만 verify() 호출 가능 - VerifiedEmail에는 이 메서드 없음
             return Result.success(new VerifiedEmail(email, LocalDateTime.now()));
         }
 

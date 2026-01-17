@@ -65,6 +65,9 @@ import java.util.List;
  *
  * 왜 String인가? 외부 입력은 항상 원시 타입으로 받고, 검증 후 도메인 타입으로 변환.
  */
+// [Type-safe State Machine] 상태 전환 흐름:
+// UnvalidatedOrder → validate() → ValidatedOrder → ... → UnpaidOrder → pay() → PaidOrder
+// [Type Enforcement] 각 상태가 별도 타입이라 잘못된 전환 불가능
 record UnvalidatedOrder(
     String customerId,
     List<UnvalidatedOrderLine> lines,
@@ -168,6 +171,9 @@ record UnpaidOrder(
      * 결제 수행 - 결제 기한 검증 후 PaidOrder로 전이
      * 반환 타입이 Result이므로 호출자는 실패 케이스를 반드시 처리해야 함
      */
+    // [Input Type] UnpaidOrder만 받음 - 컴파일 타임 상태 제약
+    // [Output Type] PaidOrder 반환 - 타입으로 상태 전환 표현
+    // [Illegal State] PaidOrder.pay() 같은 잘못된 호출은 컴파일 불가
     public Result<PaidOrder, OrderError> pay(
         PaymentMethod paymentMethod,
         PaymentGateway gateway
@@ -224,6 +230,8 @@ record PaidOrder(
     PaymentMethod paymentMethod,
     String transactionId
 ) {
+    // [Input Type] PaidOrder만 받음 - 미결제 주문은 배송 시작 불가 (컴파일 에러)
+    // [Output Type] ShippingOrder - 상태 전환이 타입으로 표현됨
     /** 배송 시작 - 항상 성공하므로 Result 없이 바로 ShippingOrder 반환 */
     public ShippingOrder startShipping(String trackingNumber) {
         return new ShippingOrder(
@@ -269,7 +277,8 @@ record ShippingOrder(
     String trackingNumber,
     LocalDateTime shippedAt
 ) {
-    // completeDelivery()만 호출 가능 - 취소 불가
+    // [State Constraint] completeDelivery()만 호출 가능 - cancel() 없음
+    // [Type Enforcement] ShippingOrder에 cancel() 메서드 자체가 없어 취소 시도 불가
     public DeliveredOrder completeDelivery() {
         return new DeliveredOrder(
             orderId,
@@ -288,6 +297,7 @@ record ShippingOrder(
 /**
  * 배송 완료 주문 - 최종 상태
  */
+// [Final State] 상태 전이 메서드 없음 - 더 이상 변경 불가
 record DeliveredOrder(
     OrderId orderId,
     CustomerId customerId,
@@ -298,13 +308,14 @@ record DeliveredOrder(
     String trackingNumber,
     LocalDateTime deliveredAt
 ) {
-    // 더 이상 상태 전이 불가 - 최종 상태
+    // [Terminal State] 메서드 없음 = 상태 전이 불가능 = 컴파일 타임 보장
 }
 
 
 /**
  * 취소된 주문 - 최종 상태
  */
+// [Final State] 상태 전이 메서드 없음 - 더 이상 변경 불가
 record CancelledOrder(
     OrderId orderId,
     CustomerId customerId,
@@ -313,7 +324,7 @@ record CancelledOrder(
     CancelReason reason,
     RefundInfo refundInfo  // null이면 환불 없음 (미결제 취소)
 ) {
-    // 더 이상 상태 전이 불가 - 최종 상태
+    // [Terminal State] 메서드 없음 = 상태 전이 불가능 = 컴파일 타임 보장
 }
 
 record RefundInfo(String originalTransactionId, Money refundAmount, LocalDateTime refundedAt) {}

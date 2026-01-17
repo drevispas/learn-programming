@@ -51,7 +51,10 @@ public record Coupon(
      * @return 성공 시 UsedCoupon, 실패 시 CouponError
      */
     public Result<UsedCoupon, CouponError> use(OrderId orderId, Money orderAmount) {
-        // 1. 쿠폰 상태 확인
+        // [Multi-stage Validation] 여러 검증을 순차적으로 수행
+        // 각 단계가 실패하면 즉시 Result.failure 반환 (fail-fast)
+
+        // Stage 1: 쿠폰 상태 확인 - Issued 상태만 사용 가능
         if (!(status instanceof CouponStatus.Issued issued)) {
             return switch (status) {
                 case CouponStatus.Used u -> Result.failure(new CouponError.AlreadyUsed(id));
@@ -60,20 +63,21 @@ public record Coupon(
             };
         }
 
-        // 2. 유효기간 확인
+        // Stage 2: 유효기간 확인
         if (issued.isExpired()) {
             return Result.failure(new CouponError.Expired(id));
         }
 
-        // 3. 최소 주문 금액 확인
+        // Stage 3: 최소 주문 금액 충족 확인
         if (orderAmount.isLessThan(minOrderAmount)) {
             return Result.failure(new CouponError.MinOrderNotMet(minOrderAmount, orderAmount));
         }
 
-        // 4. 할인 금액 계산
+        // Stage 4: 할인 금액 계산 (CouponType이 정액/정률/무료배송 구분)
         Money discount = type.calculateDiscount(orderAmount);
 
-        // 5. 쿠폰 상태 변경 (사용됨)
+        // Stage 5: 쿠폰 상태 변경 (Issued → Used)
+        // [Immutable] 기존 Coupon은 불변, 새 인스턴스 생성
         Coupon usedCoupon = new Coupon(
             id,
             code,

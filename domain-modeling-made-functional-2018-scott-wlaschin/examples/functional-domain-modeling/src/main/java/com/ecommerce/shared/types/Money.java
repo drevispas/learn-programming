@@ -50,6 +50,8 @@ public record Money(BigDecimal amount, Currency currency) {
      * 생성 시점에 불변식을 강제하므로 이후 모든 코드에서 Money는 항상 유효하다.
      */
     public Money {
+        // [Invariant] 생성 시점에 불변식 검증 - 유효하지 않은 상태 불가능
+        // [Make Illegal States Unrepresentable] null 또는 음수 금액은 존재할 수 없음
         Objects.requireNonNull(amount);
         Objects.requireNonNull(currency);
         if (amount.compareTo(BigDecimal.ZERO) < 0) {
@@ -72,7 +74,10 @@ public record Money(BigDecimal amount, Currency currency) {
      * Value Object의 핵심 특성 - 상태 변경 없이 새 값 생성
      */
     public Money add(Money other) {
+        // [Currency Check] 통화 일치 확인 - 다르면 예외
         requireSameCurrency(other);
+        // [Immutable] this 변경 없이 새 Money 반환
+        // [Value Object] 동등성은 값으로 판단 (record가 equals/hashCode 자동 구현)
         return new Money(this.amount.add(other.amount), this.currency);
     }
 
@@ -83,6 +88,7 @@ public record Money(BigDecimal amount, Currency currency) {
     public Money subtract(Money other) {
         requireSameCurrency(other);
         BigDecimal result = this.amount.subtract(other.amount);
+        // [Invariant 유지] 음수 방지를 위해 max(0) 적용 - 불변식 보존
         return new Money(result.max(BigDecimal.ZERO), this.currency);
     }
 

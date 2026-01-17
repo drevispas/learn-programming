@@ -73,8 +73,10 @@ public sealed interface Result<S, F> permits Result.Success, Result.Failure {
      */
     default <NewS> Result<NewS, F> map(Function<S, NewS> mapper) {
         return switch (this) {
+            // [Key Point] Success 트랙: 함수를 적용하고 새 Success로 감싸기
             case Success<S, F> s -> Result.success(mapper.apply(s.value()));
-            case Failure<S, F> f -> (Result<NewS, F>) f;  // Failure는 그대로 전파
+            // [Key Point] Failure 트랙: 에러를 그대로 전달 (함수 적용 안 함)
+            case Failure<S, F> f -> (Result<NewS, F>) f;
         };
     }
 
@@ -89,8 +91,10 @@ public sealed interface Result<S, F> permits Result.Success, Result.Failure {
      */
     default <NewS> Result<NewS, F> flatMap(Function<S, Result<NewS, F>> mapper) {
         return switch (this) {
-            case Success<S, F> s -> mapper.apply(s.value());  // 다음 단계 실행
-            case Failure<S, F> f -> (Result<NewS, F>) f;       // 바로 Failure 전파
+            // [Key Point] Success 트랙: 함수가 이미 Result를 반환하므로 unwrap만 (이중 감싸기 방지)
+            case Success<S, F> s -> mapper.apply(s.value());
+            // [Key Point] Failure 트랙: 첫 번째 실패에서 즉시 단락(short-circuit)
+            case Failure<S, F> f -> (Result<NewS, F>) f;
         };
     }
 
@@ -102,7 +106,9 @@ public sealed interface Result<S, F> permits Result.Success, Result.Failure {
      */
     default <NewF> Result<S, NewF> mapError(Function<F, NewF> mapper) {
         return switch (this) {
+            // [Key Point] Success 트랙: 값 그대로 유지 (에러 변환 필요 없음)
             case Success<S, F> s -> (Result<S, NewF>) s;
+            // [Key Point] Failure 트랙: 에러 타입 변환 (ACL 패턴에서 Bounded Context 간 에러 통합에 활용)
             case Failure<S, F> f -> Result.failure(mapper.apply(f.error()));
         };
     }

@@ -96,8 +96,11 @@ public class PlaceOrderUseCase {
      * 부수효과와 순수 로직이 번갈아 실행되는 구조에 주목.
      */
     public Result<OrderPlaced, PlaceOrderError> execute(PlaceOrderCommand command) {
+        // [FC/IS 패턴] Imperative Shell이 I/O 조율, Functional Core는 순수 로직만 담당
+        // I/O → PURE → I/O → PURE 패턴으로 부수효과와 순수 로직이 번갈아 실행됨
+
         // ========================================
-        // 1. 회원 조회 [부수효과: Repository I/O]
+        // 1. [I/O] 회원 조회 - Repository 호출 (부수효과)
         // ========================================
         Optional<Member> memberOpt = memberRepository.findById(new MemberId(command.customerId()));
         if (memberOpt.isEmpty()) {
@@ -108,7 +111,7 @@ public class PlaceOrderUseCase {
         Member member = memberOpt.get();
 
         // ========================================
-        // 2. 상품 조회 및 재고 확인 [부수효과]
+        // 2. [I/O] 상품 조회 및 재고 확인 - Repository 호출 (부수효과)
         // ========================================
         Result<List<OrderLineWithProduct>, PlaceOrderError> lineResult = prepareOrderLines(command.items());
         if (lineResult.isFailure()) {
@@ -120,7 +123,7 @@ public class PlaceOrderUseCase {
             .toList();
 
         // ========================================
-        // 3. 쿠폰 조회 및 검증 [부수효과]
+        // 3. [I/O] 쿠폰 조회 및 검증 - Repository 호출 (부수효과)
         // ========================================
         UsedCoupon usedCoupon = null;
         if (command.couponCode() != null && !command.couponCode().isBlank()) {
@@ -135,8 +138,8 @@ public class PlaceOrderUseCase {
         }
 
         // ========================================
-        // 4. 가격 계산 [순수 로직: Functional Core]
-        //    → Mock 없이 단위 테스트 가능
+        // 4. [PURE] 가격 계산 - DomainService 호출 (순수 함수)
+        //    → Mock 없이 단위 테스트 가능: 입력/출력만으로 검증
         // ========================================
         OrderDomainService.PricingResult pricing = usedCoupon != null
             ? domainService.calculatePricing(orderLines, member, usedCoupon.coupon().type())
@@ -152,7 +155,7 @@ public class PlaceOrderUseCase {
         );
 
         // ========================================
-        // 6. 결제 처리 [부수효과: 외부 API]
+        // 6. [I/O] 결제 처리 - PaymentGateway 호출 (외부 API, 부수효과)
         // ========================================
         Result<String, PaymentError> paymentResult = paymentGateway.charge(
             pricing.totalAmount(),
@@ -164,7 +167,7 @@ public class PlaceOrderUseCase {
         String transactionId = paymentResult.value();
 
         // ========================================
-        // 7. 주문 생성 [순수 로직]
+        // 7. [PURE] 주문 생성 - DomainService 호출 (순수 함수)
         // ========================================
         Order order = domainService.createOrder(
             new CustomerId(command.customerId()),
@@ -174,7 +177,7 @@ public class PlaceOrderUseCase {
             pricing.shippingFee()
         );
 
-        // 8. 결제 완료 처리
+        // 8. [PURE] 결제 완료 처리 - Order 상태 전이 (순수 함수)
         Result<Order, com.ecommerce.domain.order.OrderError> paidResult = order.pay(
             command.paymentMethod(),
             transactionId
@@ -184,7 +187,7 @@ public class PlaceOrderUseCase {
         }
         Order paidOrder = paidResult.value();
 
-        // 9. 재고 차감
+        // 9. [I/O] 재고 차감 - Repository 호출 (부수효과)
         for (OrderLineWithProduct lwp : linesWithProducts) {
             Result<InventoryProduct, ProductError> reduceResult = lwp.inventory()
                 .reduceStock(lwp.orderLine().quantity().value());
@@ -195,15 +198,16 @@ public class PlaceOrderUseCase {
             productRepository.saveInventoryProduct(reduceResult.value());
         }
 
-        // 10. 쿠폰 사용 처리
+        // 10. [I/O] 쿠폰 사용 처리 - Repository 호출 (부수효과)
         if (usedCoupon != null) {
             couponRepository.save(usedCoupon.coupon());
         }
 
-        // 11. 주문 저장
+        // 11. [I/O] 주문 저장 - Repository 호출 (부수효과)
         Order savedOrder = orderRepository.save(paidOrder);
 
-        // 12. 이벤트 생성
+        // 12. [PURE] 이벤트 생성 - 도메인 이벤트 생성 (순수 함수)
+        // [FC/IS Summary] Imperative Shell은 I/O만 담당, 비즈니스 로직은 Functional Core
         return Result.success(OrderPlaced.from(savedOrder));
     }
 

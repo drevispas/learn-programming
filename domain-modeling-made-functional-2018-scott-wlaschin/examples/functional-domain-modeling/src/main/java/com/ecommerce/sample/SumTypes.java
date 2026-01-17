@@ -58,6 +58,8 @@ import java.time.LocalDateTime;
  * 각 variant가 필요한 데이터만 정의하여 "유효하지 않은 상태" 자체를 불가능하게 만든다.
  * 예: 카드 결제에는 cardNumber가 필요하지만, 포인트 결제에는 불필요.
  */
+// [Sum Type] permits로 가능한 타입 완전 열거 - 4가지 결제 수단만 허용
+// [Exhaustive] 컴파일러가 switch에서 모든 케이스 처리 강제
 sealed interface PaymentMethod
     permits PaymentMethod.CreditCard, PaymentMethod.BankTransfer,
             PaymentMethod.Points, PaymentMethod.SimplePay {
@@ -148,10 +150,13 @@ enum SimplePayProvider { KAKAO, NAVER, TOSS }
  * }
  * }</pre>
  */
+// [Sum Type] 5개 상태 중 정확히 하나 - 잘못된 상태 조합 불가능
+// [Pattern Matching] switch에서 타입과 함께 데이터 추출 가능
 sealed interface OrderStatus
     permits OrderStatus.Unpaid, OrderStatus.Paid,
             OrderStatus.Shipping, OrderStatus.Delivered, OrderStatus.Cancelled {
 
+    // [Key Point] 각 상태가 필요한 데이터만 보유 - 상태별 데이터 불일치 불가능
     record Unpaid(LocalDateTime paymentDeadline) implements OrderStatus {}
 
     record Paid(
@@ -185,6 +190,8 @@ enum CancelReason {
 
 // === 쿠폰 타입 (Coupon Type) ===
 // 쿠폰은 정액 할인 OR 정률 할인 OR 무료 배송
+// [Sum Type] 3가지 쿠폰 유형만 허용 - 새 유형 추가 시 컴파일러가 모든 처리 로직 검증
+// [No default] exhaustive switch - 새 타입 추가 시 컴파일 에러로 누락 방지
 sealed interface CouponType
     permits CouponType.FixedAmountDiscount, CouponType.PercentageDiscount,
             CouponType.FreeShipping {

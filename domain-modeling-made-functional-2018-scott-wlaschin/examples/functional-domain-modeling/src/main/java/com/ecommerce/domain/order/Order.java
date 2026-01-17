@@ -59,14 +59,18 @@ public record Order(
      * 결제 처리
      */
     public Result<Order, OrderError> pay(PaymentMethod method, String transactionId) {
+        // Step 1: 현재 상태가 Unpaid인지 확인 (패턴 매칭으로 상태 검사 + 변수 바인딩)
         if (!(status instanceof OrderStatus.Unpaid unpaid)) {
             return Result.failure(new OrderError.CannotCancel(id, "이미 결제되었거나 취소된 주문입니다"));
         }
 
+        // Step 2: 결제 기한 만료 여부 확인
         if (unpaid.isExpired()) {
             return Result.failure(new OrderError.PaymentDeadlineExceeded(id));
         }
 
+        // Step 3: Paid 상태로 전환 + 결제 시각 기록
+        // [Why record] 기존 Order는 불변이므로 새 Order 인스턴스 생성
         Order paidOrder = new Order(
             id, customerId, lines, shippingAddress,
             subtotal, discount, shippingFee, totalAmount,
@@ -111,7 +115,9 @@ public record Order(
      * 주문 취소
      */
     public Result<Order, OrderError> cancel(CancelReason reason) {
+        // [Pattern] 패턴 매칭으로 상태별 분기 - 컴파일러가 모든 케이스 처리 검증 (exhaustive)
         return switch (status) {
+            // Step 1: Unpaid 상태 - 환불 없이 즉시 취소 가능
             case OrderStatus.Unpaid u -> {
                 Order cancelled = new Order(
                     id, customerId, lines, shippingAddress,
@@ -120,11 +126,12 @@ public record Order(
                 );
                 yield Result.success(cancelled);
             }
+            // Step 2: Paid 상태 - 24시간 이내만 취소 가능, 환불 정보 포함
             case OrderStatus.Paid p -> {
-                // 결제 완료 후 24시간 이내만 취소 가능
                 if (p.paidAt().plusHours(24).isBefore(LocalDateTime.now())) {
                     yield Result.failure(new OrderError.CannotCancel(id, "결제 후 24시간이 지나 취소할 수 없습니다"));
                 }
+                // [Key Point] Paid 상태에서만 환불 정보 생성 (Unpaid는 환불 불필요)
                 RefundInfo refundInfo = new RefundInfo(p.transactionId(), totalAmount, LocalDateTime.now());
                 Order cancelled = new Order(
                     id, customerId, lines, shippingAddress,
@@ -133,6 +140,7 @@ public record Order(
                 );
                 yield Result.success(cancelled);
             }
+            // Step 3: 취소 불가 상태들 - 명확한 에러 메시지 반환
             case OrderStatus.Shipping s ->
                 Result.failure(new OrderError.CannotCancel(id, "배송 중인 주문은 취소할 수 없습니다"));
             case OrderStatus.Delivered d ->

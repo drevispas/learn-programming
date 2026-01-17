@@ -83,14 +83,18 @@ public sealed interface Validation<S, E> permits Validation.Valid, Validation.In
         Validation<B, List<E>> vb,
         BiFunction<A, B, C> combiner
     ) {
+        // [Difference] flatMap은 첫 실패에서 멈추지만, combine은 모든 에러 수집
         return switch (va) {
             case Valid<A, List<E>> a -> switch (vb) {
+                // [Key Point] 둘 다 성공이면 combiner로 결과 조합
                 case Valid<B, List<E>> b -> new Valid<>(combiner.apply(a.value(), b.value()));
+                // [Key Point] 하나만 실패면 해당 에러 반환
                 case Invalid<B, List<E>> b -> new Invalid<>(b.errors());
             };
             case Invalid<A, List<E>> a -> switch (vb) {
+                // [Key Point] 하나만 실패면 해당 에러 반환
                 case Valid<B, List<E>> b -> new Invalid<>(a.errors());
-                // 핵심: 두 에러 리스트를 합침 - fail-fast가 아닌 accumulating
+                // [Key Point] 둘 다 실패면 에러 리스트 합치기 (누적!)
                 case Invalid<B, List<E>> b -> {
                     List<E> errors = new ArrayList<>(a.errors());
                     errors.addAll(b.errors());
@@ -100,6 +104,7 @@ public sealed interface Validation<S, E> permits Validation.Valid, Validation.In
         };
     }
 
+    // [Key Point] 3개 이상 결합: combine을 재귀적으로 적용 (Pair로 중간 결과 묶기)
     /** 3개 검증 결과 결합. 내부적으로 combine을 재귀 사용 */
     static <A, B, C, R, E> Validation<R, List<E>> combine3(
         Validation<A, List<E>> va,
@@ -141,6 +146,7 @@ public sealed interface Validation<S, E> permits Validation.Valid, Validation.In
         Function<S, R> onValid,
         Function<E, R> onInvalid
     ) {
+        // [Key Point] fold로 패턴 매칭: 성공/실패 각각의 처리 로직을 람다로 전달
         return switch (this) {
             case Valid<S, E> v -> onValid.apply(v.value());
             case Invalid<S, E> i -> onInvalid.apply(i.errors());

@@ -55,6 +55,9 @@ public class OrderDomainService {
      * 소계 계산
      */
     public Money calculateSubtotal(List<OrderLine> lines) {
+        // [Pure Function] 입력만으로 출력 결정, 외부 상태 참조 없음
+        // [Testability] Mock 없이 값만으로 테스트 가능
+        // [Composition] reduce로 함수 합성 - 각 OrderLine의 subtotal을 누적
         return lines.stream()
             .map(OrderLine::subtotal)
             .reduce(Money.ZERO, Money::add);
@@ -109,6 +112,8 @@ public class OrderDomainService {
         Money discount,
         Money shippingFee
     ) {
+        // [Pure Function] 입력 데이터로 새 Order 생성
+        // [Immutable] 생성된 Order는 불변 - 상태 변경 시 새 인스턴스 생성
         return Order.create(
             OrderId.generate(),
             customerId,
@@ -140,11 +145,14 @@ public class OrderDomainService {
         Member member,
         CouponType couponType
     ) {
+        // [Pure Function Composition] 여러 순수 함수를 합성하여 최종 결과 계산
+        // 각 단계가 순수 함수이므로 전체도 순수 함수
         Money subtotal = calculateSubtotal(lines);
         Money gradeDiscount = calculateGradeDiscount(subtotal, member.grade());
         Money couponDiscount = couponType != null
             ? calculateCouponDiscount(subtotal, couponType)
             : Money.ZERO;
+        // [Immutable] Money.add()는 새 Money 반환, 원본 불변
         Money totalDiscount = gradeDiscount.add(couponDiscount);
         Money shippingFee = calculateShippingFee(subtotal, member);
         Money totalAmount = calculateTotalAmount(subtotal, totalDiscount, shippingFee);
