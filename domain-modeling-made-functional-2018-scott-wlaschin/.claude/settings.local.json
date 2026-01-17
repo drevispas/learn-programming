@@ -15,7 +15,8 @@
       "Bash(git -C /Users/yonggeon.kim/repos/drevispas/learn-programming/domain-modeling-made-functional-2018-scott-wlaschin log --oneline -5)",
       "Bash(git -C /Users/yonggeon.kim/repos/drevispas/learn-programming/domain-modeling-made-functional-2018-scott-wlaschin add:*)",
       "Bash(git -C /Users/yonggeon.kim/repos/drevispas/learn-programming/domain-modeling-made-functional-2018-scott-wlaschin commit -m \"$\\(cat <<''EOF''\ndocs: add comprehensive Javadoc for functional domain modeling patterns\n\nAdd Korean documentation with English technical terms covering:\n- Railway-Oriented Programming \\(Result, Validation\\)\n- Sum Types and State Machine patterns\n- Functional Core / Imperative Shell architecture\n- Value Objects with invariants\n- Bounded Context separation \\(Display/Inventory/Settlement\\)\n- Domain Error modeling\n- Persistence Ignorance and Repository patterns\n\nEach doc includes Purpose, Key Concept, and Takeaway sections\nwith chapter references from the book.\nEOF\n\\)\")",
-      "Bash(gradle wrapper:*)"
+      "Bash(gradle wrapper:*)",
+      "Bash(git push:*)"
     ]
   }
 }
