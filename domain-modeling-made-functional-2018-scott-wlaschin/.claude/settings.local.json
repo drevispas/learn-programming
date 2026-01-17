@@ -8,7 +8,8 @@
       "Bash(mvn:*)",
       "Bash(git mv:*)",
       "WebFetch(domain:www.baeldung.com)",
-      "WebFetch(domain:openjdk.org)"
+      "WebFetch(domain:openjdk.org)",
+      "Skill(commit)"
     ]
   }
 }
