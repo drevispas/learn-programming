@@ -14,8 +14,37 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 주문 도메인 서비스 (Functional Core)
- * 순수 비즈니스 로직만 포함, 부수효과 없음
+ * 주문 도메인 서비스 - Functional Core (Chapter 9)
+ *
+ * <h2>목적 (Purpose)</h2>
+ * 순수 비즈니스 로직만 포함한다. 외부 의존성(Repository, Gateway 등)이 없으며,
+ * 모든 메서드가 입력 → 출력만 있는 순수 함수다.
+ *
+ * <h2>핵심 개념 (Key Concept): 순수 함수의 이점</h2>
+ * <ul>
+ *   <li><b>테스트 용이성</b>: Mock 객체 없이 입력/출력만으로 테스트</li>
+ *   <li><b>예측 가능성</b>: 동일 입력에 항상 동일 출력 (참조 투명성)</li>
+ *   <li><b>병렬 처리 안전</b>: 상태 변경 없으므로 동시성 문제 없음</li>
+ * </ul>
+ *
+ * <h2>얻어갈 것 (Takeaway)</h2>
+ * <pre>{@code
+ * // 단위 테스트 - Mock 불필요, 입력/출력만 검증
+ * @Test
+ * void calculateSubtotal_shouldSumAllLines() {
+ *     var service = new OrderDomainService();
+ *     var lines = List.of(
+ *         new OrderLine(..., new Quantity(2), Money.krw(1000)),
+ *         new OrderLine(..., new Quantity(3), Money.krw(2000))
+ *     );
+ *
+ *     Money result = service.calculateSubtotal(lines);
+ *
+ *     assertEquals(Money.krw(8000), result);  // 2*1000 + 3*2000
+ * }
+ * }</pre>
+ *
+ * @see PlaceOrderUseCase Imperative Shell - 외부 의존성 조율
  */
 public class OrderDomainService {
 

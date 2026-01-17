@@ -3,8 +3,10 @@ package com.ecommerce.domain.coupon;
 import com.ecommerce.shared.types.Money;
 
 /**
- * 쿠폰 도메인 에러
- * sealed interface로 모든 에러 케이스 처리 강제
+ * 쿠폰 도메인 에러 - Sum Type으로 에러 모델링 (Chapter 6)
+ *
+ * 쿠폰 사용 관련 비즈니스 규칙 위반을 타입으로 표현.
+ * 각 에러 케이스가 필요한 데이터(예: MinOrderNotMet의 required, actual)를 포함.
  */
 public sealed interface CouponError
     permits CouponError.NotFound, CouponError.AlreadyUsed, CouponError.Expired,

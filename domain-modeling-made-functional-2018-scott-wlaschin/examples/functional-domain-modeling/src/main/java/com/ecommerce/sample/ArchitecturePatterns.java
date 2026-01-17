@@ -6,16 +6,57 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * 함수형 아키텍처 패턴 예제 (Chapter 8, 9)
+ *
+ * <h2>주요 패턴</h2>
+ * <ul>
+ *   <li><b>Persistence Ignorance</b> (Ch 8.1): Repository 인터페이스로 도메인과 저장소 분리</li>
+ *   <li><b>Trust Boundary</b> (Ch 8.2): DTO와 도메인 객체 분리, 외부 데이터 검증</li>
+ *   <li><b>Anti-Corruption Layer</b> (Ch 8.3): 외부 시스템 형식을 도메인 형식으로 변환</li>
+ *   <li><b>Functional Core / Imperative Shell</b> (Ch 9.4): 순수 로직과 부수효과 분리</li>
+ * </ul>
+ *
+ * <h2>핵심 개념: Functional Core / Imperative Shell (FC/IS)</h2>
+ * <pre>
+ * ┌─────────────────────────────────────────────────────────────┐
+ * │ Imperative Shell (부수효과)                                  │
+ * │  - Repository 호출, 외부 API 호출                           │
+ * │  - 트랜잭션 관리, 로깅                                       │
+ * │                                                              │
+ * │  ┌─────────────────────────────────────────────────────┐   │
+ * │  │ Functional Core (순수 로직)                          │   │
+ * │  │  - 비즈니스 규칙, 검증, 계산                          │   │
+ * │  │  - 입력 → 출력만 있음, 외부 의존성 없음               │   │
+ * │  │  - 테스트 시 Mock 불필요                              │   │
+ * │  └─────────────────────────────────────────────────────┘   │
+ * └─────────────────────────────────────────────────────────────┘
+ * </pre>
+ *
+ * <h2>얻어갈 것 (Takeaway)</h2>
+ * <ul>
+ *   <li>Functional Core: 순수 함수로 비즈니스 로직 구현 → 단위 테스트 용이</li>
+ *   <li>Imperative Shell: 외부 의존성 조율 → 통합 테스트로 검증</li>
+ *   <li>두 레이어를 명확히 분리하면 테스트 커버리지와 유지보수성 향상</li>
+ * </ul>
+ */
+
 // =====================================================
 // Chapter 8: 도메인과 외부 세계 분리
-// Chapter 9: 함수형 아키텍처 패턴
 // =====================================================
 
 // ===========================================
-// Ch 8.1 Persistence Ignorance
-// Repository Interface (도메인 레이어에 정의)
+// Ch 8.1 Persistence Ignorance (지속성 무지)
 // ===========================================
 
+/**
+ * Repository 인터페이스 - 도메인 레이어에 정의, 인프라 레이어에서 구현
+ *
+ * 도메인 로직이 저장소 기술(JPA, MyBatis, Redis 등)에 의존하지 않도록 한다.
+ * DIP(의존성 역전 원칙)의 전형적인 적용.
+ *
+ * 왜 중요한가? 저장소 기술을 교체해도 도메인 로직은 변경하지 않아도 됨.
+ */
 interface OrderRepository {
     Optional<Order> findById(OrderId id);
     Order save(Order order);
@@ -185,10 +226,27 @@ class PriceService {
 
 
 // ===========================================
-// Ch 9.4 Functional Core, Imperative Shell
-// 순수 도메인 서비스와 부수효과 분리
+// Ch 9.4 Functional Core - 순수 도메인 서비스
 // ===========================================
 
+/**
+ * 주문 도메인 서비스 - Functional Core
+ *
+ * <h3>특징</h3>
+ * <ul>
+ *   <li>모든 메서드가 순수 함수 (입력 → 출력만, 부수효과 없음)</li>
+ *   <li>외부 의존성 없음 (Repository, Gateway 등 주입받지 않음)</li>
+ *   <li>동일 입력에 항상 동일 출력 → Mock 없이 단위 테스트 가능</li>
+ * </ul>
+ *
+ * <h3>테스트 예시</h3>
+ * <pre>{@code
+ * // Mock 필요 없음 - 순수 함수이므로
+ * var service = new OrderDomainService();
+ * var priced = service.calculatePrice(validatedOrder);
+ * assertEquals(expectedTotal, priced.totalAmount());
+ * }</pre>
+ */
 class OrderDomainService {
     public PricedOrderFull calculatePrice(ValidatedOrder order) {
         return calculatePrice(order, Money.ZERO);
@@ -248,10 +306,42 @@ record PricedOrderFull(
 
 
 // ===========================================
-// Application Use Case (Imperative Shell)
-// 부수효과를 가진 애플리케이션 서비스
+// Ch 9.4 Imperative Shell - 유스케이스
 // ===========================================
 
+/**
+ * 주문 생성 유스케이스 - Imperative Shell
+ *
+ * <h3>역할</h3>
+ * <ul>
+ *   <li>외부 의존성(Repository, Gateway) 조율</li>
+ *   <li>부수효과 실행 (DB 저장, 외부 API 호출)</li>
+ *   <li>순수 로직은 {@link OrderDomainService}에 위임</li>
+ * </ul>
+ *
+ * <h3>구조</h3>
+ * <pre>
+ * execute() {
+ *     // 1. 부수효과: 데이터 조회
+ *     var coupon = couponRepository.findByCode(code);
+ *
+ *     // 2. 순수 로직: 계산 (Functional Core 호출)
+ *     var priced = domainService.calculatePrice(order, coupon);
+ *
+ *     // 3. 부수효과: 외부 API 호출
+ *     var payment = paymentGateway.processPayment(priced.totalAmount());
+ *
+ *     // 4. 부수효과: 데이터 저장
+ *     orderRepository.save(order);
+ * }
+ * </pre>
+ *
+ * <h3>테스트 전략</h3>
+ * <ul>
+ *   <li>단위 테스트: Functional Core (OrderDomainService)에 집중</li>
+ *   <li>통합 테스트: Imperative Shell (이 클래스)에서 전체 흐름 검증</li>
+ * </ul>
+ */
 class PlaceOrderUseCase {
     private final OrderRepository orderRepository;
     private final PaymentGatewayAdapter paymentGateway;

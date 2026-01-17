@@ -1,7 +1,9 @@
 package com.ecommerce.domain.product;
 
 /**
- * 상품명 Value Object
+ * 상품명 Value Object (Chapter 2)
+ *
+ * 불변식: 공백 불가, 200자 이하
  */
 public record ProductName(String value) {
     public ProductName {

@@ -3,8 +3,14 @@ package com.ecommerce.domain.payment;
 import com.ecommerce.shared.types.Money;
 
 /**
- * 결제 에러
- * sealed interface로 모든 에러 케이스 처리 강제
+ * 결제 에러 - Sum Type으로 에러 모델링 (Chapter 6)
+ *
+ * <h2>핵심 개념: 외부 시스템 에러를 도메인 에러로 변환</h2>
+ * 외부 결제사 API의 에러 코드를 도메인에 맞는 에러 타입으로 변환한다.
+ * code() 메서드로 에러 코드도 제공하여 로깅/분석에 활용.
+ *
+ * <h2>SystemError 처리</h2>
+ * 내부 메시지(internalMessage)는 개발자용, message()는 사용자용으로 분리.
  */
 public sealed interface PaymentError
     permits PaymentError.InsufficientFunds, PaymentError.CardExpired, PaymentError.CardDeclined,

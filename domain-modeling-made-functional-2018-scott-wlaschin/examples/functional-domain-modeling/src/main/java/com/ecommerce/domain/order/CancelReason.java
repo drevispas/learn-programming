@@ -1,7 +1,11 @@
 package com.ecommerce.domain.order;
 
 /**
- * 취소 사유
+ * 취소 사유 - 유한 개 선택지를 enum으로 표현 (Chapter 4)
+ *
+ * <h2>핵심 개념: 비즈니스 규칙의 타입화</h2>
+ * 취소 사유를 String으로 받으면 "고객 요청", "고객요청", "CUSTOMER_REQUEST" 등
+ * 다양한 형태가 발생할 수 있다. enum으로 정의하여 유효한 값만 허용.
  */
 public enum CancelReason {
     CUSTOMER_REQUEST("고객 요청"),

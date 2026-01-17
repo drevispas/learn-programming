@@ -1,7 +1,13 @@
 package com.ecommerce.domain.product;
 
 /**
- * 재고 수량 Value Object
+ * 재고 수량 Value Object (Chapter 2)
+ *
+ * <h2>핵심 개념: 도메인 연산 포함</h2>
+ * 단순 래퍼가 아닌, 재고 관련 비즈니스 로직(입고, 출고, 품절 확인)을 포함한다.
+ *
+ * <h2>불변식 (Invariant)</h2>
+ * 음수 불가 (재고는 0 이상)
  */
 public record StockQuantity(int value) {
     public StockQuantity {

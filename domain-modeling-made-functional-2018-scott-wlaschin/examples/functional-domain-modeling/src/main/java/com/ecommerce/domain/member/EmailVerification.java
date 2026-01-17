@@ -5,8 +5,22 @@ import com.ecommerce.shared.Result;
 import java.time.LocalDateTime;
 
 /**
- * 이메일 인증 상태 - Phantom Type 대신 Sum Type 사용
- * 검증 안 된 이메일과 검증된 이메일을 타입으로 구분
+ * 이메일 인증 상태 - Sum Type으로 State Machine 구현 (Chapter 4, 5)
+ *
+ * <h2>핵심 개념: 상태를 타입으로 표현</h2>
+ * <pre>
+ * UnverifiedEmail → verify() → VerifiedEmail
+ *                   (성공 시)
+ * </pre>
+ *
+ * <h2>왜 이렇게 구현하는가?</h2>
+ * <ul>
+ *   <li>검증되지 않은 이메일에만 verify() 호출 가능</li>
+ *   <li>검증된 이메일에서 verify() 호출 자체가 불가능 (컴파일 에러)</li>
+ *   <li>각 상태에 필요한 데이터만 보유 (verificationCode는 UnverifiedEmail에만)</li>
+ * </ul>
+ *
+ * @see com.ecommerce.sample.PhantomTypes Phantom Type 방식과 비교
  */
 public sealed interface EmailVerification
     permits EmailVerification.UnverifiedEmail, EmailVerification.VerifiedEmail {

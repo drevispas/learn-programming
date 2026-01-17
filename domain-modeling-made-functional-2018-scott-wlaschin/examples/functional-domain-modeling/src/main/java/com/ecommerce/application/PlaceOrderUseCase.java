@@ -30,8 +30,39 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 주문 생성 유스케이스 (Imperative Shell)
- * 외부 의존성 조율 및 부수효과 처리
+ * 주문 생성 유스케이스 - Imperative Shell (Chapter 9)
+ *
+ * <h2>목적 (Purpose)</h2>
+ * 외부 의존성(Repository, Gateway)을 조율하고 부수효과를 실행한다.
+ * 순수 비즈니스 로직은 {@link OrderDomainService}(Functional Core)에 위임한다.
+ *
+ * <h2>핵심 개념 (Key Concept): Functional Core / Imperative Shell</h2>
+ * <pre>
+ * execute() 메서드 구조:
+ * ┌────────────────────────────────────────────────────────────┐
+ * │ 1. 데이터 조회 (부수효과)                                    │
+ * │    memberRepository.findById(), productRepository.find...  │
+ * │                                                             │
+ * │ 2. 순수 로직 호출 (Functional Core)                         │
+ * │    domainService.calculatePricing() - Mock 없이 테스트 가능  │
+ * │                                                             │
+ * │ 3. 외부 API 호출 (부수효과)                                  │
+ * │    paymentGateway.charge()                                  │
+ * │                                                             │
+ * │ 4. 데이터 저장 (부수효과)                                    │
+ * │    orderRepository.save(), couponRepository.save()         │
+ * └────────────────────────────────────────────────────────────┘
+ * </pre>
+ *
+ * <h2>얻어갈 것 (Takeaway)</h2>
+ * <ul>
+ *   <li>Imperative Shell은 "껍데기" 역할 - I/O만 담당</li>
+ *   <li>복잡한 비즈니스 로직은 Functional Core로 분리하여 테스트 용이성 확보</li>
+ *   <li>Result 타입으로 에러 흐름을 명시적으로 관리</li>
+ * </ul>
+ *
+ * @see OrderDomainService Functional Core - 순수 비즈니스 로직
+ * @see PlaceOrderError 여러 Bounded Context 에러를 통합한 에러 타입
  */
 public class PlaceOrderUseCase {
 
@@ -59,10 +90,15 @@ public class PlaceOrderUseCase {
     }
 
     /**
-     * 주문 처리 실행
+     * 주문 처리 실행 - 워크플로우의 진입점
+     *
+     * 각 단계가 Result를 반환하여 실패 시 조기 종료된다.
+     * 부수효과와 순수 로직이 번갈아 실행되는 구조에 주목.
      */
     public Result<OrderPlaced, PlaceOrderError> execute(PlaceOrderCommand command) {
-        // 1. 회원 조회
+        // ========================================
+        // 1. 회원 조회 [부수효과: Repository I/O]
+        // ========================================
         Optional<Member> memberOpt = memberRepository.findById(new MemberId(command.customerId()));
         if (memberOpt.isEmpty()) {
             return Result.failure(new PlaceOrderError.MemberIssue(
@@ -71,7 +107,9 @@ public class PlaceOrderUseCase {
         }
         Member member = memberOpt.get();
 
-        // 2. 상품 조회 및 재고 확인
+        // ========================================
+        // 2. 상품 조회 및 재고 확인 [부수효과]
+        // ========================================
         Result<List<OrderLineWithProduct>, PlaceOrderError> lineResult = prepareOrderLines(command.items());
         if (lineResult.isFailure()) {
             return Result.failure(lineResult.error());
@@ -81,7 +119,9 @@ public class PlaceOrderUseCase {
             .map(OrderLineWithProduct::orderLine)
             .toList();
 
-        // 3. 쿠폰 조회 및 검증 (선택적)
+        // ========================================
+        // 3. 쿠폰 조회 및 검증 [부수효과]
+        // ========================================
         UsedCoupon usedCoupon = null;
         if (command.couponCode() != null && !command.couponCode().isBlank()) {
             Result<UsedCoupon, PlaceOrderError> couponResult = applyCoupon(
@@ -94,7 +134,10 @@ public class PlaceOrderUseCase {
             usedCoupon = couponResult.value();
         }
 
-        // 4. 가격 계산 (순수 로직)
+        // ========================================
+        // 4. 가격 계산 [순수 로직: Functional Core]
+        //    → Mock 없이 단위 테스트 가능
+        // ========================================
         OrderDomainService.PricingResult pricing = usedCoupon != null
             ? domainService.calculatePricing(orderLines, member, usedCoupon.coupon().type())
             : domainService.calculatePricing(orderLines, member);
@@ -108,7 +151,9 @@ public class PlaceOrderUseCase {
             command.detailAddress()
         );
 
-        // 6. 결제 처리
+        // ========================================
+        // 6. 결제 처리 [부수효과: 외부 API]
+        // ========================================
         Result<String, PaymentError> paymentResult = paymentGateway.charge(
             pricing.totalAmount(),
             command.paymentMethod()
@@ -118,7 +163,9 @@ public class PlaceOrderUseCase {
         }
         String transactionId = paymentResult.value();
 
-        // 7. 주문 생성
+        // ========================================
+        // 7. 주문 생성 [순수 로직]
+        // ========================================
         Order order = domainService.createOrder(
             new CustomerId(command.customerId()),
             orderLines,

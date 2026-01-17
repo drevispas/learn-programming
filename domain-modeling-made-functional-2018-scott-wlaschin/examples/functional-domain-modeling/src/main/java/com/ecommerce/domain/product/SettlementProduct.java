@@ -3,9 +3,22 @@ package com.ecommerce.domain.product;
 import com.ecommerce.shared.types.Money;
 
 /**
- * 정산용 상품 모델 (Settlement Context)
- * 판매자 정산에 필요한 정보만 포함
- * 전시 정보나 재고 정보는 포함하지 않음 (Bounded Context 분리)
+ * 정산용 상품 모델 - Settlement Bounded Context (Chapter 10)
+ *
+ * <h2>이 Context의 관심사</h2>
+ * 판매자 ID, 공급가, 수수료율 (재무 정산)
+ *
+ * <h2>핵심 개념: 같은 상품, 다른 관점</h2>
+ * <pre>
+ * DisplayProduct:    "고객이 보는 상품" - 가격 99,000원, 평점 4.5
+ * InventoryProduct:  "창고의 상품" - 재고 50개, A-1-1 위치
+ * SettlementProduct: "정산할 상품" - 공급가 70,000원, 수수료 10%
+ * </pre>
+ *
+ * ProductId로 연결되지만, 각 Context가 독립적으로 발전할 수 있다.
+ *
+ * @see DisplayProduct 전시용 상품
+ * @see InventoryProduct 재고용 상품
  */
 public record SettlementProduct(
     ProductId id,

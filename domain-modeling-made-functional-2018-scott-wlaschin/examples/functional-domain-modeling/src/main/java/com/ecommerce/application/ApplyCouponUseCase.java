@@ -11,7 +11,32 @@ import com.ecommerce.shared.types.Money;
 import java.util.Optional;
 
 /**
- * 쿠폰 적용 유스케이스
+ * 쿠폰 적용 유스케이스 (Chapter 9)
+ *
+ * <h2>목적 (Purpose)</h2>
+ * 쿠폰 적용 워크플로우와 미리보기 기능을 제공한다.
+ *
+ * <h2>핵심 개념: execute vs preview</h2>
+ * <ul>
+ *   <li><b>execute()</b>: 쿠폰 실제 사용 - 상태 변경(부수효과) 발생</li>
+ *   <li><b>preview()</b>: 할인 금액만 계산 - 부수효과 없음 (순수 함수처럼 동작)</li>
+ * </ul>
+ *
+ * <h2>얻어갈 것 (Takeaway)</h2>
+ * UI에서 "쿠폰 적용 시 예상 할인 금액"을 보여줄 때 preview() 사용.
+ * 실제 주문 확정 시에만 execute() 호출하여 쿠폰 상태 변경.
+ *
+ * <pre>{@code
+ * // 장바구니 화면에서 쿠폰 미리보기
+ * Money discount = applyCouponUseCase.preview("WELCOME10", orderTotal)
+ *     .fold(
+ *         d -> d,
+ *         error -> Money.ZERO  // 에러 시 할인 0원 표시
+ *     );
+ *
+ * // 주문 확정 시 실제 적용
+ * applyCouponUseCase.execute(new ApplyCouponCommand(...));
+ * }</pre>
  */
 public class ApplyCouponUseCase {
 
@@ -84,7 +109,14 @@ public class ApplyCouponUseCase {
     }
 
     /**
-     * 쿠폰 미리보기 (사용하지 않고 할인 금액만 계산)
+     * 쿠폰 미리보기 - 부수효과 없이 할인 금액만 계산
+     *
+     * execute()와 달리 쿠폰 상태를 변경하지 않는다.
+     * UI에서 사용자에게 예상 할인 금액을 보여줄 때 사용.
+     *
+     * @param couponCode 쿠폰 코드
+     * @param orderAmount 주문 금액 (할인 계산 기준)
+     * @return 할인 금액 또는 에러 (쿠폰 없음, 최소 주문 금액 미달 등)
      */
     public Result<Money, CouponError> preview(String couponCode, Money orderAmount) {
         // 1. 쿠폰 조회

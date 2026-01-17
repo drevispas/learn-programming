@@ -3,20 +3,67 @@ package com.ecommerce.sample;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// =====================================================
-// State Machine Pattern - 타입으로 상태 전이를 강제
-// =====================================================
+/**
+ * State Machine Pattern - 타입으로 상태 전이를 강제 (Chapter 5)
+ *
+ * <h2>목적 (Purpose)</h2>
+ * 주문 상태 전이를 타입 시스템으로 강제하여, 잘못된 상태 전이가 컴파일 타임에 방지되도록 한다.
+ * "결제 전 주문을 배송 시작하는" 같은 비즈니스 규칙 위반이 코드에서 불가능해진다.
+ *
+ * <h2>핵심 개념 (Key Concept): 타입 기반 상태 머신</h2>
+ * <pre>
+ * 상태 전이 흐름:
+ * UnvalidatedOrder → ValidatedOrder → PricedOrder → UnpaidOrder → PaidOrder → ShippingOrder → DeliveredOrder
+ *                                                   ↓                ↓
+ *                                             CancelledOrder   CancelledOrder
+ * </pre>
+ *
+ * 각 상태가 별도 타입이므로, 해당 타입에 정의된 메서드만 호출 가능하다.
+ * <ul>
+ *   <li>UnpaidOrder → pay(), cancel() 가능</li>
+ *   <li>PaidOrder → startShipping(), cancel() 가능 (24시간 이내)</li>
+ *   <li>ShippingOrder → completeDelivery() 가능 (취소 불가)</li>
+ *   <li>DeliveredOrder, CancelledOrder → 최종 상태, 전이 없음</li>
+ * </ul>
+ *
+ * <h2>왜 이렇게 구현하는가?</h2>
+ * <pre>{@code
+ * // Before: 런타임 검증 필요
+ * void startShipping(Order order) {
+ *     if (order.status != OrderStatus.PAID) {
+ *         throw new IllegalStateException("미결제 주문은 배송할 수 없습니다");
+ *     }
+ *     // ...
+ * }
+ *
+ * // After: 타입으로 강제
+ * ShippingOrder startShipping(PaidOrder order) {
+ *     // PaidOrder만 받으므로 상태 검증 불필요
+ *     return new ShippingOrder(...);
+ * }
+ * }</pre>
+ *
+ * <h2>얻어갈 것 (Takeaway)</h2>
+ * <ol>
+ *   <li>비즈니스 규칙이 타입에 인코딩됨 → 문서 대신 코드로 규칙 표현</li>
+ *   <li>상태 전이 버그가 컴파일 에러로 변환</li>
+ *   <li>각 상태에서 가능한 동작이 메서드 시그니처로 명확</li>
+ * </ol>
+ *
+ * @see SumTypes 단일 타입 내 상태 표현 (vs 여기서는 각 상태가 별도 타입)
+ */
 
-// 상태 전이 흐름:
-// UnvalidatedOrder → ValidatedOrder → PricedOrder → UnpaidOrder → PaidOrder → ShippingOrder → DeliveredOrder
-//                                                  ↓                ↓
-//                                            CancelledOrder   CancelledOrder
-
-// === 주문 상태별 Entity ===
-// 각 상태가 별도 타입으로 정의되어, 잘못된 상태 전이가 컴파일 타임에 방지됨
+// =====================================================
+// 상태별 Entity 정의
+// =====================================================
 
 /**
- * 미검증 주문 - Command에서 생성된 원시 데이터
+ * 미검증 주문 - 워크플로우의 시작점
+ *
+ * 외부에서 들어온 원시 데이터(String)를 담고 있다.
+ * validate() 메서드만 호출 가능 - 검증 없이 다음 단계로 진행 불가.
+ *
+ * 왜 String인가? 외부 입력은 항상 원시 타입으로 받고, 검증 후 도메인 타입으로 변환.
  */
 record UnvalidatedOrder(
     String customerId,
@@ -24,7 +71,14 @@ record UnvalidatedOrder(
     String shippingAddress,
     String couponCode
 ) {
-    // validate()만 호출 가능 - 다른 상태로 직접 전이 불가능
+    /**
+     * 검증 수행 - 성공 시 ValidatedOrder로 전이
+     *
+     * Applicative Validation으로 모든 에러를 한 번에 수집.
+     * 외부 의존성(validator)은 함수형 인터페이스로 주입받아 테스트 용이.
+     *
+     * @return Result&lt;ValidatedOrder, List&lt;OrderError&gt;&gt; - 성공 시 검증된 주문, 실패 시 모든 에러 리스트
+     */
     public Result<ValidatedOrder, List<OrderError>> validate(
         CustomerValidator customerValidator,
         AddressValidator addressValidator,
@@ -95,6 +149,12 @@ record UnvalidatedOrderLine(ProductId productId, Quantity quantity, Money unitPr
 
 /**
  * 미결제 주문 - 결제 대기 중
+ *
+ * 가능한 전이:
+ * - pay() → PaidOrder (성공 시)
+ * - cancel() → CancelledOrder (언제든 가능)
+ *
+ * paymentDeadline 초과 시 결제 불가 - 비즈니스 규칙이 타입 메서드에 인코딩됨
  */
 record UnpaidOrder(
     OrderId orderId,
@@ -104,7 +164,10 @@ record UnpaidOrder(
     ShippingAddress shippingAddress,
     LocalDateTime paymentDeadline
 ) {
-    // pay()만 호출 가능 - 결제 전이
+    /**
+     * 결제 수행 - 결제 기한 검증 후 PaidOrder로 전이
+     * 반환 타입이 Result이므로 호출자는 실패 케이스를 반드시 처리해야 함
+     */
     public Result<PaidOrder, OrderError> pay(
         PaymentMethod paymentMethod,
         PaymentGateway gateway
@@ -143,6 +206,13 @@ record UnpaidOrder(
 
 /**
  * 결제 완료 주문 - 배송 대기 중
+ *
+ * 가능한 전이:
+ * - startShipping() → ShippingOrder (항상 성공)
+ * - cancel() → CancelledOrder (24시간 이내만 가능, Result 반환)
+ *
+ * paidAt, paymentMethod, transactionId가 항상 존재 (null 불가) -
+ * 결제 완료 상태이므로 이 정보들이 반드시 있어야 함
  */
 record PaidOrder(
     OrderId orderId,
@@ -154,7 +224,7 @@ record PaidOrder(
     PaymentMethod paymentMethod,
     String transactionId
 ) {
-    // startShipping()만 호출 가능
+    /** 배송 시작 - 항상 성공하므로 Result 없이 바로 ShippingOrder 반환 */
     public ShippingOrder startShipping(String trackingNumber) {
         return new ShippingOrder(
             orderId,

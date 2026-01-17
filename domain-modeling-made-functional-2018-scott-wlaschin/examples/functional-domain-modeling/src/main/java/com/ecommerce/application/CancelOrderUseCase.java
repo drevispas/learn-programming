@@ -15,7 +15,23 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
- * 주문 취소 유스케이스
+ * 주문 취소 유스케이스 - Imperative Shell (Chapter 9)
+ *
+ * <h2>목적 (Purpose)</h2>
+ * 주문 취소 워크플로우를 조율한다. 상태에 따라 환불 처리 여부가 결정된다.
+ *
+ * <h2>핵심 개념: 상태별 다른 처리</h2>
+ * <ul>
+ *   <li>미결제 취소 → 환불 없음 (결제된 적 없으므로)</li>
+ *   <li>결제 완료 취소 → PaymentGateway 환불 처리 필요</li>
+ *   <li>배송 중/완료 → 취소 불가 (Order.cancel()에서 에러 반환)</li>
+ * </ul>
+ *
+ * <h2>얻어갈 것 (Takeaway)</h2>
+ * 비즈니스 규칙(취소 가능 여부)은 Order 엔티티의 cancel() 메서드에 있고,
+ * 이 유스케이스는 외부 시스템(PaymentGateway) 호출만 담당한다.
+ *
+ * @see com.ecommerce.domain.order.Order#cancel 취소 가능 여부 판단 로직
  */
 public class CancelOrderUseCase {
 

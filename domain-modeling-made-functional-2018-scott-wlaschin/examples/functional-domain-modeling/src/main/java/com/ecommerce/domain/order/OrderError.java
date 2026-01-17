@@ -5,8 +5,24 @@ import com.ecommerce.domain.product.ProductId;
 import java.util.List;
 
 /**
- * 주문 도메인 에러
- * sealed interface로 모든 에러 케이스 처리 강제
+ * 주문 도메인 에러 - Sum Type으로 에러 모델링 (Chapter 6)
+ *
+ * <h2>핵심 개념: 예외 대신 타입으로 에러 표현</h2>
+ * sealed interface로 가능한 모든 에러 케이스를 정의하고,
+ * 컴파일러가 패턴 매칭의 완전성(exhaustiveness)을 강제한다.
+ *
+ * <h2>얻어갈 것 (Takeaway)</h2>
+ * <pre>{@code
+ * // 모든 에러 케이스를 명시적으로 처리
+ * String errorMessage = switch (error) {
+ *     case EmptyOrder e -> "주문 상품을 추가해주세요";
+ *     case OutOfStock e -> "재고 부족: " + e.productId();
+ *     case PaymentFailed e -> e.message();
+ *     // ... 모든 케이스 처리 필수
+ * };
+ * }</pre>
+ *
+ * @see com.ecommerce.application.PlaceOrderError Application Layer의 에러 통합
  */
 public sealed interface OrderError
     permits OrderError.EmptyOrder, OrderError.InvalidCustomerId, OrderError.InvalidShippingAddress,

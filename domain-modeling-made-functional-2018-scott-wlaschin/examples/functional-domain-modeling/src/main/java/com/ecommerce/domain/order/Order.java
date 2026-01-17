@@ -8,8 +8,27 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 주문 엔티티
- * 불변 객체로 상태 변경 시 새 객체 반환
+ * 주문 Entity - 불변 객체로 구현된 도메인 엔티티 (Chapter 3, 5)
+ *
+ * <h2>핵심 개념: State Machine as Methods</h2>
+ * 상태 전이 메서드(pay, cancel, startShipping, completeDelivery)가
+ * Result를 반환하여 실패 가능한 전이를 타입으로 표현한다.
+ *
+ * <pre>
+ * 상태 흐름:
+ * Unpaid → Paid → Shipping → Delivered
+ *   ↓        ↓
+ * Cancelled (환불 없음 / 환불 있음)
+ * </pre>
+ *
+ * <h2>왜 record인가</h2>
+ * <ul>
+ *   <li>불변성: 상태 변경 시 새 객체 반환 (원본 불변)</li>
+ *   <li>값 동등성: 같은 상태면 같은 주문</li>
+ *   <li>스레드 안전: 불변이므로 동시성 문제 없음</li>
+ * </ul>
+ *
+ * @see OrderStatus 주문 상태 Sum Type
  */
 public record Order(
     OrderId id,

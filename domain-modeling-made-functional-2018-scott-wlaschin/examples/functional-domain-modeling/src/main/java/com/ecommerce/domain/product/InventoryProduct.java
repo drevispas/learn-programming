@@ -3,9 +3,23 @@ package com.ecommerce.domain.product;
 import com.ecommerce.shared.Result;
 
 /**
- * 재고용 상품 모델 (Inventory Context)
- * 창고 관리에 필요한 정보만 포함
- * 가격 정보나 전시 정보는 포함하지 않음 (Bounded Context 분리)
+ * 재고용 상품 모델 - Inventory Bounded Context (Chapter 10)
+ *
+ * <h2>이 Context의 관심사</h2>
+ * 재고 수량, 창고 위치, 안전 재고 수준 (물류 관리)
+ *
+ * <h2>핵심 개념: Context별 다른 연산</h2>
+ * <ul>
+ *   <li>reduceStock(): 주문 시 재고 차감</li>
+ *   <li>addStock(): 입고 시 재고 추가</li>
+ *   <li>relocate(): 창고 이동</li>
+ * </ul>
+ *
+ * DisplayProduct에는 이런 연산이 없고, SettlementProduct에도 없다.
+ * 각 Context가 자신의 책임에 맞는 연산만 제공한다.
+ *
+ * @see DisplayProduct 전시용 상품 (가격, 이미지)
+ * @see SettlementProduct 정산용 상품 (공급가, 수수료)
  */
 public record InventoryProduct(
     ProductId id,

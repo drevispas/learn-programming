@@ -7,8 +7,27 @@ import com.ecommerce.shared.types.Money;
 import java.time.LocalDateTime;
 
 /**
- * 쿠폰 엔티티
- * 불변 객체로 상태 변경 시 새 객체 반환
+ * 쿠폰 Entity - State Machine 패턴 (Chapter 5)
+ *
+ * <h2>핵심 개념: 상태 전이를 타입으로 표현</h2>
+ * <pre>
+ * Issued → use() → Used
+ *    ↓
+ * Expired (유효기간 만료)
+ * </pre>
+ *
+ * <h2>사용 예시</h2>
+ * <pre>{@code
+ * Result<UsedCoupon, CouponError> result = coupon.use(orderId, orderAmount);
+ *
+ * return result.fold(
+ *     used -> applyDiscount(used.discountAmount()),
+ *     error -> showError(error.message())
+ * );
+ * }</pre>
+ *
+ * @see CouponStatus 쿠폰 상태 Sum Type
+ * @see CouponType 쿠폰 유형 (정액, 정률, 무료배송)
  */
 public record Coupon(
     CouponId id,

@@ -4,8 +4,27 @@ import com.ecommerce.shared.Result;
 import com.ecommerce.shared.types.Money;
 
 /**
- * 회원 엔티티
- * 불변 객체로 상태 변경 시 새 객체 반환 (Wither 패턴)
+ * 회원 Entity - Wither 패턴 적용 (Chapter 1.3)
+ *
+ * <h2>핵심 개념: 불변 Entity + Wither</h2>
+ * <ul>
+ *   <li>record로 불변성 보장</li>
+ *   <li>withXxx() 메서드로 부분 수정한 새 인스턴스 반환</li>
+ *   <li>실패 가능한 연산(usePoints)은 Result 반환</li>
+ * </ul>
+ *
+ * <h2>Wither 패턴 예시</h2>
+ * <pre>{@code
+ * // 포인트 적립 - 원본 member는 불변
+ * Member updated = member.earnPoints(1000);
+ *
+ * // 체이닝 가능
+ * Member result = member
+ *     .withGrade(new MemberGrade.Gold())
+ *     .earnPoints(500);
+ * }</pre>
+ *
+ * @see com.ecommerce.sample.Member 간단한 Wither 패턴 예제
  */
 public record Member(
     MemberId id,

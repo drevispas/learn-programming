@@ -1,8 +1,10 @@
 package com.ecommerce.domain.product;
 
 /**
- * 상품 도메인 에러
- * sealed interface로 모든 에러 케이스 처리 강제
+ * 상품 도메인 에러 - Sum Type으로 에러 모델링 (Chapter 6)
+ *
+ * 상품 관련 비즈니스 규칙 위반을 타입으로 표현.
+ * InsufficientStock 에러는 요청 수량과 가용 수량을 포함하여 명확한 피드백 제공.
  */
 public sealed interface ProductError
     permits ProductError.NotFound, ProductError.InsufficientStock, ProductError.NotOnSale,

@@ -1,8 +1,10 @@
 package com.ecommerce.domain.member;
 
 /**
- * 회원 도메인 에러
- * sealed interface로 모든 에러 케이스 처리 강제
+ * 회원 도메인 에러 - Sum Type으로 에러 모델링 (Chapter 6)
+ *
+ * 회원 관련 비즈니스 규칙 위반을 타입으로 표현.
+ * sealed interface로 완전 열거 보장.
  */
 public sealed interface MemberError
     permits MemberError.NotFound, MemberError.EmailNotVerified, MemberError.InsufficientPoints,

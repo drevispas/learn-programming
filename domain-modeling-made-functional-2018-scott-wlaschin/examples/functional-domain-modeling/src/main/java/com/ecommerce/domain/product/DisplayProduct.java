@@ -5,9 +5,25 @@ import com.ecommerce.shared.types.Money;
 import java.util.List;
 
 /**
- * 전시용 상품 모델 (Display Context)
- * 고객에게 보여주는 상품 정보만 포함
- * 재고 정보나 정산 정보는 포함하지 않음 (Bounded Context 분리)
+ * 전시용 상품 모델 - Display Bounded Context (Chapter 10)
+ *
+ * <h2>핵심 개념: Bounded Context 분리</h2>
+ * 동일한 "상품"이지만 Context에 따라 다른 모델이 필요하다:
+ * <ul>
+ *   <li><b>DisplayProduct</b>: 고객 화면용 (가격, 이미지, 리뷰)</li>
+ *   <li>{@link InventoryProduct}: 재고 관리용 (수량, 창고 위치)</li>
+ *   <li>{@link SettlementProduct}: 판매자 정산용 (공급가, 수수료)</li>
+ * </ul>
+ *
+ * <h2>왜 분리하는가?</h2>
+ * <ul>
+ *   <li>관심사 분리: 각 Context가 필요한 정보만 보유</li>
+ *   <li>독립 배포: 전시 시스템 변경이 정산 시스템에 영향 없음</li>
+ *   <li>팀 간 경계: Display 팀은 InventoryProduct 구조를 몰라도 됨</li>
+ * </ul>
+ *
+ * <h2>이 Context의 관심사</h2>
+ * 상품명, 설명, 이미지, 가격, 할인, 평점, 리뷰 수 (고객 경험)
  */
 public record DisplayProduct(
     ProductId id,
