@@ -34,12 +34,11 @@ public record Order(
     OrderStatus status
 ) {
     // 순수한 비즈니스 로직만
-    public Order cancel(CancelReason reason) {
-        if (!(status instanceof Unpaid || status instanceof Paid)) {
-            throw new IllegalStateException("취소 불가능한 상태");
-        }
-        return new Order(id, customerId, lines, totalAmount,
-                        new Cancelled(LocalDateTime.now(), reason));
+    public Result<Order, OrderError> cancel(CancelReason reason) {
+        if (!(status instanceof Unpaid || status instanceof Paid))
+            return Result.failure(new OrderError.InvalidState("취소 불가능한 상태"));
+        return Result.success(new Order(id, customerId, lines, totalAmount,
+                        new Cancelled(LocalDateTime.now(), reason)));
     }
 }
 
@@ -333,22 +332,28 @@ OrderMapper.toDomain()의 역할은?
 
 **그림 9.1**: Onion Architecture 계층 구조
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Infrastructure                        │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │              Application Services               │   │
-│  │  ┌───────────────────────────────────────────┐ │   │
-│  │  │              Domain Model                 │ │   │
-│  │  │  - Entities (Order, Customer)            │ │   │
-│  │  │  - Value Objects (Money, Email)          │ │   │
-│  │  │  - Domain Services                        │ │   │
-│  │  └───────────────────────────────────────────┘ │   │
-│  │  - Use Cases (PlaceOrder, CancelOrder)        │   │
-│  │  - Repository Interfaces                       │   │
-│  └─────────────────────────────────────────────────┘   │
-│  - Controllers, JPA Repositories, External APIs       │
-│  - Mappers, Adapters                                   │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                         INFRASTRUCTURE                           │
+│    Controllers, JPA Repositories, External APIs, Mappers         │
+│                                                                  │
+│ ┌──────────────────────────────────────────────────────────────┐ │
+│ │                    APPLICATION SERVICES                      │ │
+│ │         Use Cases, Repository Interfaces                     │ │
+│ │                                                              │ │
+│ │ ┌──────────────────────────────────────────────────────────┐ │ │
+│ │ │                      DOMAIN MODEL                        │ │ │
+│ │ │                                                          │ │ │
+│ │ │    Entities: Order, Customer, Product                    │ │ │
+│ │ │    Value Objects: Money, Email, OrderId                  │ │ │
+│ │ │    Domain Services: OrderDomainService                   │ │ │
+│ │ │                                                          │ │ │
+│ │ └──────────────────────────────────────────────────────────┘ │ │
+│ │                                                              │ │
+│ └──────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+              Dependency Direction: Outside --> Inside
 ```
 
 > **중요**: Repository Interface는 **domain 패키지**에 위치합니다! (DIP)

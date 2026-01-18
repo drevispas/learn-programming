@@ -23,7 +23,8 @@
       "Bash(__NEW_LINE_1835827b75c1f39a__ grep -A 12 \"#### Q1.1\" 01-part-i.md)",
       "Bash(__NEW_LINE_91a01d2cfef568ea__ grep -A 5 \"#### 💡 비유: 나라와 언어\" 01-part-i.md)",
       "Bash(__NEW_LINE_8775a079e178b890__ grep -A 3 '^\\\\*\\\\*코드 1.1\\\\*\\\\*' 01-part-i.md)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Skill(ascii-diagrams)"
     ]
   }
 }

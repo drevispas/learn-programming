@@ -67,6 +67,7 @@ public class User {
 **단어의 의미는 문맥(Context)에 따라 달라집니다.**
 
 **표 1.1**: Bounded Context별 "사용자" 의미
+
 | 컨텍스트 | "사용자"의 의미 | 핵심 관심사 |
 |---------|---------------|-----------|
 | 인증 (Auth) | AppUser | ID, Password, Role |
@@ -178,6 +179,7 @@ public class CouponService {
 #### 이커머스 도메인 용어 사전 예시
 
 **표 1.2**: 이커머스 도메인 용어 사전
+
 | 기획 용어 | 코드 타입 | 설명 |
 |----------|---------|------|
 | 회원 등급 | `MemberGrade` | BRONZE, SILVER, GOLD, VIP |
@@ -258,33 +260,12 @@ Java 14+부터 도입된 `record`는 불변 데이터 객체를 위한 최고의
 
 **코드 1.5**: 기존 클래스 vs Record 비교
 ```java
-// ❌ 기존 방식: 보일러플레이트 코드가 많음
+// ❌ 기존 방식: 30줄의 보일러플레이트
 public final class OrderAmount {
     private final BigDecimal value;
-
-    public OrderAmount(BigDecimal value) {
-        this.value = value;
-    }
-
+    public OrderAmount(BigDecimal value) { this.value = value; }
     public BigDecimal getValue() { return value; }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        OrderAmount that = (OrderAmount) o;
-        return Objects.equals(value, that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value);
-    }
-
-    @Override
-    public String toString() {
-        return "OrderAmount[value=" + value + "]";
-    }
+    // equals(), hashCode(), toString() 직접 구현 필요...
 }
 
 // ✅ Java Record: 한 줄로 동일한 기능
@@ -314,29 +295,15 @@ public record OrderAmount(BigDecimal value) {}
 **코드 1.6**: Wither 패턴 구현
 ```java
 public record User(String name, int age, String email) {
-    // [Wither 패턴] 특정 필드만 바꾼 새 객체를 반환하는 메서드들
-    public User withAge(int age) {
-        return new User(this.name, age, this.email);
-    }
-
-    public User withName(String name) {
-        return new User(name, this.age, this.email);
-    }
-
-    public User withEmail(String email) {
-        return new User(this.name, this.age, email);
-    }
+    // 각 필드별 wither 메서드 - 새 객체를 반환
+    public User withAge(int age) { return new User(this.name, age, this.email); }
+    public User withName(String name) { return new User(name, this.age, this.email); }
 }
 
 // 사용 예시
 User user1 = new User("Alice", 30, "alice@example.com");
-
-// age만 변경된 새로운 객체 생성
-User user2 = user1.withAge(31);
-
-// 여러 필드를 체이닝하여 변경
-User user3 = user1.withName("Bob")
-                  .withEmail("bob@example.com");
+User user2 = user1.withAge(31);                    // age만 변경
+User user3 = user1.withName("Bob").withAge(25);    // 체이닝
 ```
 
 **핵심 포인트**:
@@ -421,6 +388,7 @@ public int add(int a, int b) {
 #### 순수 함수의 실질적 이점
 
 **표 1.3**: 순수 함수의 이점
+
 | 이점 | 설명 |
 |------|------|
 | **테스트의 천국** | Mock 없이 `assert(f(input) == expected)` 한 줄로 테스트 끝 |
@@ -732,6 +700,7 @@ double totalPrice = quantity + price;  // 수량 + 가격? 컴파일 OK
 #### 두 개념의 핵심 차이
 
 **표 2.1**: Value Object vs Entity 비교
+
 | 구분 | Value Object | Entity |
 |-----|----------------------|----------------|
 | 동등성 | 값이 같으면 같은 것 | ID가 같으면 같은 것 |
@@ -784,64 +753,30 @@ Java Record의 **Compact Constructor**를 사용하면 객체가 생성되는 �
 
 **코드 2.5**: Compact Constructor를 활용한 Value Object
 ```java
-package com.ecommerce.domain.types;
-
-import java.math.BigDecimal;
-import java.util.Objects;
-
-// 1. 이메일 주소
+// 이메일: Compact Constructor로 생성 시점 검증
 public record EmailAddress(String value) {
-    // Compact Constructor: 파라미터 괄호 없이 작성
-    public EmailAddress {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("이메일은 비어있을 수 없습니다");
-        }
-        if (!value.contains("@")) {
-            throw new IllegalArgumentException("유효하지 않은 이메일 형식: " + value);
-        }
-        // 검증 통과 후 this.value = value; 가 자동 실행됨
+    public EmailAddress {  // 괄호 없이 작성
+        if (value == null || !value.contains("@"))
+            throw new IllegalArgumentException("유효하지 않은 이메일");
+        // 검증 통과 후 this.value = value; 자동 실행
     }
 }
 
-// 2. 주문 금액 (0원 이상)
+// 금액: 음수 방지 + 비즈니스 메서드 포함
 public record OrderAmount(BigDecimal value) {
     public OrderAmount {
-        Objects.requireNonNull(value, "금액은 null일 수 없습니다");
-        if (value.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("주문 금액은 음수가 될 수 없습니다: " + value);
-        }
+        Objects.requireNonNull(value);
+        if (value.compareTo(BigDecimal.ZERO) < 0)
+            throw new IllegalArgumentException("음수 불가");
     }
-
-    // 유용한 팩토리 메서드
-    public static OrderAmount zero() {
-        return new OrderAmount(BigDecimal.ZERO);
-    }
-
-    public static OrderAmount won(long amount) {
-        return new OrderAmount(BigDecimal.valueOf(amount));
-    }
-
-    // 비즈니스 로직도 포함 가능
     public OrderAmount add(OrderAmount other) {
         return new OrderAmount(this.value.add(other.value));
     }
-
-    public OrderAmount multiply(int quantity) {
-        return new OrderAmount(this.value.multiply(BigDecimal.valueOf(quantity)));
-    }
 }
 
-// 3. 수량 (1 이상)
+// 수량: 1 이상 강제
 public record Quantity(int value) {
-    public Quantity {
-        if (value < 1) {
-            throw new IllegalArgumentException("수량은 1 이상이어야 합니다: " + value);
-        }
-    }
-
-    public static Quantity of(int value) {
-        return new Quantity(value);
-    }
+    public Quantity { if (value < 1) throw new IllegalArgumentException("1 이상 필요"); }
 }
 ```
 
@@ -885,17 +820,9 @@ public record Quantity(int value) {
 
 ### 2.4 도메인별 Simple Type 설계
 
-**코드 2.6**: 이커머스 도메인 타입 전체
+**코드 2.6**: 이커머스 도메인 타입 (핵심 예시)
 ```java
-package com.ecommerce.domain.types;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Objects;
-import java.util.regex.Pattern;
-
-// === 공통 타입 ===
-
+// === 핵심: Money 타입 (금액 계산의 정밀도 보장) ===
 public record Money(BigDecimal amount, Currency currency) {
     public Money {
         Objects.requireNonNull(amount);
@@ -906,182 +833,43 @@ public record Money(BigDecimal amount, Currency currency) {
     }
 
     public static final Money ZERO = new Money(BigDecimal.ZERO, Currency.KRW);
-
     public static Money krw(long amount) {
         return new Money(BigDecimal.valueOf(amount), Currency.KRW);
     }
 
-    public Money add(Money other) {
-        if (this.currency != other.currency) {
-            throw new IllegalArgumentException("통화가 다릅니다");
-        }
-        return new Money(this.amount.add(other.amount), this.currency);
-    }
-
-    /**
-     * 금액을 뺍니다. 결과가 음수면 생성자에서 IllegalArgumentException 발생.
-     * 안전한 뺄셈이 필요하면 canSubtract()로 먼저 확인하거나 subtractSafe()를 사용하세요.
-     */
-    public Money subtract(Money other) {
-        if (this.currency != other.currency) {
-            throw new IllegalArgumentException("통화가 다릅니다");
-        }
-        // 결과가 음수면 생성자의 음수 체크에서 예외 발생
-        return new Money(this.amount.subtract(other.amount), this.currency);
-    }
-
-    /** 뺄셈이 가능한지 확인 (결과가 0 이상인지) */
-    public boolean canSubtract(Money other) {
-        if (this.currency != other.currency) {
-            return false;
-        }
-        return this.amount.compareTo(other.amount) >= 0;
-    }
-
-    /** 안전한 뺄셈 - 결과가 음수면 Optional.empty() 반환 */
-    public Optional<Money> subtractSafe(Money other) {
-        if (!canSubtract(other)) {
-            return Optional.empty();
-        }
-        return Optional.of(new Money(this.amount.subtract(other.amount), this.currency));
-    }
-
-    public Money multiply(int factor) {
-        return new Money(this.amount.multiply(BigDecimal.valueOf(factor)), this.currency);
-    }
-
-    public Money multiply(BigDecimal factor) {
-        return new Money(this.amount.multiply(factor), this.currency);
-    }
-
-    public Money divide(int divisor) {
-        return new Money(
-            this.amount.divide(BigDecimal.valueOf(divisor), 2, RoundingMode.HALF_UP),
-            this.currency
-        );
-    }
-
-    public Money divide(BigDecimal divisor) {
-        return new Money(this.amount.divide(divisor, 2, RoundingMode.HALF_UP), this.currency);
-    }
-
-    public boolean isLessThan(Money other) {
-        if (this.currency != other.currency) {
-            throw new IllegalArgumentException("통화가 다릅니다");
-        }
-        return this.amount.compareTo(other.amount) < 0;
-    }
-
-    public boolean isGreaterThan(Money other) {
-        if (this.currency != other.currency) {
-            throw new IllegalArgumentException("통화가 다릅니다");
-        }
-        return this.amount.compareTo(other.amount) > 0;
-    }
-
-    public boolean isNegativeOrZero() {
-        return this.amount.compareTo(BigDecimal.ZERO) <= 0;
-    }
+    public Money add(Money other) { /* 통화 확인 후 덧셈 */ }
+    public Money subtract(Money other) { /* 통화 확인 후 뺄셈 */ }
+    public Money multiply(int factor) { /* 곱셈 */ }
+    public boolean isLessThan(Money other) { /* 비교 */ }
 }
 
 public enum Currency { KRW, USD, EUR }
 
-// === 회원 도메인 ===
-
+// === ID 타입들: 생성 시점 검증 ===
 public record MemberId(long value) {
-    public MemberId {
-        if (value <= 0) throw new IllegalArgumentException("회원 ID는 양수여야 합니다");
-    }
+    public MemberId { if (value <= 0) throw new IllegalArgumentException("양수 필요"); }
 }
-
-public record EmailAddress(String value) {
-    private static final Pattern EMAIL_PATTERN =
-        Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
-
-    public EmailAddress {
-        if (value == null || !EMAIL_PATTERN.matcher(value).matches()) {
-            throw new IllegalArgumentException("유효하지 않은 이메일: " + value);
-        }
-    }
-}
-
-// === 상품 도메인 ===
-
-public record ProductId(String value) {
-    public ProductId {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("상품 ID는 비어있을 수 없습니다");
-        }
-    }
-}
-
-public record StockQuantity(int value) {
-    public StockQuantity {
-        if (value < 0) {
-            throw new IllegalArgumentException("재고는 음수가 될 수 없습니다");
-        }
-    }
-
-    public static StockQuantity zero() {
-        return new StockQuantity(0);
-    }
-
-    public boolean isOutOfStock() {
-        return value == 0;
-    }
-
-    public StockQuantity decrease(int amount) {
-        return new StockQuantity(value - amount);
-    }
-}
-
-// === 주문 도메인 ===
 
 public record OrderId(String value) {
     public OrderId {
-        if (value == null || !value.startsWith("ORD-")) {
-            throw new IllegalArgumentException("주문 ID는 'ORD-'로 시작해야 합니다: " + value);
-        }
+        if (value == null || !value.startsWith("ORD-"))
+            throw new IllegalArgumentException("ORD-로 시작 필요");
     }
+    public static OrderId generate() { return new OrderId("ORD-" + System.currentTimeMillis()); }
+}
 
-    public static OrderId generate() {
-        return new OrderId("ORD-" + System.currentTimeMillis());
+// === 검증 타입들: 정규식 또는 범위 검증 ===
+public record EmailAddress(String value) {
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+    public EmailAddress {
+        if (value == null || !EMAIL_PATTERN.matcher(value).matches())
+            throw new IllegalArgumentException("유효하지 않은 이메일");
     }
 }
 
 public record OrderLineQuantity(int value) {
     public OrderLineQuantity {
-        if (value < 1) {
-            throw new IllegalArgumentException("주문 수량은 1 이상이어야 합니다");
-        }
-        if (value > 99) {
-            throw new IllegalArgumentException("주문 수량은 99개를 초과할 수 없습니다");
-        }
-    }
-}
-
-// === 쿠폰 도메인 ===
-
-public record CouponCode(String value) {
-    private static final Pattern COUPON_PATTERN = Pattern.compile("^[A-Z0-9]{8,12}$");
-
-    public CouponCode {
-        if (value == null || !COUPON_PATTERN.matcher(value).matches()) {
-            throw new IllegalArgumentException("쿠폰 코드는 8-12자리 영숫자여야 합니다: " + value);
-        }
-    }
-}
-
-public record DiscountRate(int value) {
-    public DiscountRate {
-        if (value < 1 || value > 100) {
-            throw new IllegalArgumentException("할인율은 1-100 사이여야 합니다: " + value);
-        }
-    }
-
-    public Money applyTo(Money original) {
-        BigDecimal rate = BigDecimal.valueOf(100 - value).divide(BigDecimal.valueOf(100));
-        return new Money(original.amount().multiply(rate), original.currency());
+        if (value < 1 || value > 99) throw new IllegalArgumentException("1-99 사이 필요");
     }
 }
 ```
@@ -1184,6 +972,7 @@ public record OrderAmount(double value) {
 모든 복잡한 데이터 구조는 단 두 가지 방식의 조합으로 만들어집니다:
 
 **표 3.1**: Product Type vs Sum Type
+
 | 결합 방식 | 의미 | Java 도구 | 예시 |
 |----------|-----|----------|------|
 | **AND (Product Type)** | A **그리고** B | `record` | 주문 = 상품목록 AND 배송지 AND 결제정보 |
@@ -1472,90 +1261,41 @@ public record FreeShipping(Money shippingFee) implements CouponType {
 
 **코드 3.6**: 주문 상태 (상태별 데이터가 다른 Sum Type)
 ```java
-package com.ecommerce.domain.order;
-
-// 주문 상태: 각 상태마다 필요한 데이터가 다름
+// 주문 상태: 각 상태마다 필요한 데이터가 다름!
 public sealed interface OrderStatus
-    permits Unpaid, Paid, Shipping, Delivered, Cancelled {
-}
+    permits Unpaid, Paid, Shipping, Delivered, Cancelled {}
 
-// 미결제: 결제 기한만 있음
-public record Unpaid(
-    LocalDateTime paymentDeadline
-) implements OrderStatus {}
+public record Unpaid(LocalDateTime paymentDeadline) implements OrderStatus {}
+public record Paid(LocalDateTime paidAt, String transactionId) implements OrderStatus {}
+public record Shipping(LocalDateTime shippedAt, String trackingNumber) implements OrderStatus {}
+public record Delivered(LocalDateTime deliveredAt) implements OrderStatus {}
+public record Cancelled(LocalDateTime cancelledAt, CancelReason reason) implements OrderStatus {}
 
-// 결제 완료: 결제 일시와 결제 정보 추가
-public record Paid(
-    LocalDateTime paidAt,
-    PaymentMethod paymentMethod,
-    String transactionId
-) implements OrderStatus {}
-
-// 배송 중: 운송장 번호와 배송 시작일 추가
-public record Shipping(
-    LocalDateTime paidAt,
-    String trackingNumber,
-    LocalDateTime shippedAt
-) implements OrderStatus {}
-
-// 배송 완료: 수령 확인 일시 추가
-public record Delivered(
-    LocalDateTime paidAt,
-    String trackingNumber,
-    LocalDateTime deliveredAt
-) implements OrderStatus {}
-
-// 취소됨: 취소 사유와 환불 정보
-public record Cancelled(
-    LocalDateTime cancelledAt,
-    CancelReason reason,
-    RefundInfo refundInfo  // null일 수 있음 (환불 전)
-) implements OrderStatus {}
-
-public enum CancelReason {
-    CUSTOMER_REQUEST, OUT_OF_STOCK, PAYMENT_FAILED, FRAUD_SUSPECTED
-}
+public enum CancelReason { CUSTOMER_REQUEST, OUT_OF_STOCK, PAYMENT_FAILED }
 ```
 
 #### 상태별 처리 로직
 
-**코드 3.7**: 상태별 메시지 처리
+**코드 3.7**: 상태별 메시지 처리와 Guard Pattern
 ```java
 public class OrderService {
-
     public String getOrderStatusMessage(Order order) {
         return switch (order.status()) {
-            case Unpaid u ->
-                "결제 대기 중입니다. 기한: " + u.paymentDeadline();
-
-            case Paid p ->
-                "결제가 완료되었습니다. (" + p.paidAt() + ")";
-
-            case Shipping s ->
-                "배송 중입니다. 운송장: " + s.trackingNumber();
-
-            case Delivered d ->
-                "배송이 완료되었습니다. (" + d.deliveredAt() + ")";
-
-            case Cancelled c ->
-                "주문이 취소되었습니다. 사유: " + c.reason();
+            case Unpaid u -> "결제 대기. 기한: " + u.paymentDeadline();
+            case Paid p -> "결제 완료 (" + p.paidAt() + ")";
+            case Shipping s -> "배송 중. 운송장: " + s.trackingNumber();
+            case Delivered d -> "배송 완료 (" + d.deliveredAt() + ")";
+            case Cancelled c -> "취소됨. 사유: " + c.reason();
         };
     }
 
-    // Guard Pattern: 조건부 매칭
+    // Guard Pattern: when 절로 조건 추가
     public boolean canCancel(Order order) {
         return switch (order.status()) {
-            case Unpaid u -> true;  // 미결제는 항상 취소 가능
-            case Paid p when isWithin24Hours(p.paidAt()) -> true;  // 24시간 내 취소 가능
-            case Paid p -> false;   // 24시간 이후 취소 불가
-            case Shipping s -> false;  // 배송 시작 후 취소 불가
-            case Delivered d -> false;
-            case Cancelled c -> false;  // 이미 취소됨
+            case Unpaid u -> true;
+            case Paid p when p.paidAt().plusHours(24).isAfter(LocalDateTime.now()) -> true;
+            case Paid p, Shipping s, Delivered d, Cancelled c -> false;
         };
-    }
-
-    private boolean isWithin24Hours(LocalDateTime time) {
-        return time.plusHours(24).isAfter(LocalDateTime.now());
     }
 }
 ```
@@ -1566,41 +1306,28 @@ public class OrderService {
 
 **코드 3.8**: 중첩된 Sum Type과 Pattern Matching
 ```java
-// 결제 결과도 Sum Type
-public sealed interface PaymentResult
-    permits PaymentResult.Success, PaymentResult.Failure {
-
-    record Success(String receiptNumber, LocalDateTime processedAt) implements PaymentResult {}
-
+// 결제 결과: Success 또는 Failure
+public sealed interface PaymentResult permits Success, Failure {
+    record Success(String receiptNumber) implements PaymentResult {}
     record Failure(PaymentError error) implements PaymentResult {}
 }
 
+// 결제 에러: 4가지 유형
 public sealed interface PaymentError
-    permits InsufficientFunds, CardExpired, InvalidAccount, SystemError {
-}
-
-record InsufficientFunds(Money required, Money available) implements PaymentError {}
-record CardExpired(ExpiryDate expiryDate) implements PaymentError {}
+    permits InsufficientFunds, CardExpired, InvalidAccount, SystemError {}
+record InsufficientFunds(Money required) implements PaymentError {}
+record CardExpired(ExpiryDate exp) implements PaymentError {}
 record InvalidAccount(String reason) implements PaymentError {}
-record SystemError(String errorCode, String message) implements PaymentError {}
+record SystemError(String code) implements PaymentError {}
 
-// 중첩 패턴 매칭으로 상세 처리
+// 중첩 패턴 매칭: Failure 내부의 에러 타입까지 분기
 public String handlePaymentResult(PaymentResult result) {
     return switch (result) {
-        case PaymentResult.Success s ->
-            "결제 성공! 영수증: " + s.receiptNumber();
-
-        case PaymentResult.Failure(InsufficientFunds e) ->
-            "잔액 부족: " + e.available() + " / " + e.required() + " 필요";
-
-        case PaymentResult.Failure(CardExpired e) ->
-            "카드 만료: " + e.expiryDate();
-
-        case PaymentResult.Failure(InvalidAccount e) ->
-            "잘못된 계좌: " + e.reason();
-
-        case PaymentResult.Failure(SystemError e) ->
-            "시스템 오류 [" + e.errorCode() + "]: " + e.message();
+        case Success s -> "결제 성공! 영수증: " + s.receiptNumber();
+        case Failure(InsufficientFunds e) -> "잔액 부족";
+        case Failure(CardExpired e) -> "카드 만료: " + e.exp();
+        case Failure(InvalidAccount e) -> "잘못된 계좌";
+        case Failure(SystemError e) -> "시스템 오류: " + e.code();
     };
 }
 ```
@@ -1860,43 +1587,30 @@ shipping.cancel();  // 컴파일 에러! 메서드 없음
 
 **코드 4.6**: Phantom Type을 사용한 이메일 검증
 ```java
-// Phantom Type을 사용한 상태 표현
+// Phantom Type: 상태를 제네릭 파라미터로 표시 (런타임 비용 없음)
 public sealed interface EmailState {}
 public record Unverified() implements EmailState {}
 public record Verified() implements EmailState {}
 
-// 상태를 제네릭 파라미터로 "표시"만 함 (런타임에 영향 없음)
 public record Email<S extends EmailState>(String value) {
     public static Email<Unverified> unverified(String value) {
-        // 기본 검증 (형식만)
-        if (!value.contains("@")) {
-            throw new IllegalArgumentException("이메일 형식 오류");
-        }
+        if (!value.contains("@")) throw new IllegalArgumentException("형식 오류");
         return new Email<>(value);
     }
 }
 
-// 검증 서비스
+// Unverified → Verified 변환 (검증 통과 시)
 public class EmailVerificationService {
-    // Unverified 이메일만 받아서 Verified로 변환
     public Email<Verified> verify(Email<Unverified> email, String code) {
-        if (verifyCode(email.value(), code)) {
+        if (verifyCode(email.value(), code))
             return new Email<>(email.value());  // 같은 값, 다른 타입!
-        }
         throw new VerificationFailedException();
-    }
-
-    private boolean verifyCode(String email, String code) {
-        // 실제로는 DB 또는 캐시에서 코드 확인
-        return true; // 예시용 단순화
     }
 }
 
-// 회원 가입 완료 - Verified 이메일만 받음
+// Verified 이메일만 받음 → 인증 안 된 이메일로 가입 불가!
 public class MemberService {
-    public Member register(Email<Verified> email, String name) {
-        return new Member(MemberId.generate(), email.value(), name);
-    }
+    public Member register(Email<Verified> email, String name) { ... }
 }
 ```
 

@@ -331,6 +331,7 @@ Result<PaidOrder, OrderError> result = validateOrder(input)
 ```
 
 **표 6.1**: map vs flatMap 비교
+
 | 연산 | 변환 함수 시그니처 | 사용 시점 |
 |-----|-------------------|----------|
 | `map` | `A → B` | 변환이 절대 실패하지 않을 때 |
@@ -518,6 +519,7 @@ Validation<Order, List<Error>> result = Validation.combine3(
 ```
 
 **표 7.1**: Result vs Validation 비교
+
 | 특성 | Result | Validation |
 |------|--------|------------|
 | 에러 처리 | 첫 에러에서 중단 | 모든 에러 수집 |
@@ -809,6 +811,7 @@ public sealed interface OrderEvent permits
 ```
 
 **표 7.2**: Command vs Event 비교
+
 | 특성 | Command | Event |
 |------|---------|-------|
 | 시제 | 미래/명령형 | 과거/완료형 |
