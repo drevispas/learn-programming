@@ -1,5 +1,7 @@
 package com.ecommerce.shared.types;
 
+import com.ecommerce.shared.Result;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
@@ -83,13 +85,57 @@ public record Money(BigDecimal amount, Currency currency) {
 
     /**
      * 뺄셈 결과가 음수면 0으로 처리 (음수 금액 불변식 유지)
-     * subtract 후 음수가 될 수 있는 도메인 로직이면 Result 반환 고려
+     *
+     * @deprecated 음수 결과를 조용히 0으로 클램핑하므로 버그를 은폐할 수 있음.
+     *             비즈니스 로직에서는 {@link #subtractSafe(Money)}를 사용 권장.
+     * @see #subtractSafe(Money) Result를 반환하는 안전한 뺄셈
      */
+    @Deprecated
     public Money subtract(Money other) {
         requireSameCurrency(other);
         BigDecimal result = this.amount.subtract(other.amount);
         // [Invariant 유지] 음수 방지를 위해 max(0) 적용 - 불변식 보존
         return new Money(result.max(BigDecimal.ZERO), this.currency);
+    }
+
+    /**
+     * 안전한 뺄셈: 실패 가능성을 Result로 표현
+     *
+     * subtract()와 달리 음수 결과를 조용히 0으로 변환하지 않고,
+     * 명시적으로 InsufficientAmount 에러를 반환한다.
+     *
+     * <h2>사용 예시</h2>
+     * <pre>{@code
+     * Money balance = Money.krw(10000);
+     * Money withdrawal = Money.krw(5000);
+     *
+     * // 성공 케이스
+     * balance.subtractSafe(withdrawal)
+     *     .map(remaining -> "남은 금액: " + remaining.amount());
+     *
+     * // 실패 케이스 처리
+     * balance.subtractSafe(Money.krw(15000))
+     *     .fold(
+     *         remaining -> processWithdrawal(remaining),
+     *         error -> showError(error.toString())
+     *     );
+     * }</pre>
+     *
+     * @param other 뺄 금액
+     * @return 성공 시 새 Money, 실패 시 MoneyError
+     */
+    public Result<Money, MoneyError> subtractSafe(Money other) {
+        // 통화 일치 확인
+        if (!this.currency.equals(other.currency)) {
+            return Result.failure(new MoneyError.CurrencyMismatch(this.currency, other.currency));
+        }
+        // 결과 계산
+        BigDecimal result = this.amount.subtract(other.amount);
+        // 음수 확인
+        if (result.compareTo(BigDecimal.ZERO) < 0) {
+            return Result.failure(new MoneyError.InsufficientAmount(this, other));
+        }
+        return Result.success(new Money(result, this.currency));
     }
 
     public Money multiply(int factor) {

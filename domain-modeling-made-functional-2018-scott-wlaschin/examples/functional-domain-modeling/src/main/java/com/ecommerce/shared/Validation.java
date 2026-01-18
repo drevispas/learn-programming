@@ -134,6 +134,42 @@ public sealed interface Validation<S, E> permits Validation.Valid, Validation.In
         );
     }
 
+    /** 5개 검증 결과 결합. combine4를 확장하여 구현 */
+    static <A, B, C, D, E, R, Err> Validation<R, List<Err>> combine5(
+        Validation<A, List<Err>> va,
+        Validation<B, List<Err>> vb,
+        Validation<C, List<Err>> vc,
+        Validation<D, List<Err>> vd,
+        Validation<E, List<Err>> ve,
+        QuintFunction<A, B, C, D, E, R> combiner
+    ) {
+        return combine(
+            combine4(va, vb, vc, vd, Quadruple::new),
+            ve,
+            (abcd, e) -> combiner.apply(abcd.first(), abcd.second(), abcd.third(), abcd.fourth(), e)
+        );
+    }
+
+    /** 6개 검증 결과 결합. combine4를 두 번 사용하여 구현 */
+    static <A, B, C, D, E, F, R, Err> Validation<R, List<Err>> combine6(
+        Validation<A, List<Err>> va,
+        Validation<B, List<Err>> vb,
+        Validation<C, List<Err>> vc,
+        Validation<D, List<Err>> vd,
+        Validation<E, List<Err>> ve,
+        Validation<F, List<Err>> vf,
+        SextFunction<A, B, C, D, E, F, R> combiner
+    ) {
+        return combine(
+            combine3(va, vb, vc, Triple::new),
+            combine3(vd, ve, vf, Triple::new),
+            (abc, def) -> combiner.apply(
+                abc.first(), abc.second(), abc.third(),
+                def.first(), def.second(), def.third()
+            )
+        );
+    }
+
     /**
      * 검증 결과를 처리하는 패턴 매칭 헬퍼
      *
@@ -159,8 +195,18 @@ public sealed interface Validation<S, E> permits Validation.Valid, Validation.In
     /** 검증 실패. 에러 목록을 담고 있다 (보통 List&lt;E&gt; 타입) */
     record Invalid<S, E>(E errors) implements Validation<S, E> {}
 
+    // === 내부 헬퍼 튜플 타입 ===
+
     /** 내부 헬퍼: combine3, combine4에서 중간 결과를 담는 튜플 */
     record Pair<A, B>(A first, B second) {}
+
+    /** 내부 헬퍼: combine6에서 중간 결과를 담는 튜플 */
+    record Triple<A, B, C>(A first, B second, C third) {}
+
+    /** 내부 헬퍼: combine5에서 중간 결과를 담는 튜플 */
+    record Quadruple<A, B, C, D>(A first, B second, C third, D fourth) {}
+
+    // === 함수형 인터페이스 ===
 
     @FunctionalInterface
     interface TriFunction<A, B, C, R> {
@@ -170,5 +216,15 @@ public sealed interface Validation<S, E> permits Validation.Valid, Validation.In
     @FunctionalInterface
     interface QuadFunction<A, B, C, D, R> {
         R apply(A a, B b, C c, D d);
+    }
+
+    @FunctionalInterface
+    interface QuintFunction<A, B, C, D, E, R> {
+        R apply(A a, B b, C c, D d, E e);
+    }
+
+    @FunctionalInterface
+    interface SextFunction<A, B, C, D, E, F, R> {
+        R apply(A a, B b, C c, D d, E e, F f);
     }
 }
