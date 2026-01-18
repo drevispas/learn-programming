@@ -491,26 +491,24 @@ public class OrderDomainService {
     // 입력 → 출력, 외부 의존성 없음
     // Optional을 파라미터로 받지 않고 메서드 오버로딩 사용
     public PricedOrder calculatePrice(ValidatedOrder order) {
-        return calculatePrice(order, Money.ZERO);
+        return calculatePriceInternal(order, Money.ZERO);
     }
 
     public PricedOrder calculatePrice(ValidatedOrder order, Coupon coupon) {
-        Money subtotal = order.lines().stream()
-            .map(line -> line.price().multiply(line.quantity()))
-            .reduce(Money.ZERO, Money::add);
-
+        Money subtotal = calculateSubtotal(order);
         Money discount = coupon.calculateDiscount(subtotal);
-
-        return new PricedOrder(order.customerId(), order.lines(),
-            subtotal, discount, subtotal.subtract(discount));
+        return calculatePriceInternal(order, discount);
     }
 
-    // 내부에서만 사용하는 private 메서드
-    private PricedOrder calculatePrice(ValidatedOrder order, Money discount) {
-        Money subtotal = order.lines().stream()
+    // 내부 헬퍼 메서드
+    private Money calculateSubtotal(ValidatedOrder order) {
+        return order.lines().stream()
             .map(line -> line.price().multiply(line.quantity()))
             .reduce(Money.ZERO, Money::add);
+    }
 
+    private PricedOrder calculatePriceInternal(ValidatedOrder order, Money discount) {
+        Money subtotal = calculateSubtotal(order);
         return new PricedOrder(order.customerId(), order.lines(),
             subtotal, discount, subtotal.subtract(discount));
     }
