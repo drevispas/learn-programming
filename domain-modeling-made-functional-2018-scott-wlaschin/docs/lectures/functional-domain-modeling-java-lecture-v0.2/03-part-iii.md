@@ -89,6 +89,14 @@ public class JpaOrderRepository implements OrderRepository {
 
 #### 도메인 코어를 보호하라
 
+**그림 8.0**: Trust Boundary (신뢰 경계) 다이어그램
+
+![Trust Boundary DFD](https://threat-modeling.com/wp-content/uploads/2022/10/How-to-use-Data-Flow-Diagrams-in-Threat-Modeling-Example-2-1.jpg)
+*출처: [Data Flow Diagrams in Threat Modeling - Threat-Modeling.com](https://threat-modeling.com/data-flow-diagrams-in-threat-modeling/)*
+
+> 점선으로 표시된 **Trust Boundary**가 신뢰할 수 있는 영역과 그렇지 않은 영역을 구분합니다.
+> 데이터가 경계를 넘을 때마다 **검증과 변환**이 필요합니다.
+
 **신뢰 경계**:
 - **외부**: 신뢰할 수 없는 데이터 (JSON, String, Raw Data)
 - **경계**: 유효성 검사 및 변환 (DTO -> Domain Object)
@@ -165,6 +173,14 @@ public User getUser(@PathVariable Long id) {
 > 외국 손님(외부 시스템)이 오면 통역사가 번역합니다.
 > 우리 팀(도메인)은 우리 언어(도메인 타입)만 사용합니다.
 
+**그림 8.1**: Anti-Corruption Layer 패턴
+
+![Anti-Corruption Layer](https://learn.microsoft.com/en-us/azure/architecture/patterns/_images/anti-corruption-layer.png)
+*출처: [Anti-Corruption Layer Pattern - Microsoft Azure Architecture Center](https://learn.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer)*
+
+> 외부 시스템의 모델을 도메인 모델로 변환하는 **번역 계층**을 둡니다.
+> 도메인 모델이 외부 시스템에 오염되지 않도록 보호합니다.
+
 **코드 8.3**: Anti-Corruption Layer - 외부 API 응답 변환
 ```java
 // 외부 결제 API 응답
@@ -191,8 +207,10 @@ public class PaymentGatewayAdapter {
         if (!"0000".equals(response.result_code())) {
             return Result.failure(translateErrorCode(response.result_code()));
         }
-        return Result.success(new PaymentApproval(
-            new TransactionId(response.transaction_id())
+        return Result.success(
+            new PaymentApproval(
+                new TransactionId(response.transaction_id()
+            )
         ));
     }
 }
@@ -331,6 +349,10 @@ OrderMapper.toDomain()의 역할은?
 > **의존성은 항상 안쪽으로 향합니다.** 도메인은 아무것도 의존하지 않습니다.
 
 **그림 9.1**: Onion Architecture 계층 구조
+
+![Onion Architecture - Clean Architecture Onion View](https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/media/image5-7.png)
+*출처: [Microsoft Learn - Common Web Application Architectures](https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures)*
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                         INFRASTRUCTURE                           │
@@ -445,6 +467,14 @@ Money krw = krwConverter.apply(usd100);
 
 > "우리 팀은 Spring 쓰고 JPA 쓰는데요?" 100% 순수하게 짤 수는 없습니다.
 > 현실적인 타협점: **Functional Core, Imperative Shell**
+
+**그림 9.2**: Functional Core, Imperative Shell 패턴
+
+![Functional Core Imperative Shell](https://kennethlange.com/wp-content/uploads/2021/03/functional_core_imperative_shell-624x351.png)
+*출처: [The Functional Core, Imperative Shell Pattern - Kenneth Lange](https://kennethlange.com/functional-core-imperative-shell/)*
+
+> 순수 함수로 구성된 **Functional Core** (내부)와
+> 부수효과를 처리하는 **Imperative Shell** (외부)로 분리합니다.
 
 **Functional Core (순수 영역)**:
 - 비즈니스 로직, 계산, 판단, 데이터 변환 등 **"머리 쓰는 일"**은 Pure Function으로

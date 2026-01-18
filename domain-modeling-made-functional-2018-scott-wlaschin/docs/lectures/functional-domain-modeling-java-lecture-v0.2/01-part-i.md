@@ -403,6 +403,14 @@ public int add(int a, int b) {
 
 도메인 모델링은 클래스 다이어그램을 그리는 것에서 시작하지 않습니다. **Event Storming**이라는 협업 워크숍을 통해 비즈니스 흐름을 파악하는 것이 먼저입니다.
 
+**그림 1.1**: Event Storming 워크플로우
+
+![Event Storming Process](https://corporate-assets.lucid.co/co/63567f11-f099-44cd-8c96-ec0650ec3c5b.png)
+*출처: [8 Steps in the Event Storming Process - Lucidspark](https://lucid.co/blog/8-steps-in-the-event-storming-process)*
+
+> 색깔별 포스트잇: **주황색** = Domain Event (과거형), **파란색** = Command,
+> **노란색** = Aggregate, **분홍색** = 외부 시스템, **빨간색** = 문제점/핫스팟
+
 **핵심 질문**: "우리 시스템에서 어떤 흥미로운 일이 발생합니까?"
 
 #### Domain Event
@@ -971,6 +979,34 @@ public record OrderAmount(double value) {
 
 모든 복잡한 데이터 구조는 단 두 가지 방식의 조합으로 만들어집니다:
 
+**그림 3.1**: Algebraic Data Types - Product Type vs Sum Type
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          Algebraic Data Types (ADT)                          │
+├──────────────────────────────────────┬───────────────────────────────────────┤
+│          Product Type (AND)          │            Sum Type (OR)              │
+├──────────────────────────────────────┼───────────────────────────────────────┤
+│                                      │                                       │
+│    ┌──────────────────────────────┐  │             ┌──────────┐              │
+│    │      record Order(           │  │             │  sealed  │              │
+│    │        OrderId id,           │  │             │interface │              │
+│    │        Money amount,         │  │             │ Payment  │              │
+│    │        Status status         │  │             └────┬─────┘              │
+│    │      )                       │  │                  │                    │
+│    └──────────────────────────────┘  │            ┌─────┼─────┐              │
+│                                      │            │     │     │              │
+│                                      │          Card Transfer Points         │
+│                                      │                                       │
+│    id AND amount AND status          │           (하나만 선택)               │
+│    (모든 필드 필요)                  │                                       │
+│                                      │                                       │
+│    상태 공간: N₁ × N₂ × N₃           │       상태 공간: N₁ + N₂ + N₃         │
+└──────────────────────────────────────┴───────────────────────────────────────┘
+```
+*참고 자료: [Domain Modeling Made Functional](https://pragprog.com/titles/swdddf/) - Scott Wlaschin,
+[What Are Sum, Product, and Pi Types?](https://manishearth.github.io/blog/2017/03/04/what-are-sum-product-and-pi-types/)*
+
 **표 3.1**: Product Type vs Sum Type
 
 | 결합 방식 | 의미 | Java 도구 | 예시 |
@@ -1537,6 +1573,14 @@ public class MemberService {
 ### 4.3 상태별 Entity 패턴 (xxxEntity)
 
 #### 타입으로 상태 전이 강제하기
+
+**그림 4.1**: 주문 상태 전이 다이어그램 (State Machine)
+
+![Order State Machine](https://images.doclify.net/gleek-web/d/420c9e96-63da-4d78-834f-0fc4af7f71a7.png)
+*출처: [Online Shopping State Diagram - Gleek](https://www.gleek.io/templates/online-shopping-state)*
+
+> 위 다이어그램은 일반적인 온라인 쇼핑 상태 흐름을 보여줍니다.
+> 우리 도메인에서는 `Unpaid → Paid → Shipping → Delivered` 상태 전이를 타입으로 강제합니다.
 
 **코드 4.4**: 상태별 Entity 패턴
 ```java

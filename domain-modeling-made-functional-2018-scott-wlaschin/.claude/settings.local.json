@@ -26,7 +26,23 @@
       "Bash(grep:*)",
       "Skill(ascii-diagrams)",
       "Bash(git -C /Users/yonggeon.kim/repos/drevispas/learn-programming/domain-modeling-made-functional-2018-scott-wlaschin diff)",
-      "Bash(git -C /Users/yonggeon.kim/repos/drevispas/learn-programming/domain-modeling-made-functional-2018-scott-wlaschin commit -m \"$\\(cat <<''EOF''\nrefactor: replace default cases with exhaustive pattern matching\n\n- Coupon.expire\\(\\): return Result instead of throwing exception\n- Coupon.use\\(\\): replace default with explicit CouponStatus.Issued case\n- Order.cancel\\(\\): return Result with exhaustive OrderStatus handling\n- Add CouponError.CannotExpire error type for expire\\(\\) failures\n- Update tests to handle Result return types\nEOF\n\\)\")"
+      "Bash(git -C /Users/yonggeon.kim/repos/drevispas/learn-programming/domain-modeling-made-functional-2018-scott-wlaschin commit -m \"$\\(cat <<''EOF''\nrefactor: replace default cases with exhaustive pattern matching\n\n- Coupon.expire\\(\\): return Result instead of throwing exception\n- Coupon.use\\(\\): replace default with explicit CouponStatus.Issued case\n- Order.cancel\\(\\): return Result with exhaustive OrderStatus handling\n- Add CouponError.CannotExpire error type for expire\\(\\) failures\n- Update tests to handle Result return types\nEOF\n\\)\")",
+      "WebFetch(domain:blog.allegro.tech)",
+      "WebFetch(domain:fsharpforfunandprofit.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:ibm-cloud-architecture.github.io)",
+      "WebFetch(domain:www.gleek.io)",
+      "WebFetch(domain:stanford-cs242.github.io)",
+      "WebFetch(domain:jrsinclair.com)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "WebFetch(domain:www.boldare.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:lucid.co)",
+      "WebFetch(domain:kennethlange.com)",
+      "WebFetch(domain:threat-modeling.com)",
+      "WebFetch(domain:code.egym.de)",
+      "WebFetch(domain:www.jeffhui.net)",
+      "WebFetch(domain:manishearth.github.io)"
     ]
   }
 }

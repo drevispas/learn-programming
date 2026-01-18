@@ -93,3 +93,10 @@ Email<Verified> verify(Email<Unverified> email);
 - `PlaceOrderUseCase.java` - Complete workflow integrating all patterns
 - `WorkflowTest.java` - Tests demonstrating end-to-end order flow
 - `OrderDomainService.java` - Pure domain logic extraction
+
+## ASCII 다이어그램
+
+ASCII 박스, 플로우차트, 아키텍처 다이어그램, 시퀀스 다이어그램 등을 그릴 때:
+1. `/ascii-diagrams` skill을 사용하세요
+2. 직접 코드 블록에 ASCII 문자로 그리지 마세요
+3. Skill이 정렬과 포맷팅을 자동으로 처리합니다
