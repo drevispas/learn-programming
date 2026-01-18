@@ -470,7 +470,7 @@ Money krw = krwConverter.apply(usd100);
 
 **그림 9.2**: Functional Core, Imperative Shell 패턴
 
-![Functional Core Imperative Shell](https://kennethlange.com/wp-content/uploads/2021/03/functional_core_imperative_shell-624x351.png)
+![Functional Core Imperative Shell](https://kennethlange.com/wp-content/uploads/2021/03/functional_core_imperative_shell-624x351.png)<br/>
 *출처: [The Functional Core, Imperative Shell Pattern - Kenneth Lange](https://kennethlange.com/functional-core-imperative-shell/)*
 
 > 순수 함수로 구성된 **Functional Core** (내부)와

@@ -93,7 +93,7 @@ public record OrderPlaced(OrderId orderId, Money totalAmount, LocalDateTime occu
 
 **그림 5.1**: 함수 합성 파이프라인 - 타입이 일치하면 연결 가능
 
-![Function Composition](https://fsharpforfunandprofit.com/posts/recipe-part2/Recipe_Railway_Cargo3.png)
+![Function Composition](https://fsharpforfunandprofit.com/posts/recipe-part2/Recipe_Railway_Cargo3.png)<br/>
 *출처: [Railway Oriented Programming - F# for Fun and Profit](https://fsharpforfunandprofit.com/posts/recipe-part2/) - Scott Wlaschin*
 
 **코드 5.3**: 함수 합성으로 워크플로우 구현
@@ -213,12 +213,12 @@ void methodC() { throw new SomeException(); }  // 바로 catch로 점프!
 
 **그림 6.1**: Railway-Oriented Programming - 성공/실패 트랙
 
-![Railway Switch](https://fsharpforfunandprofit.com/posts/recipe-part2/Recipe_RailwaySwitch.png)
+![Railway Switch](https://fsharpforfunandprofit.com/posts/recipe-part2/Recipe_RailwaySwitch.png)<br/>
 *출처: [Railway Oriented Programming - F# for Fun and Profit](https://fsharpforfunandprofit.com/posts/recipe-part2/) - Scott Wlaschin*
 
 **그림 6.2**: Railway-Oriented Programming - 함수들의 연결
 
-![Railway Compose](https://fsharpforfunandprofit.com/posts/recipe-part2/Recipe_Railway_Compose2.png)
+![Railway Compose](https://fsharpforfunandprofit.com/posts/recipe-part2/Recipe_Railway_Compose2.png)<br/>
 *출처: [Railway Oriented Programming - F# for Fun and Profit](https://fsharpforfunandprofit.com/posts/recipe-part2/) - Scott Wlaschin*
 
 #### Result 타입 정의
