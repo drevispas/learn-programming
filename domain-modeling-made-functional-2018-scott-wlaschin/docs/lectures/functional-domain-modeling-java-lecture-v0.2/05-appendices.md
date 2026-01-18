@@ -2,8 +2,9 @@
 
 ---
 
-## Appendix A: 흔한 실수 모음 (⚠️ 경고)
+## Appendix A: 흔한 실수 모음
 
+**표 A.1**: 흔한 실수와 올바른 코드
 | 실수 | 올바른 코드 | 참고 |
 |------|------------|------|
 | `quantity < 0` 검증 | `quantity < 1` (0도 막아야) | Ch.2 Compact Constructor |
@@ -17,8 +18,9 @@
 
 ## Appendix B: Java 25 함수형 Cheat Sheet
 
-### Record (불변 데이터)
+### Record (Immutable Data)
 
+**코드 B.1**: Record 기본 사용법과 Wither 메서드
 ```java
 // 기본 Record
 public record Money(BigDecimal amount) {
@@ -35,6 +37,7 @@ Order newOrder = oldOrder.withStatus(OrderStatus.PAID);
 
 ### Sealed Interface (Sum Type)
 
+**코드 B.2**: Sealed Interface로 Sum Type 정의
 ```java
 public sealed interface Result<S,F> permits Success, Failure {}
 public record Success<S,F>(S value) implements Result<S,F> {}
@@ -43,6 +46,7 @@ public record Failure<S,F>(F error) implements Result<S,F> {}
 
 ### Pattern Matching
 
+**코드 B.3**: Exhaustive Pattern Matching with Sealed Interface
 ```java
 // sealed interface OrderStatus permits Unpaid, Paid, Shipping, Delivered, Cancelled
 String msg = switch (status) {
@@ -58,12 +62,14 @@ String msg = switch (status) {
 
 ### Optional
 
+**코드 B.4**: Optional 체이닝
 ```java
 opt.map(f).flatMap(g).orElseThrow(() -> new NotFoundException());
 ```
 
 ### var 타입 추론
 
+**코드 B.5**: Local Variable Type Inference
 ```java
 var validator = new OrderValidator();
 var result = validator.validate(order);
@@ -79,7 +85,7 @@ var result = validator.validate(order);
 
 현대의 JVM(특히 G1GC, ZGC)은 **"짧게 살고 죽는 객체(Short-lived Object)"**를 처리하는 데 극도로 최적화되어 있습니다.
 
-- **에덴(Eden) 영역의 마법**: 대부분의 record나 불변 객체는 생성되자마자 잠깐 쓰이고 버려집니다. JVM의 가비지 컬렉터(GC) 입장에서 이런 객체들은 청소 비용이 거의 '0'에 수렴합니다.
+- **에덴(Eden) 영역의 마법**: 대부분의 record나 Immutable 객체는 생성되자마자 잠깐 쓰이고 버려집니다. JVM의 가비지 컬렉터(GC) 입장에서 이런 객체들은 청소 비용이 거의 '0'에 수렴합니다.
 - **구조적 공유 (Structural Sharing)**: `new Order(..., newAddress)`를 할 때, 기존 Order의 모든 데이터를 복사하는 게 아닙니다. 기존 데이터는 참조(Reference)만 복사해서 재사용합니다.
 - **탈출 분석 (Escape Analysis)**: JIT 컴파일러가 "이 객체는 메서드 밖으로 안 나가네?"라고 판단하면, 힙이 아닌 스택에 할당해버립니다.
 
@@ -95,6 +101,7 @@ var result = validator.validate(order);
 
 서비스 메서드 시그니처가 타입(Type) 그 자체로 문서가 되어야 합니다.
 
+**코드 C.1**: toDomain() 위치 - Controller vs Service
 ```java
 // Service가 DTO를 받을 때: 불안함
 void register(UserDTO dto)  // dto 안에 쓰레기 값 있을 수도
@@ -107,7 +114,7 @@ void register(User user)    // User 타입이면 이미 검증 완료
 
 **위치: domain 패키지**
 
-이것이 **의존성 역전 원칙(DIP)**의 핵심입니다.
+이것이 **Dependency Inversion Principle(DIP)**의 핵심입니다.
 - Domain은 인터페이스만 정의 (OrderRepository)
 - Infra는 구현체 제공 (JpaOrderRepository)
 
@@ -121,15 +128,15 @@ void register(User user)    // User 타입이면 이미 검증 완료
 - **테스트 불가능**: 단위 테스트하려는데 연쇄적으로 의존성 딸려옴
 - **변경의 전파**: DB 스키마 바꿨는데 할인 로직에서 에러 발생
 
-### Q6. 순수 함수의 본질은 무엇인가요?
+### Q6. Pure Function의 본질은 무엇인가요?
 
-**참조 투명성(Referential Transparency)**: "언제, 어디서, 누가 실행하든 입력이 같으면 결과가 무조건 같아야 한다. 그리고 그 외에는 아무 일도 일어나지 않아야 한다."
+**Referential Transparency (참조 투명성)**: "언제, 어디서, 누가 실행하든 입력이 같으면 결과가 무조건 같아야 한다. 그리고 그 외에는 아무 일도 일어나지 않아야 한다."
 
-`System.out.println`도 부수 효과입니다:
+`System.out.println`도 Side Effect입니다:
 - 모니터라는 외부 세계의 상태를 변경
 - 실행 환경에 따라 동작이 달라질 수 있음
 
-### Q7. 팀이 FP를 안 하는데 순수 함수로 짜면 좋은가요?
+### Q7. 팀이 FP를 안 하는데 Pure Function으로 짜면 좋은가요?
 
 **네, 무조건 좋습니다!**
 
@@ -137,19 +144,20 @@ void register(User user)    // User 타입이면 이미 검증 완료
 2. **Local Reasoning**: 버그 추적 시 함수 안만 보면 됨
 3. **동시성 안전**: 값을 안 바꾸니 락 불필요
 
-### Q8. 순수 함수 적용 전략은?
+### Q8. Pure Function 적용 전략은?
 
 **Functional Core, Imperative Shell**
 
-- **Functional Core**: 비즈니스 로직, 계산, 판단 → 순수 함수로
+- **Functional Core**: 비즈니스 로직, 계산, 판단 → Pure Function으로
 - **Imperative Shell**: DB 저장, API 호출, 로그 출력 → 바깥쪽으로
 
-복잡한 로직만 순수 함수로 분리해도 디버깅 시간이 절반으로 줄어듭니다.
+복잡한 로직만 Pure Function으로 분리해도 디버깅 시간이 절반으로 줄어듭니다.
 
 ---
 
 ## Appendix D: 전체 퀴즈 정답
 
+**표 D.1**: 챕터별 퀴즈 정답표
 | Ch | Q1 | Q2 | Q3 | Q4 | Q5 |
 |----|----|----|----|----|-----|
 | 1  | C  | B  | B  | B  | B   |
@@ -166,11 +174,11 @@ void register(User user)    // User 타입이면 이미 검증 완료
 ### 정답 해설
 
 **Chapter 1**
-- Q1.1: C - 각 컨텍스트별로 필요한 정보만 담은 별도 모델 정의
-- Q1.2: B - Record는 setter가 없음 (불변)
+- Q1.1: C - 각 Bounded Context별로 필요한 정보만 담은 별도 모델 정의
+- Q1.2: B - Record는 setter가 없음 (Immutable)
 - Q1.3: B - 객체가 여러 곳에서 변경되어 상태 추적이 어렵다
 - Q1.4: B - 기획서 용어가 그대로 코드에 등장
-- Q1.5: B - 주문 컨텍스트에서 인증 정보에 접근
+- Q1.5: B - 주문 Bounded Context에서 인증 정보에 접근
 
 **Chapter 2**
 - Q2.1: C - 메모리 사용량 증가는 Primitive Obsession의 문제가 아님
@@ -203,7 +211,7 @@ void register(User user)    // User 타입이면 이미 검증 완료
 **Chapter 7**
 - Q7.1: B - 폼 검증에서 모든 에러를 한번에 보여줄 때 Validation
 - Q7.2: C - Applicative는 모든 에러를 수집 (첫 에러에서 중단 X)
-- Q7.3: C - Event는 이미 발생한 불변의 사실
+- Q7.3: C - Event는 이미 발생한 Immutable 사실
 - Q7.4: D - 두 에러 모두 수집됨
 - Q7.5: B - 과거형으로 "이미 일어난 일"을 표현
 
@@ -216,14 +224,14 @@ void register(User user)    // User 타입이면 이미 검증 완료
 
 **Chapter 9**
 - Q9.1: B - 의존성은 바깥쪽에서 안쪽으로 (Infrastructure → Domain)
-- Q9.2: C - 데이터베이스 저장은 부수효과
-- Q9.3: C - 순수 함수는 데이터베이스를 조회하지 않음
+- Q9.2: C - 데이터베이스 저장은 Side Effect
+- Q9.3: C - Pure Function은 데이터베이스를 조회하지 않음
 - Q9.4: B - Repository 인터페이스는 Domain 계층에 정의 (DIP)
 - Q9.5: B - Mock 없이 입력/출력만으로 테스트 가능
 
 **Chapter 10**
 - Q10.1: B - sealed interface의 메서드로 정의 (hasFreeShipping())
-- Q10.2: B - 각 컨텍스트에 필요한 데이터만 포함
+- Q10.2: B - 각 Bounded Context에 필요한 데이터만 포함
 - Q10.3: B - 타입으로 "배송 중 취소 불가" 규칙을 강제
 - Q10.4: B - 모든 결제 수단을 타입 안전하게 처리 가능
 - Q10.5: B - 쿠폰 사용 실패 가능성을 명시적으로 표현
@@ -242,7 +250,7 @@ void register(User user)    // User 타입이면 이미 검증 완료
 - 빌드: `mvn -q -f examples/functional-domain-modeling/pom.xml test`
 - Java 버전: 21+ (Record, Sealed Interface, Pattern Matching 사용)
 
-> 📝 **Java 버전 참고사항**:
+> **Java 버전 참고사항**:
 > - **Java 21+**: Record, Sealed Interface, Pattern Matching, Record Patterns 정식 지원
 > - **Java 22+**: Unnamed Variables & Patterns (`_`) 정식 지원 (JEP 456)
 > - **Java 25**: JEP 468 (`with` 구문)은 **포함되지 않았습니다** - 수동 `withXxx()` 메서드 필요
@@ -252,3 +260,5 @@ void register(User user)    // User 타입이면 이미 검증 완료
 - `Money`, `OrderLine`, `ValidatedOrder` 등 핵심 도메인 타입
 - `Result`, `Validation` 구현체
 - 간단한 `PlaceOrder` 워크플로우와 테스트
+
+> 💡 전체 프로젝트 구조와 실행 방법은 `examples/functional-domain-modeling/README.md`를 참조하세요.
