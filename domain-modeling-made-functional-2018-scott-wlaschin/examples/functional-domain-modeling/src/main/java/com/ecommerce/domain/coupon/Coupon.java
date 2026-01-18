@@ -59,7 +59,7 @@ public record Coupon(
             return switch (status) {
                 case CouponStatus.Used u -> Result.failure(new CouponError.AlreadyUsed(id));
                 case CouponStatus.Expired e -> Result.failure(new CouponError.Expired(id));
-                default -> Result.failure(new CouponError.NotAvailable());
+                case CouponStatus.Issued i -> Result.failure(new CouponError.NotAvailable()); // unreachable
             };
         }
 
@@ -98,18 +98,19 @@ public record Coupon(
 
     /**
      * 쿠폰 만료 처리
+     * @return 성공 시 만료된 Coupon, 실패 시 CouponError
      */
-    public Coupon expire() {
+    public Result<Coupon, CouponError> expire() {
         if (!(status instanceof CouponStatus.Issued)) {
-            throw new IllegalStateException("이미 사용되었거나 만료된 쿠폰입니다");
+            return Result.failure(new CouponError.CannotExpire(id));
         }
-        return new Coupon(
+        return Result.success(new Coupon(
             id,
             code,
             type,
             new CouponStatus.Expired(LocalDateTime.now()),
             minOrderAmount
-        );
+        ));
     }
 
     /**

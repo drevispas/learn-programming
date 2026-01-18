@@ -70,17 +70,19 @@ record Order(
     Money totalAmount,
     OrderStatus status
 ) {
-    public Order cancel(CancelReason reason) {
+    public Result<Order, String> cancel(CancelReason reason) {
         return switch (status) {
-            case OrderStatus.Unpaid u -> new Order(
+            case OrderStatus.Unpaid u -> Result.success(new Order(
                 id, customerId, lines, totalAmount,
                 new OrderStatus.Cancelled(LocalDateTime.now(), reason)
-            );
-            case OrderStatus.Paid p -> new Order(
+            ));
+            case OrderStatus.Paid p -> Result.success(new Order(
                 id, customerId, lines, totalAmount,
                 new OrderStatus.Cancelled(LocalDateTime.now(), reason)
-            );
-            default -> throw new IllegalStateException("취소 불가능한 상태: " + status);
+            ));
+            case OrderStatus.Shipping s -> Result.failure("배송 중인 주문은 취소할 수 없습니다");
+            case OrderStatus.Delivered d -> Result.failure("배송 완료된 주문은 취소할 수 없습니다");
+            case OrderStatus.Cancelled c -> Result.failure("이미 취소된 주문입니다");
         };
     }
 }

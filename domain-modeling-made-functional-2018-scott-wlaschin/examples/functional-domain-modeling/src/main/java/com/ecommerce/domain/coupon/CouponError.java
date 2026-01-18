@@ -10,7 +10,7 @@ import com.ecommerce.shared.types.Money;
  */
 public sealed interface CouponError
     permits CouponError.NotFound, CouponError.AlreadyUsed, CouponError.Expired,
-            CouponError.MinOrderNotMet, CouponError.NotAvailable {
+            CouponError.MinOrderNotMet, CouponError.NotAvailable, CouponError.CannotExpire {
 
     String message();
 
@@ -46,6 +46,13 @@ public sealed interface CouponError
         @Override
         public String message() {
             return "사용 불가능한 쿠폰입니다";
+        }
+    }
+
+    record CannotExpire(CouponId couponId) implements CouponError {
+        @Override
+        public String message() {
+            return "만료 처리할 수 없는 쿠폰입니다: " + couponId.value();
         }
     }
 }

@@ -395,16 +395,18 @@ class ArchitecturePatternsTest {
                 new OrderStatus.Unpaid(LocalDateTime.now().plusDays(1))
             );
 
-            Order cancelled = order.cancel(CancelReason.CUSTOMER_REQUEST);
+            Result<Order, String> result = order.cancel(CancelReason.CUSTOMER_REQUEST);
 
+            assertTrue(result.isSuccess());
+            Order cancelled = result.value();
             assertTrue(cancelled.status() instanceof OrderStatus.Cancelled);
             assertEquals(CancelReason.CUSTOMER_REQUEST,
                 ((OrderStatus.Cancelled) cancelled.status()).reason());
         }
 
         @Test
-        @DisplayName("취소 불가 상태에서 cancel() 호출 시 예외")
-        void order_cancel_throwsOnInvalidState() {
+        @DisplayName("취소 불가 상태에서 cancel() 호출 시 실패 Result 반환")
+        void order_cancel_returnsFailureOnInvalidState() {
             Order order = new Order(
                 new OrderId("ORD-1"),
                 new CustomerId(1L),
@@ -417,9 +419,10 @@ class ArchitecturePatternsTest {
                 )
             );
 
-            assertThrows(IllegalStateException.class, () ->
-                order.cancel(CancelReason.CUSTOMER_REQUEST)
-            );
+            Result<Order, String> result = order.cancel(CancelReason.CUSTOMER_REQUEST);
+
+            assertTrue(result.isFailure());
+            assertEquals("배송 중인 주문은 취소할 수 없습니다", result.error());
         }
     }
 }

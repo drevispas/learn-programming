@@ -253,8 +253,10 @@ class CouponDomainTest {
                 LocalDateTime.now().plusDays(30)
             );
 
-            Coupon expired = coupon.expire();
+            Result<Coupon, CouponError> result = coupon.expire();
 
+            assertTrue(result.isSuccess());
+            Coupon expired = result.value();
             assertTrue(expired.status() instanceof CouponStatus.Expired);
             assertFalse(expired.isAvailable());
         }
@@ -290,6 +292,7 @@ class CouponDomainTest {
                 case CouponError.Expired e -> "만료됨";
                 case CouponError.MinOrderNotMet e -> "최소 주문 금액 미달";
                 case CouponError.NotAvailable e -> "사용 불가";
+                case CouponError.CannotExpire e -> "만료 처리 불가";
             };
 
             assertEquals("최소 주문 금액 미달", result);

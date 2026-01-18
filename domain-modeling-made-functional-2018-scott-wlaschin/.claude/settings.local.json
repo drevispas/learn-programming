@@ -24,7 +24,9 @@
       "Bash(__NEW_LINE_91a01d2cfef568ea__ grep -A 5 \"#### 💡 비유: 나라와 언어\" 01-part-i.md)",
       "Bash(__NEW_LINE_8775a079e178b890__ grep -A 3 '^\\\\*\\\\*코드 1.1\\\\*\\\\*' 01-part-i.md)",
       "Bash(grep:*)",
-      "Skill(ascii-diagrams)"
+      "Skill(ascii-diagrams)",
+      "Bash(git -C /Users/yonggeon.kim/repos/drevispas/learn-programming/domain-modeling-made-functional-2018-scott-wlaschin diff)",
+      "Bash(git -C /Users/yonggeon.kim/repos/drevispas/learn-programming/domain-modeling-made-functional-2018-scott-wlaschin commit -m \"$\\(cat <<''EOF''\nrefactor: replace default cases with exhaustive pattern matching\n\n- Coupon.expire\\(\\): return Result instead of throwing exception\n- Coupon.use\\(\\): replace default with explicit CouponStatus.Issued case\n- Order.cancel\\(\\): return Result with exhaustive OrderStatus handling\n- Add CouponError.CannotExpire error type for expire\\(\\) failures\n- Update tests to handle Result return types\nEOF\n\\)\")"
     ]
   }
 }
