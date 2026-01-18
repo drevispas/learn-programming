@@ -49,6 +49,16 @@ public sealed interface EmailVerification permits UnverifiedEmail, VerifiedEmail
 
 public record UnverifiedEmail(String email, String code, LocalDateTime expiresAt)
     implements EmailVerification {
+    // Compact Constructor: 불변 객체 생성 시 검증 필수 (Ch.2 원칙)
+    public UnverifiedEmail {
+        if (email == null || !email.contains("@"))
+            throw new IllegalArgumentException("유효하지 않은 이메일");
+        if (code == null || code.isBlank())
+            throw new IllegalArgumentException("인증 코드 필수");
+        if (expiresAt == null)
+            throw new IllegalArgumentException("만료일 필수");
+    }
+
     public Result<VerifiedEmail, EmailError> verify(String inputCode) {
         if (LocalDateTime.now().isAfter(expiresAt))
             return Result.failure(new EmailError.Expired());
@@ -58,7 +68,14 @@ public record UnverifiedEmail(String email, String code, LocalDateTime expiresAt
     }
 }
 
-public record VerifiedEmail(String email, LocalDateTime verifiedAt) implements EmailVerification {}
+public record VerifiedEmail(String email, LocalDateTime verifiedAt) implements EmailVerification {
+    public VerifiedEmail {
+        if (email == null || !email.contains("@"))
+            throw new IllegalArgumentException("유효하지 않은 이메일");
+        if (verifiedAt == null)
+            throw new IllegalArgumentException("인증 시간 필수");
+    }
+}
 
 // === 회원 ===
 public record Member(
@@ -119,23 +136,30 @@ public sealed interface OrderStatus
     record Cancelled(LocalDateTime at, CancelReason reason) implements OrderStatus {}
 }
 
+// === 주문 에러 (Sum Type) ===
+public sealed interface OrderError permits InvalidState, AlreadyCancelled {
+    record InvalidState(String message) implements OrderError {}
+    record AlreadyCancelled() implements OrderError {}
+}
+
 // === 주문 ===
 public record Order(
     OrderId id, MemberId memberId, List<OrderLine> lines,
     Money total, OrderStatus status
 ) {
-    public Order pay(TransactionId txId) {
+    // 비즈니스 로직에서는 Exception 대신 Result 사용
+    public Result<Order, OrderError> pay(TransactionId txId) {
         if (!(status instanceof Unpaid))
-            throw new IllegalStateException("미결제만 결제 가능");
-        return new Order(id, memberId, lines, total,
-            new Paid(LocalDateTime.now(), txId));
+            return Result.failure(new OrderError.InvalidState("미결제만 결제 가능"));
+        return Result.success(new Order(id, memberId, lines, total,
+            new Paid(LocalDateTime.now(), txId)));
     }
 
-    public Order ship(TrackingNumber tracking) {
+    public Result<Order, OrderError> ship(TrackingNumber tracking) {
         if (!(status instanceof Paid p))
-            throw new IllegalStateException("결제완료만 배송 가능");
-        return new Order(id, memberId, lines, total,
-            new Shipping(p.paidAt(), tracking));
+            return Result.failure(new OrderError.InvalidState("결제완료만 배송 가능"));
+        return Result.success(new Order(id, memberId, lines, total,
+            new Shipping(p.paidAt(), tracking)));
     }
 
     public boolean canCancel() {

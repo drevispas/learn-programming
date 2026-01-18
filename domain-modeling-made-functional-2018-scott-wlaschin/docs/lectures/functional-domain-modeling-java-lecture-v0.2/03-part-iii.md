@@ -97,21 +97,20 @@ public class JpaOrderRepository implements OrderRepository {
 
 **코드 8.2**: Trust Boundary - DTO와 Domain 변환
 ```java
-// DTO: 외부 통신용
-public class OrderDto {
-    public String orderId;
-    public BigDecimal amount;
-}
+// DTO: 외부 통신용 (불변성 보장을 위해 Record 사용)
+public record OrderDto(String orderId, BigDecimal amount) {}
 
 // 도메인 요약 모델
 public record OrderSummary(OrderId orderId, Money amount) {}
 
 // 변환: DTO -> Domain (입력)
+// 💡 Trust Boundary에서는 외부 입력의 예외를 Result로 변환하는 것이 허용됩니다
+// 도메인 내부 로직에서는 Exception을 사용하지 마세요
 public Result<OrderSummary, String> toDomain(OrderDto dto) {
     try {
         return Result.success(new OrderSummary(
-            new OrderId(dto.orderId),
-            new Money(dto.amount, Currency.KRW)
+            new OrderId(dto.orderId()),
+            new Money(dto.amount(), Currency.KRW)
         ));
     } catch (IllegalArgumentException e) {
         return Result.failure(e.getMessage());
@@ -120,10 +119,10 @@ public Result<OrderSummary, String> toDomain(OrderDto dto) {
 
 // 변환: Domain -> DTO (출력)
 public OrderDto toDto(OrderSummary order) {
-    OrderDto dto = new OrderDto();
-    dto.orderId = order.orderId().value();
-    dto.amount = order.amount().amount();
-    return dto;
+    return new OrderDto(
+        order.orderId().value(),
+        order.amount().amount()
+    );
 }
 ```
 
@@ -507,17 +506,25 @@ public class PlaceOrderUseCase {
         return Result.success(new OrderPlaced(savedOrder.id()));
     }
 
-    // 예시용 스텁
+    // 실제 구현은 examples/functional-domain-modeling/ 프로젝트 참조
     private ValidatedOrder validateOrder(PlaceOrderCommand cmd) {
-        throw new UnsupportedOperationException("검증 로직 생략");
+        return new ValidatedOrder(cmd.customerId(), cmd.lines());
     }
 
     private Coupon findCoupon(PlaceOrderCommand cmd) {
-        throw new UnsupportedOperationException("쿠폰 조회 로직 생략");
+        return cmd.couponId()
+            .map(couponRepository::findById)
+            .orElse(Coupon.NONE);
     }
 
     private Order createOrder(ValidatedOrder order, PaymentResult payment) {
-        throw new UnsupportedOperationException("주문 생성 로직 생략");
+        return new Order(
+            OrderId.generate(),
+            order.customerId(),
+            order.lines(),
+            payment.amount(),
+            new Paid(LocalDateTime.now(), payment.txId())
+        );
     }
 }
 ```
