@@ -42,7 +42,9 @@
       "WebFetch(domain:threat-modeling.com)",
       "WebFetch(domain:code.egym.de)",
       "WebFetch(domain:www.jeffhui.net)",
-      "WebFetch(domain:manishearth.github.io)"
+      "WebFetch(domain:manishearth.github.io)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ]
   }
 }

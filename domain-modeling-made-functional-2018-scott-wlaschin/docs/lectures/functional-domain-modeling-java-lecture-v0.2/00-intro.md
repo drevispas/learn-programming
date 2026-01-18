@@ -38,6 +38,112 @@
 
 ---
 
+## 아키텍처 오버뷰
+
+본 강의에서 사용하는 전체 아키텍처를 한눈에 파악할 수 있도록 정리합니다.
+
+### 전체 요청 흐름
+
+```
+                           [HTTP Request]
+                                 │
+                                 ↓
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Controller (API Layer)                                                  │
+│  - 요청 파싱, 응답 직렬화                                                │
+└──────────────────────────────────────────────────────────────────────────┘
+                                 │
+                      PlaceOrderCommand (DTO)
+                                 │
+                                 ↓
+┌──────────────────────────────────────────────────────────────────────────┐
+│  UseCase (Application Layer) - Imperative Shell                          │
+│  - I/O 조율, 부수효과 관리, 트랜잭션                                     │
+│  - PlaceOrderUseCase.execute()                                           │
+├──────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌─────────────────┐    ┌────────────────────────────────────────────┐  │
+│  │ Repository      │    │ DomainService (Functional Core)            │  │
+│  │ (Interface)     │    │ - 순수 함수, 외부 의존성 없음              │  │
+│  │ findById()      │    │ - OrderDomainService.calculate*()          │  │
+│  │ save()          │    │                                            │  │
+│  └─────────────────┘    └────────────────────────────────────────────┘  │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+          │                                    │
+          ↓                                    ↓
+    ┌───────────┐                    ┌─────────────────────┐
+    │    DB     │                    │  External API       │
+    │           │                    │  (PaymentGateway)   │
+    └───────────┘                    └─────────────────────┘
+```
+
+### 계층별 객체 흐름
+
+| 계층 | 입력 타입 | 출력 타입 | 책임 |
+|------|----------|----------|------|
+| Controller | HTTP JSON | HTTP Response | 요청/응답 변환 |
+| UseCase | Command (DTO) | Result<Event, Error> | I/O 조율 |
+| DomainService | Domain Types | Domain Types | 순수 비즈니스 로직 |
+| Repository | Domain Types | Optional<Entity> | 영속성 추상화 |
+| Gateway | Domain Types | Result<T, Error> | 외부 API 추상화 |
+
+### 네이밍 컨벤션
+
+| 구분 | 패턴 | 예시 |
+|------|------|------|
+| UseCase | `{Verb}{Object}UseCase` | `PlaceOrderUseCase` |
+| Command | `{Verb}{Object}Command` | `PlaceOrderCommand` |
+| DomainService | `{Domain}DomainService` | `OrderDomainService` |
+| Repository | `{Domain}Repository` | `OrderRepository` |
+| Domain Error | `{Domain}Error` | `OrderError`, `MemberError` |
+| App Error | `{Operation}Error` | `PlaceOrderError` |
+| Event | `{Domain}{PastVerb}` | `OrderPlaced` |
+| Entity | `{Domain}` | `Order`, `Member` |
+| Value Object | `{Domain}` or `{Type}` | `OrderId`, `Money` |
+| Status | `{Domain}Status` | `OrderStatus` |
+
+### 메서드 네이밍 컨벤션
+
+| 패턴 | 용도 | 예시 |
+|------|------|------|
+| `execute()` | UseCase 진입점 | `useCase.execute(cmd)` |
+| `calculate*()` | 계산 로직 | `calculateSubtotal()` |
+| `with*()` | 불변 수정 (Wither) | `member.withGrade(VIP)` |
+| `find*()` | 조회 | `findById()`, `findByEmail()` |
+| `save()` | 저장 | `repository.save(order)` |
+| `is*()`/`can*()` | 상태 확인 | `isPaid()`, `canCancel()` |
+| `to*()`/`from*()` | 타입 변환 | `OrderPlaced.from(order)` |
+
+### 패키지 구조
+
+```
+com.ecommerce/
+├── application/           # Imperative Shell
+│   ├── *UseCase          # execute() 메서드
+│   ├── *Command          # 입력 DTO
+│   ├── *Error            # 통합 에러
+│   └── *DomainService    # Functional Core
+│
+├── domain/               # Domain Layer
+│   ├── order/
+│   │   ├── Order         # Entity
+│   │   ├── OrderStatus   # Sum Type (상태)
+│   │   ├── OrderError    # Sum Type (에러)
+│   │   └── OrderRepository
+│   ├── member/
+│   ├── product/
+│   ├── payment/
+│   └── coupon/
+│
+└── shared/               # Cross-cutting
+    ├── Result<S, F>      # ROP
+    ├── Validation<T, E>  # 에러 수집
+    └── types/Money       # 공통 Value Object
+```
+
+---
+
 ## 본 강의의 철학: DDD + 함수형의 조화
 
 본 강의는 전통적인 DDD(Domain-Driven Design)의 핵심 철학을 유지하면서, 함수형 프로그래밍의 장점을 결합합니다.
