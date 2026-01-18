@@ -35,10 +35,13 @@ public record Order(
 ) {
     // 순수한 비즈니스 로직만
     public Result<Order, OrderError> cancel(CancelReason reason) {
-        if (!(status instanceof Unpaid || status instanceof Paid))
-            return Result.failure(new OrderError.InvalidState("취소 불가능한 상태"));
-        return Result.success(new Order(id, customerId, lines, totalAmount,
-                        new Cancelled(LocalDateTime.now(), reason)));
+        return switch (status) {
+            case Unpaid u, Paid p -> Result.success(new Order(id, customerId, lines, totalAmount,
+                new Cancelled(LocalDateTime.now(), reason)));
+            case Shipping s -> Result.failure(new OrderError.InvalidState("배송 중"));
+            case Delivered d -> Result.failure(new OrderError.InvalidState("배송 완료"));
+            case Cancelled c -> Result.failure(new OrderError.InvalidState("이미 취소됨"));
+        };
     }
 }
 

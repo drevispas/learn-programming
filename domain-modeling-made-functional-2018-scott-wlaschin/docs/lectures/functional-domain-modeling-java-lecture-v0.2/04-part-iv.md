@@ -82,8 +82,25 @@ public record Member(
     MemberId id, String name, EmailVerification email,
     MemberGrade grade, Points points
 ) {
-    public Member upgradeGrade(MemberGrade newGrade) {
+    // Wither 패턴: 불변 객체의 일부 필드만 변경한 새 객체 생성
+    public Member withGrade(MemberGrade newGrade) {
         return new Member(id, name, email, newGrade, points);
+    }
+
+    public Member withPoints(Points newPoints) {
+        return new Member(id, name, email, grade, newPoints);
+    }
+
+    // 편의 메서드
+    public boolean isEmailVerified() {
+        return email instanceof VerifiedEmail;
+    }
+
+    public String emailAddress() {
+        return switch (email) {
+            case UnverifiedEmail u -> u.email();
+            case VerifiedEmail v -> v.email();
+        };
     }
 }
 ```
@@ -99,7 +116,26 @@ package com.ecommerce.domain.product;
 // === Bounded Context별 상품 모델 ===
 
 // 전시용 (Display Context)
-public record DisplayProduct(ProductId id, ProductName name, List<String> imageUrls, Money price) {}
+public record DisplayProduct(
+    ProductId id, ProductName name, List<String> imageUrls,
+    Money price, Money originalPrice, boolean isOnSale
+) {
+    // 할인 금액 계산
+    public Money discountAmount() {
+        return isOnSale ? originalPrice.subtract(price) : Money.ZERO;
+    }
+
+    // 할인율 계산
+    public int discountRate() {
+        if (!isOnSale || originalPrice.isZero()) return 0;
+        return (int) (discountAmount().value() * 100 / originalPrice.value());
+    }
+
+    // 대표 이미지
+    public String mainImageUrl() {
+        return imageUrls.isEmpty() ? "" : imageUrls.getFirst();
+    }
+}
 
 // 재고용 (Inventory Context)
 public record InventoryProduct(ProductId id, StockQuantity stock, WarehouseLocation location) {
@@ -137,9 +173,19 @@ public sealed interface OrderStatus
 }
 
 // === 주문 에러 (Sum Type) ===
-public sealed interface OrderError permits InvalidState, AlreadyCancelled {
-    record InvalidState(String message) implements OrderError {}
-    record AlreadyCancelled() implements OrderError {}
+public sealed interface OrderError permits
+    EmptyOrder, InvalidCustomer, InvalidAddress, OutOfStock,
+    PaymentFailed, PaymentDeadlineExceeded, CannotCancel, NotFound, InvalidCoupon {
+
+    record EmptyOrder() implements OrderError {}
+    record InvalidCustomer(String customerId) implements OrderError {}
+    record InvalidAddress(String reason) implements OrderError {}
+    record OutOfStock(ProductId productId, int requested, int available) implements OrderError {}
+    record PaymentFailed(String reason) implements OrderError {}
+    record PaymentDeadlineExceeded(OrderId orderId) implements OrderError {}
+    record CannotCancel(OrderId orderId, String reason) implements OrderError {}
+    record NotFound(OrderId orderId) implements OrderError {}
+    record InvalidCoupon(String code, String reason) implements OrderError {}
 }
 
 // === 주문 ===
@@ -147,19 +193,53 @@ public record Order(
     OrderId id, MemberId memberId, List<OrderLine> lines,
     Money total, OrderStatus status
 ) {
+    // Compact Constructor: 불변 객체 생성 시 검증 필수 (Ch.2 원칙)
+    public Order {
+        if (id == null) throw new IllegalArgumentException("주문 ID 필수");
+        if (memberId == null) throw new IllegalArgumentException("회원 ID 필수");
+        if (lines == null || lines.isEmpty()) throw new IllegalArgumentException("주문 항목 필수");
+        if (total == null) throw new IllegalArgumentException("총액 필수");
+        if (status == null) throw new IllegalArgumentException("주문 상태 필수");
+        lines = List.copyOf(lines); // 방어적 복사
+    }
+
     // 비즈니스 로직에서는 Exception 대신 Result 사용
     public Result<Order, OrderError> pay(TransactionId txId) {
-        if (!(status instanceof Unpaid))
-            return Result.failure(new OrderError.InvalidState("미결제만 결제 가능"));
-        return Result.success(new Order(id, memberId, lines, total,
-            new Paid(LocalDateTime.now(), txId)));
+        return switch (status) {
+            case Unpaid u -> Result.success(new Order(id, memberId, lines, total,
+                new Paid(LocalDateTime.now(), txId)));
+            case Paid p -> Result.failure(new CannotCancel(id, "이미 결제됨"));
+            case Shipping s -> Result.failure(new CannotCancel(id, "배송 중"));
+            case Delivered d -> Result.failure(new CannotCancel(id, "배송 완료"));
+            case Cancelled c -> Result.failure(new CannotCancel(id, "취소된 주문"));
+        };
     }
 
     public Result<Order, OrderError> ship(TrackingNumber tracking) {
-        if (!(status instanceof Paid p))
-            return Result.failure(new OrderError.InvalidState("결제완료만 배송 가능"));
-        return Result.success(new Order(id, memberId, lines, total,
-            new Shipping(p.paidAt(), tracking)));
+        return switch (status) {
+            case Paid p -> Result.success(new Order(id, memberId, lines, total,
+                new Shipping(p.paidAt(), tracking)));
+            case Unpaid u -> Result.failure(new PaymentDeadlineExceeded(id));
+            case Shipping s -> Result.failure(new CannotCancel(id, "이미 배송 중"));
+            case Delivered d -> Result.failure(new CannotCancel(id, "배송 완료"));
+            case Cancelled c -> Result.failure(new CannotCancel(id, "취소된 주문"));
+        };
+    }
+
+    public Result<Order, OrderError> cancel(CancelReason reason) {
+        return switch (status) {
+            case Unpaid u -> Result.success(new Order(id, memberId, lines, total,
+                new Cancelled(LocalDateTime.now(), reason)));
+            case Paid p -> {
+                if (p.paidAt().plusHours(24).isBefore(LocalDateTime.now()))
+                    yield Result.failure(new CannotCancel(id, "결제 후 24시간 초과"));
+                yield Result.success(new Order(id, memberId, lines, total,
+                    new Cancelled(LocalDateTime.now(), reason)));
+            }
+            case Shipping s -> Result.failure(new CannotCancel(id, "배송 중 취소 불가"));
+            case Delivered d -> Result.failure(new CannotCancel(id, "배송 완료 취소 불가"));
+            case Cancelled c -> Result.failure(new CannotCancel(id, "이미 취소됨"));
+        };
     }
 
     public boolean canCancel() {
@@ -174,6 +254,17 @@ public record Order(
 }
 ```
 
+> **💡 Tip: Negated instanceof는 Anti-Pattern**
+>
+> 상태 검사 시 `if (!(status instanceof Unpaid))` 같은 부정 조건보다 switch 패턴 매칭을 사용하세요:
+>
+> | 측면 | `!(x instanceof T)` | switch 패턴 매칭 |
+> |------|---------------------|------------------|
+> | Exhaustiveness | 컴파일러 검증 없음 | 모든 케이스 강제 |
+> | 에러 메시지 | 단일 메시지 | 상태별 구체적 메시지 |
+> | 가독성 | 부정 조건 (what NOT to do) | 긍정 조건 (what to do) |
+> | 유지보수 | 새 상태 추가 시 누락 위험 | 컴파일 에러로 누락 방지 |
+
 ---
 
 ### 10.4 결제 도메인
@@ -184,7 +275,19 @@ package com.ecommerce.domain.payment;
 
 // === 결제 수단 (Sum Type) ===
 public sealed interface PaymentMethod permits CreditCard, BankTransfer, Points, SimplePay {
-    record CreditCard(CardNumber num, ExpiryDate exp) implements PaymentMethod {}
+    record CreditCard(CardNumber num, ExpiryDate exp, String cvc) implements PaymentMethod {
+        public CreditCard {
+            if (num == null) throw new IllegalArgumentException("카드번호 필수");
+            if (exp == null) throw new IllegalArgumentException("유효기간 필수");
+            if (cvc == null || !cvc.matches("\\d{3,4}"))
+                throw new IllegalArgumentException("CVC는 3-4자리 숫자");
+        }
+        // PII 보호: 마스킹된 카드번호
+        public String maskedNumber() {
+            String n = num.value();
+            return "**** **** **** " + n.substring(n.length() - 4);
+        }
+    }
     record BankTransfer(BankCode bank, AccountNumber acc) implements PaymentMethod {}
     record Points(int amount) implements PaymentMethod {}
     record SimplePay(Provider provider, String token) implements PaymentMethod {}
@@ -200,10 +303,35 @@ public enum Provider { KAKAO, NAVER, TOSS }
 
 // === 결제 에러 (Sum Type) ===
 public sealed interface PaymentError
-    permits InsufficientFunds, CardExpired, SystemError {
-    record InsufficientFunds(Money required) implements PaymentError {}
-    record CardExpired(ExpiryDate exp) implements PaymentError {}
-    record SystemError(String msg) implements PaymentError {}
+    permits InsufficientFunds, CardExpired, CardDeclined, InvalidMethod, Timeout, SystemError {
+
+    String message();  // 사용자용 메시지
+    String code();     // 로깅/분석용 코드
+
+    record InsufficientFunds(Money required, Money available) implements PaymentError {
+        public String message() { return "잔액이 부족합니다"; }
+        public String code() { return "INSUFFICIENT_FUNDS"; }
+    }
+    record CardExpired(ExpiryDate exp) implements PaymentError {
+        public String message() { return "카드가 만료되었습니다"; }
+        public String code() { return "CARD_EXPIRED"; }
+    }
+    record CardDeclined(String reason) implements PaymentError {
+        public String message() { return "카드가 거절되었습니다"; }
+        public String code() { return "CARD_DECLINED"; }
+    }
+    record InvalidMethod(String reason) implements PaymentError {
+        public String message() { return "유효하지 않은 결제 수단입니다"; }
+        public String code() { return "INVALID_METHOD"; }
+    }
+    record Timeout() implements PaymentError {
+        public String message() { return "결제 시간이 초과되었습니다"; }
+        public String code() { return "TIMEOUT"; }
+    }
+    record SystemError(String msg) implements PaymentError {
+        public String message() { return "시스템 오류가 발생했습니다"; }
+        public String code() { return "SYSTEM_ERROR"; }
+    }
 }
 ```
 
@@ -237,27 +365,68 @@ public sealed interface CouponType permits FixedAmount, Percentage, FreeShipping
     }
 }
 
+// === 쿠폰 에러 (Sum Type) ===
+public sealed interface CouponError permits NotFound, AlreadyUsed, Expired, MinOrderNotMet, NotAvailable {
+    record NotFound(String code) implements CouponError {}
+    record AlreadyUsed(CouponId id) implements CouponError {}
+    record Expired(CouponId id) implements CouponError {}
+    record MinOrderNotMet(Money required, Money actual) implements CouponError {} // 풍부한 에러 데이터
+    record NotAvailable() implements CouponError {}
+}
+
 // === 쿠폰 상태 (State Machine) ===
-public sealed interface CouponStatus permits Issued, Used, Expired {
+public sealed interface CouponStatus permits Issued, Used, CouponExpired {
     record Issued(LocalDateTime expiresAt) implements CouponStatus {
-        boolean isValid() { return LocalDateTime.now().isBefore(expiresAt); }
+        public boolean isValid() { return LocalDateTime.now().isBefore(expiresAt); }
+        public boolean isExpired() { return !isValid(); }
     }
     record Used(LocalDateTime usedAt, OrderId orderId) implements CouponStatus {}
-    record Expired(LocalDateTime at) implements CouponStatus {}
+    record CouponExpired(LocalDateTime at) implements CouponStatus {}
 }
 
 // === 쿠폰 ===
-public record Coupon(CouponId id, CouponType type, CouponStatus status, Money minOrder) {
+public record Coupon(CouponId id, String code, CouponType type, CouponStatus status, Money minOrder) {
+    // 팩토리 메서드
+    public static Coupon issue(String code, CouponType type, Money minOrder, LocalDateTime expiresAt) {
+        return new Coupon(
+            CouponId.generate(),
+            code,
+            type,
+            new Issued(expiresAt),
+            minOrder
+        );
+    }
+
+    // 편의 메서드
+    public boolean isAvailable() {
+        return status instanceof Issued i && i.isValid();
+    }
+
+    // 만료 처리
+    public Result<Coupon, CouponError> expire() {
+        return switch (status) {
+            case Issued i -> Result.success(new Coupon(id, code, type,
+                new CouponExpired(LocalDateTime.now()), minOrder));
+            case Used u -> Result.failure(new CouponError.AlreadyUsed(id));
+            case CouponExpired e -> Result.failure(new CouponError.Expired(id));
+        };
+    }
+
     public Result<UsedCoupon, CouponError> use(OrderId orderId, Money orderAmount) {
-        if (!(status instanceof Issued i) || !i.isValid())
-            return Result.failure(new CouponError.NotAvailable());
-        if (orderAmount.isLessThan(minOrder))
-            return Result.failure(new CouponError.MinNotMet(minOrder));
-        Money discount = type.calculateDiscount(orderAmount);
-        return Result.success(new UsedCoupon(
-            new Coupon(id, type, new Used(LocalDateTime.now(), orderId), minOrder),
-            discount
-        ));
+        return switch (status) {
+            case Issued i when !i.isValid() -> Result.failure(new CouponError.NotAvailable());
+            case Issued i -> {
+                if (orderAmount.isLessThan(minOrder))
+                    yield Result.failure(new CouponError.MinOrderNotMet(minOrder, orderAmount));
+                Money discount = type.calculateDiscount(orderAmount);
+                yield Result.success(new UsedCoupon(
+                    new Coupon(id, code, type, new Used(LocalDateTime.now(), orderId), minOrder),
+                    discount
+                ));
+            }
+            case Used u -> Result.failure(new CouponError.AlreadyUsed(id));
+            case CouponExpired e -> Result.failure(new CouponError.Expired(id));
+        };
     }
 }
 ```
