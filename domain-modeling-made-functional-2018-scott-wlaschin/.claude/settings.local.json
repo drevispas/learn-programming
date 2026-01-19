@@ -45,7 +45,9 @@
       "WebFetch(domain:manishearth.github.io)",
       "Bash(git pull:*)",
       "Bash(git stash:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npx markdownlint:*)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

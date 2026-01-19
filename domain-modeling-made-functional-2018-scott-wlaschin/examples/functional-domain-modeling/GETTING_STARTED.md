@@ -58,14 +58,14 @@ cd examples/functional-domain-modeling
 Phase 1: 기반 타입         Phase 2: 패턴 학습         Phase 3: 실무 적용
     │                          │                          │
     ▼                          ▼                          ▼
-┌─────────┐              ┌─────────────┐            ┌───────────────┐
-│ shared/ │───────────▶ │   sample/   │─────────▶ │    domain/    │
-│         │              │             │            │  application/ │
-│ Result  │              │ DomainTypes │            │               │
-│Validation│             │  SumTypes   │            │ Order, Member │
-│  Money  │              │PhantomTypes │            │PlaceOrderUseCase│
-└─────────┘              │OrderStateMachine│        └───────────────┘
-                         └─────────────┘
+┌──────────┐             ┌─────────────────┐           ┌─────────────────┐
+│ shared/  │───────────▶ │   sample/       │─────────▶ │    domain/      │
+│          │             │                 │           │  application/   │
+│ Result   │             │ DomainTypes     │           │                 │
+│Validation│             │  SumTypes       │           │ Order, Member   │
+│  Money   │             │PhantomTypes     │           │PlaceOrderUseCase│
+└──────────┘             │OrderStateMachine│           └─────────────────┘
+                         └─────────────────┘
 ```
 
 **핵심 원칙**: 각 Phase의 개념이 다음 Phase에서 실제로 사용되므로, 순서대로 학습하는 것이 효과적입니다.
