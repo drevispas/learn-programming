@@ -44,7 +44,8 @@
       "WebFetch(domain:www.jeffhui.net)",
       "WebFetch(domain:manishearth.github.io)",
       "Bash(git pull:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(ls:*)"
     ]
   }
 }
