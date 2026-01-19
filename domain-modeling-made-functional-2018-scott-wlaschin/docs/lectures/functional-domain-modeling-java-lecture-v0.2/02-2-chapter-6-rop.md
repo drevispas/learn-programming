@@ -172,6 +172,97 @@ public record Failure<S, F>(F error) implements Result<S, F> {
 
 ---
 
+### 6.2.1 컨테이너와 변환 - 왜 map이 필요한가?
+
+#### 💡 비유: 선물 포장
+
+> **map은 선물 상자 안의 내용물만 바꾸는 것입니다.**
+>
+> 상자(Result)를 열어서, 안에 든 물건(Order)을 다른 물건(OrderDto)으로 교체하고,
+> 다시 같은 종류의 상자에 넣어 돌려줍니다.
+>
+> 상자가 빈 상태(Failure)라면? 상자를 열어봐도 바꿀 게 없으니
+> 그냥 빈 상자를 그대로 돌려줍니다.
+
+#### 문제: map 없이 값을 변환하려면?
+
+Result 안의 값을 변환하려면 매번 switch로 분기해야 합니다:
+
+**코드 6.2.1a**: map 없이 Result 안의 값 변환
+```java
+// 매번 이렇게 해야 하나요?
+Result<OrderDto, OrderError> convertToDto(Result<Order, OrderError> result) {
+    return switch (result) {
+        case Success<Order, OrderError> s -> Result.success(toDto(s.value()));
+        case Failure<Order, OrderError> f -> (Result<OrderDto, OrderError>) f;
+    };
+}
+
+// 이것도요?
+Result<String, OrderError> getOrderId(Result<Order, OrderError> result) {
+    return switch (result) {
+        case Success<Order, OrderError> s -> Result.success(s.value().id());
+        case Failure<Order, OrderError> f -> (Result<String, OrderError>) f;
+    };
+}
+```
+
+이 패턴이 반복됩니다:
+1. Success면 값을 꺼내서 변환하고 다시 Success로 감싼다
+2. Failure면 그대로 반환한다
+
+**map은 이 반복 패턴을 추상화한 것입니다.**
+
+#### 다이어그램: map의 동작
+
+```
+=== map: 변환 함수가 순수 값을 반환할 때 ===
+
+   f: A -> B (절대 실패 안 함)
+
+   ┌──────────┐     map(f)      ┌──────────┐
+   │ Success  │ ───────────────→│ Success  │
+   │    A     │       f(A)=B    │    B     │
+   └──────────┘                 └──────────┘
+
+   ┌──────────┐     map(f)      ┌──────────┐
+   │ Failure  │ ───────────────→│ Failure  │
+   │   err    │   (f 실행 안됨) │   err    │
+   └──────────┘                 └──────────┘
+```
+
+#### Before/After 비교
+
+**코드 6.2.1b**: map 사용 전후 비교
+```java
+// ❌ Before: 반복적인 switch 문
+Result<OrderDto, OrderError> convertToDto(Result<Order, OrderError> result) {
+    return switch (result) {
+        case Success<Order, OrderError> s -> Result.success(toDto(s.value()));
+        case Failure<Order, OrderError> f -> (Result<OrderDto, OrderError>) f;
+    };
+}
+
+// ✅ After: map으로 간결하게
+Result<OrderDto, OrderError> convertToDto(Result<Order, OrderError> result) {
+    return result.map(this::toDto);
+}
+```
+
+#### 핵심 포인트
+
+> 📌 **map은 "컨테이너 안의 값을 변환하되, 컨테이너 구조는 유지"하는 패턴입니다.**
+>
+> 이 패턴은 Result뿐 아니라 Optional, List, Stream에도 동일하게 적용됩니다:
+> - `Optional.map()` - Optional 안의 값 변환
+> - `Stream.map()` - Stream 각 요소 변환
+> - `Result.map()` - Result 안의 성공 값 변환
+
+**퀴즈 Q6.X1**: map과 flatMap 중 어떤 것을 사용해야 할까요?
+> 변환 함수의 반환 타입이 `A -> B`이면 **map**, `A -> Result<B, E>`이면 **flatMap**
+
+---
+
 ### 6.3 map과 flatMap: 역 환승
 
 #### 💡 비유: 역 환승
@@ -238,6 +329,96 @@ Result<PaidOrder, OrderError> result = validateOrder(input)
 >
 > // ✅ String.valueOf(s.value())로 변환 필요
 > ```
+
+---
+
+### 6.3.1 왜 flatMap이 필요한가?
+
+#### 💡 비유: 택배 재포장
+
+> **map으로 "Result를 반환하는 함수"를 적용하면 상자 안에 또 상자가 들어갑니다.**
+>
+> 예를 들어, `Result<Order, Error>`에 `Order -> Result<PricedOrder, Error>` 함수를 map으로 적용하면
+> `Result<Result<PricedOrder, Error>, Error>` - 이중 포장이 됩니다!
+>
+> **flatMap은 "상자를 열어서, 안에 든 상자의 내용물만 꺼내는" 것입니다.**
+> 이중 포장을 단일 포장으로 "평평하게(flat)" 만들어줍니다.
+
+#### 문제: 실패할 수 있는 연산을 연쇄하려면?
+
+주문 처리에서 각 단계가 실패할 수 있습니다:
+
+**코드 6.3.1a**: map을 잘못 사용한 경우
+```java
+// 문제: map을 사용하면 Result가 중첩됨
+Result<Order, Error> validated = validateOrder(input);
+
+// checkInventory는 Result를 반환하는 함수
+// Result<Result<Order, Error>, Error> - 이중 포장!
+var nested = validated.map(this::checkInventory);  // ❌
+
+// 계속하면 더 심해짐
+// Result<Result<Result<Order, Error>, Error>, Error>
+var moreNested = nested.map(???);  // ❌❌
+```
+
+**flatMap은 이 중첩을 방지합니다:**
+
+**코드 6.3.1b**: flatMap으로 올바르게 연쇄
+```java
+// flatMap은 Result를 반환하는 함수를 받아서
+// 중첩 없이 단일 Result로 반환
+Result<PaidOrder, Error> result = validateOrder(input)
+    .flatMap(this::checkInventory)   // Result<Order, Error>
+    .flatMap(this::processPayment);  // Result<PaidOrder, Error>
+    // 중첩 없이 깔끔!
+```
+
+#### 다이어그램: flatMap의 동작
+
+```
+=== flatMap: 변환 함수가 Result를 반환할 때 ===
+
+   g: A -> Result<B, E> (실패할 수 있음)
+
+   ┌──────────┐    flatMap(g)   ┌──────────┐
+   │ Success  │ ───────────────→│ Success  │ (g가 성공하면)
+   │    A     │     g(A)        │    B     │
+   └──────────┘                 └──────────┘
+                                    또는
+                                ┌──────────┐
+                                │ Failure  │ (g가 실패하면)
+                                │  err2    │
+                                └──────────┘
+
+   ┌──────────┐    flatMap(g)   ┌──────────┐
+   │ Failure  │ ───────────────→│ Failure  │
+   │   err    │   (g 실행 안됨) │   err    │
+   └──────────┘                 └──────────┘
+```
+
+#### map과 flatMap의 핵심 차이
+
+```
+=== map vs flatMap 비교 ===
+
+map:     Success(A)  ---f--->  Success(f(A))     f: A -> B
+flatMap: Success(A)  ---g--->  g(A)              g: A -> Result<B, E>
+                               (Success 또는 Failure)
+```
+
+#### 퀴즈: 언제 무엇을 사용할까?
+
+**표 6.2**: map vs flatMap 선택 가이드
+
+| 변환 함수 | 예시 | 사용할 연산 |
+|----------|-----|-----------|
+| `Order -> OrderDto` | DTO 변환 | **map** |
+| `Order -> String` | ID 추출 | **map** |
+| `Order -> Result<PricedOrder, E>` | 가격 계산 (실패 가능) | **flatMap** |
+| `Order -> Result<Order, E>` | 재고 확인 (실패 가능) | **flatMap** |
+
+> 💡 **기억하기**: 함수가 `Result`를 반환하면 **flatMap**, 아니면 **map**
 
 ---
 

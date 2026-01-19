@@ -208,6 +208,7 @@ void register(User user)    // User 타입이면 이미 검증 완료
 - Q6.1: C - 메모리 사용량은 Exception의 문제가 아님
 - Q6.2: B - 결과가 Result인 함수는 flatMap 사용
 - Q6.3: C - Failure가 반환되고 이후 단계는 실행되지 않음
+- Q6.X1: 변환 함수의 반환 타입이 `A -> B`이면 **map**, `A -> Result<B, E>`이면 **flatMap** 사용
 
 **Chapter 7**
 - Q7.1: B - 폼 검증에서 모든 에러를 한번에 보여줄 때 Validation
@@ -215,6 +216,7 @@ void register(User user)    // User 타입이면 이미 검증 완료
 - Q7.3: C - Event는 이미 발생한 Immutable 사실
 - Q7.4: D - 두 에러 모두 수집됨
 - Q7.5: B - 과거형으로 "이미 일어난 일"을 표현
+- Q7.X1: 모든 에러를 한 번에 수집하여 사용자에게 보여줄 수 있어서 (좋은 UX)
 
 **Chapter 8**
 - Q8.1: B - 도메인이 인프라에 의존하면 결합도가 높아짐
@@ -263,3 +265,298 @@ void register(User user)    // User 타입이면 이미 검증 완료
 - 간단한 `PlaceOrder` 워크플로우와 테스트
 
 > 💡 전체 프로젝트 구조와 실행 방법은 `examples/functional-domain-modeling/README.md`를 참조하세요.
+
+---
+
+## Appendix F: 함수형 타입 클래스 이해하기
+
+> 📖 **선택적 심화 학습 자료**
+>
+> Chapter 6, 7의 내용만으로도 실무에서 충분히 Result와 Validation을 활용할 수 있습니다.
+> 이 부록은 "왜 이런 패턴들이 비슷해 보이는가?"에 대한 이론적 배경을 제공합니다.
+
+---
+
+### F.1 타입 클래스란?
+
+#### 공통 패턴 발견하기
+
+다음 코드들을 보세요:
+
+**코드 F.1**: 다양한 타입의 map 연산
+```java
+// Optional의 map
+Optional<String> name = Optional.of("Kim");
+Optional<Integer> length = name.map(String::length);
+
+// Stream의 map
+Stream<String> names = Stream.of("Kim", "Lee");
+Stream<Integer> lengths = names.map(String::length);
+
+// Result의 map
+Result<String, Error> name = Result.success("Kim");
+Result<Integer, Error> length = name.map(String::length);
+```
+
+이 세 가지는 겉보기에 다른 타입이지만, 모두 **동일한 패턴**을 따릅니다:
+- "컨테이너" 안에 값이 들어있고
+- `map`을 사용하면 안에 든 값만 변환할 수 있음
+- 컨테이너의 구조(Optional, Stream, Result)는 유지됨
+
+**이 공통 패턴에 "Functor"라는 이름을 붙였습니다.**
+
+#### 타입 클래스 = 행동의 계약
+
+> 💡 **타입 클래스**는 "이 타입은 이런 연산을 지원합니다"라는 계약입니다.
+>
+> Java의 `interface`와 비슷하지만, 기존 타입에 구현을 "추가"할 수 있습니다.
+> Haskell, Scala, Rust 등에서 널리 사용됩니다.
+
+---
+
+### F.2 Functor (펑터)
+
+#### 정의
+
+> **Functor**는 "컨테이너 안의 값을 변환하는 능력"을 가진 타입입니다.
+
+```java
+// Functor의 핵심 연산
+<B> F<B> map(Function<A, B> f);
+```
+
+#### Functor Laws (법칙)
+
+Functor라고 불리려면 두 가지 법칙을 만족해야 합니다:
+
+**1. Identity Law (항등 법칙)**
+```java
+// 아무것도 안 하는 함수로 map하면 원본과 같아야 함
+container.map(x -> x)  ==  container
+
+// 예: Result
+Result.success(42).map(x -> x)  ==  Result.success(42)
+```
+
+**2. Composition Law (합성 법칙)**
+```java
+// f를 map하고 g를 map하는 것 = f.andThen(g)를 한번 map하는 것
+container.map(f).map(g)  ==  container.map(f.andThen(g))
+
+// 예: Optional
+optional.map(String::length).map(n -> n * 2)
+==
+optional.map(s -> s.length() * 2)
+```
+
+#### 왜 법칙이 중요한가?
+
+> 📌 법칙을 만족하면 **리팩토링이 안전**합니다.
+>
+> `container.map(f).map(g)`를 `container.map(f.andThen(g))`로 바꿔도
+> 동작이 동일함을 보장합니다.
+
+---
+
+### F.3 Monad (모나드)
+
+#### 정의
+
+> **Monad**는 "flatMap을 가진 Functor"입니다.
+
+```java
+// Monad의 핵심 연산
+<B> M<B> flatMap(Function<A, M<B>> f);  // 또는 bind, >>=
+```
+
+#### 왜 Monad가 필요한가?
+
+Functor(map)만으로는 **"실패할 수 있는 연산의 연쇄"**를 표현할 수 없습니다:
+
+**코드 F.2**: Functor vs Monad
+```java
+// Functor만으로는 중첩됨
+Result<Result<Order, E>, E> nested =
+    validateInput(input).map(this::processOrder);  // ❌ 중첩!
+
+// Monad(flatMap)를 사용하면 평평하게
+Result<Order, E> flat =
+    validateInput(input).flatMap(this::processOrder);  // ✅ 단일 레벨
+```
+
+#### Monad Laws (법칙)
+
+**1. Left Identity (왼쪽 항등)**
+```java
+// 순수 값을 컨테이너로 감싼 후 flatMap하면 그냥 f를 적용한 것과 같음
+Result.success(a).flatMap(f)  ==  f.apply(a)
+```
+
+**2. Right Identity (오른쪽 항등)**
+```java
+// success로 감싸는 함수로 flatMap하면 원본과 같음
+m.flatMap(a -> Result.success(a))  ==  m
+```
+
+**3. Associativity (결합 법칙)**
+```java
+// flatMap 순서를 바꿔도 결과가 같음
+m.flatMap(f).flatMap(g)  ==  m.flatMap(a -> f.apply(a).flatMap(g))
+```
+
+#### Monad의 직관적 이해
+
+> 💡 **Monad는 "컨텍스트가 있는 계산의 연쇄"입니다.**
+>
+> - Optional Monad: "값이 없을 수도 있는" 컨텍스트
+> - Result Monad: "실패할 수도 있는" 컨텍스트
+> - List Monad: "여러 값이 있을 수 있는" 컨텍스트
+> - IO Monad: "부수효과가 있는" 컨텍스트
+
+---
+
+### F.4 Applicative (어플리커티브)
+
+#### 정의
+
+> **Applicative**는 "독립적인 컨테이너들을 결합하는 능력"을 가진 타입입니다.
+
+```java
+// Applicative의 핵심 연산
+static <A, B, C> F<C> combine(F<A> fa, F<B> fb, BiFunction<A, B, C> combiner);
+```
+
+#### Monad vs Applicative
+
+**핵심 차이: 의존성**
+
+```
+=== Monad (flatMap) - 순차적 의존 ===
+
+  A ─────→ f(A) ─────→ Result<B>
+                          │
+                          └─→ g(B) ─────→ Result<C>
+
+  "B를 계산하려면 A가 필요하고, C를 계산하려면 B가 필요하다"
+
+
+=== Applicative (combine) - 독립적 ===
+
+  ┌─→ Result<A> ─────┐
+  │                  │
+  ├─→ Result<B> ─────┼─→ combine ─→ Result<(A, B, C)>
+  │                  │
+  └─→ Result<C> ─────┘
+
+  "A, B, C는 서로 독립적으로 계산된다"
+```
+
+**코드 F.3**: Monad vs Applicative
+```java
+// Monad: 순차 의존 (앞 결과가 뒤 계산에 필요)
+Result<Order, E> order = getUser(userId)
+    .flatMap(user -> getCart(user.cartId()))      // user 필요
+    .flatMap(cart -> createOrder(cart));          // cart 필요
+
+// Applicative: 독립 계산 (서로 의존 없음)
+Validation<User, List<E>> user = Validation.combine3(
+    validateName(input.name()),        // 독립
+    validateEmail(input.email()),      // 독립
+    validatePhone(input.phone()),      // 독립
+    User::new
+);
+```
+
+---
+
+### F.5 Result는 Monad, Validation은 Applicative인 이유
+
+#### Result: Monad로 구현
+
+Result의 flatMap은 **첫 실패에서 중단**합니다:
+
+```java
+// Result.flatMap 구현
+public <B> Result<B, E> flatMap(Function<A, Result<B, E>> f) {
+    return switch (this) {
+        case Success<A, E> s -> f.apply(s.value());  // 성공하면 다음 단계
+        case Failure<A, E> fail -> (Result<B, E>) fail;  // 실패하면 중단
+    };
+}
+```
+
+이는 Monad 법칙을 만족하고, **순차적 파이프라인**에 적합합니다.
+
+#### Validation: Applicative로 구현
+
+Validation의 combine은 **모든 에러를 수집**합니다:
+
+```java
+// Validation.combine 구현
+static <A, B, C> Validation<C, List<E>> combine(
+    Validation<A, List<E>> va,
+    Validation<B, List<E>> vb,
+    BiFunction<A, B, C> combiner
+) {
+    return switch (va) {
+        case Valid<A, List<E>> a -> switch (vb) {
+            case Valid<B, List<E>> b -> valid(combiner.apply(a.value(), b.value()));
+            case Invalid<B, List<E>> b -> b;
+        };
+        case Invalid<A, List<E>> a -> switch (vb) {
+            case Valid<B, List<E>> b -> a;
+            case Invalid<B, List<E>> b -> invalid(concat(a.errors(), b.errors()));  // 에러 합침!
+        };
+    };
+}
+```
+
+**Validation은 합법적인 Monad가 될 수 없습니다!**
+
+만약 Validation에 flatMap을 구현하면:
+```java
+// 가상의 Validation.flatMap
+Validation<B, List<E>> flatMap(Function<A, Validation<B, List<E>>> f) {
+    return switch (this) {
+        case Valid v -> f.apply(v.value());
+        case Invalid inv -> inv;  // 여기서 중단됨!
+    };
+}
+```
+
+이렇게 하면 Monad 법칙(결합 법칙)을 위반하게 됩니다.
+따라서 Validation은 **Applicative까지만** 구현합니다.
+
+#### 정리표
+
+| 타입 | Functor | Applicative | Monad | 에러 처리 |
+|------|---------|-------------|-------|----------|
+| Optional | ✅ | ✅ | ✅ | 첫 None에서 중단 |
+| Result | ✅ | ✅ | ✅ | 첫 Failure에서 중단 |
+| Validation | ✅ | ✅ | ❌ | 모든 에러 수집 |
+| List | ✅ | ✅ | ✅ | (해당 없음) |
+
+---
+
+### F.6 더 알아보기
+
+**추천 자료:**
+
+1. **Railway Oriented Programming** (Scott Wlaschin)
+   - https://fsharpforfunandprofit.com/rop/
+   - Result 패턴의 원전
+
+2. **Functors, Applicatives, and Monads in Pictures** (Aditya Bhargava)
+   - https://adit.io/posts/2013-04-17-functors,_applicatives,_and_monads_in_pictures.html
+   - 시각적 설명의 명작
+
+3. **Vavr Documentation**
+   - https://www.vavr.io/
+   - Java에서 함수형 프로그래밍 라이브러리
+
+4. **Arrow (Kotlin) Documentation**
+   - https://arrow-kt.io/
+   - Kotlin용 함수형 프로그래밍 라이브러리
+
+> 💡 **학습 팁**: 이론을 먼저 이해하려 하기보다, Chapter 6-7의 Result/Validation을
+> 실제로 사용해보면서 "왜 이렇게 동작하지?"라는 질문이 생길 때 이 부록을 참고하세요.
