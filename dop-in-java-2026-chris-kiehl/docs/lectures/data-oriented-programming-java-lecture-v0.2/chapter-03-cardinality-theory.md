@@ -17,6 +17,8 @@
 복잡도 ∝ 가능한 상태의 수 (Cardinality)
 ```
 
+**Table 3.1**: 주요 타입별 기수(Cardinality)
+
 | 타입 | 기수(Cardinality) |
 |-----|------------------|
 | `boolean` | 2 (true, false) |
@@ -32,8 +34,7 @@
 
 필드를 추가하는 것은 경우의 수를 **곱하는(Multiply)** 행위입니다.
 
-### Before: 곱 타입으로 인한 상태 폭발
-
+**Code 3.1**: 곱 타입으로 인한 상태 폭발 (안티패턴)
 ```java
 // 각 boolean 필드는 2가지 상태
 class Order {
@@ -48,8 +49,7 @@ class Order {
 // 나머지 27가지는 "불가능한 상태"
 ```
 
-### After: 합 타입으로 상태 축소
-
+**Code 3.2**: 합 타입으로 상태 축소 (DOP 권장)
 ```java
 // 합 타입: 5가지 상태만 가능
 sealed interface OrderStatus permits
@@ -72,27 +72,27 @@ record Canceled(LocalDateTime at, CancelReason reason) implements OrderStatus {}
 > **💡 Q&A: enum으로도 충분하지 않나요?**
 >
 > **결론**: 데이터의 모양(구조)이 다를 수 있느냐가 결정적인 차이입니다.
->
-> **Enum의 한계**: 모든 상수가 똑같은 필드 구조를 가져야 합니다.
-> ```java
-> public enum DeliveryStatus {
->     PREPARING(null, null),     // 불필요한 null
->     SHIPPED("12345", null),    // 배송일시는 null
->     DELIVERED("12345", LocalDateTime.now());
->
->     private final String trackingNumber;  // 모든 필드를 가져야 함
->     private final LocalDateTime deliveredAt;
-> }
-> ```
->
-> **Sealed Interface의 강점**: 각 상태마다 다른 데이터를 가질 수 있습니다.
-> ```java
-> sealed interface DeliveryStatus {}
-> record Preparing() implements DeliveryStatus {}  // 아무것도 없음
-> record Shipped(String trackingNumber) implements DeliveryStatus {}  // 송장만
-> record Delivered(String trackingNumber, LocalDateTime deliveredAt)
->     implements DeliveryStatus {}  // 송장 + 시간
-> ```
+
+**Code 3.3**: Enum의 한계 - 모든 상수가 같은 구조
+```java
+public enum DeliveryStatus {
+    PREPARING(null, null),     // 불필요한 null
+    SHIPPED("12345", null),    // 배송일시는 null
+    DELIVERED("12345", LocalDateTime.now());
+
+    private final String trackingNumber;  // 모든 필드를 가져야 함
+    private final LocalDateTime deliveredAt;
+}
+```
+
+**Code 3.4**: Sealed Interface의 강점 - 각 상태마다 다른 데이터
+```java
+sealed interface DeliveryStatus {}
+record Preparing() implements DeliveryStatus {}  // 아무것도 없음
+record Shipped(String trackingNumber) implements DeliveryStatus {}  // 송장만
+record Delivered(String trackingNumber, LocalDateTime deliveredAt)
+    implements DeliveryStatus {}  // 송장 + 시간
+```
 
 ---
 

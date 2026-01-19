@@ -13,6 +13,8 @@
 
 데이터 모델링에 수학적 속성을 적용하면 분산 시스템에서 강력한 위력을 발휘합니다.
 
+**Table 7.1**: 주요 대수적 속성과 활용
+
 | 속성 | 정의 | 활용 |
 |-----|------|------|
 | 결합법칙 | (A ⊕ B) ⊕ C = A ⊕ (B ⊕ C) | 병렬 처리, 분산 계산 |
@@ -40,6 +42,7 @@
 
 ### 분산 처리에서의 활용
 
+**Code 7.1**: 결합법칙을 만족하는 Money 타입
 ```java
 // 결합법칙을 만족하는 Money
 public record Money(BigDecimal amount, Currency currency) {
@@ -55,7 +58,10 @@ public record Money(BigDecimal amount, Currency currency) {
         return new Money(this.amount.add(other.amount), this.currency);
     }
 }
+```
 
+**Code 7.2**: 결합법칙 덕분에 병렬 처리 가능
+```java
 // 결합법칙 덕분에 병렬 처리 가능
 List<Money> orderTotals = getOrderTotals(); // 100만 건
 
@@ -70,6 +76,7 @@ Money total2 = orderTotals.parallelStream()
 
 ### 이커머스 예제: 장바구니 병합
 
+**Code 7.3**: 결합법칙을 만족하는 Cart 병합
 ```java
 // 장바구니 아이템도 결합법칙 적용 가능
 public record CartItem(ProductId productId, Quantity quantity, Money price) {}
@@ -121,13 +128,17 @@ public record Cart(List<CartItem> items) {
 
 ### 재시도 안전성
 
+**Code 7.4**: 멱등하지 않은 결제 (위험!)
 ```java
 // 멱등하지 않은 결제 (위험!)
 public void processPayment(PaymentRequest request) {
     account.withdraw(request.amount());  // 중복 실행되면 두 번 출금!
     merchant.deposit(request.amount());
 }
+```
 
+**Code 7.5**: 멱등한 결제 (안전!)
+```java
 // 멱등한 결제 (안전!)
 public void processPayment(PaymentId id, PaymentRequest request) {
     // 이미 처리된 결제인지 확인
@@ -147,6 +158,7 @@ retryOnFailure(() -> processPayment(paymentId, request));
 
 ### 이커머스 예제: 멱등한 주문 상태 변경
 
+**Code 7.6**: 멱등한 주문 상태 변경
 ```java
 // 멱등한 주문 상태 변경
 public class OrderStateMachine {
@@ -176,6 +188,8 @@ public class OrderStateMachine {
 
 연산의 결과가 원래 값 그대로인 특별한 값입니다.
 
+**Table 7.2**: 연산별 항등원
+
 | 연산 | 항등원 |
 |-----|-------|
 | 덧셈 | 0 |
@@ -183,6 +197,7 @@ public class OrderStateMachine {
 | 문자열 연결 | "" (빈 문자열) |
 | 리스트 병합 | [] (빈 리스트) |
 
+**Code 7.7**: 항등원을 활용한 안전한 reduce
 ```java
 // 항등원이 있으면 reduce가 안전해짐
 List<Money> payments = Collections.emptyList();
@@ -197,6 +212,7 @@ Money total = payments.stream()
 
 ## 7.5 이커머스 실전 예제: 할인 규칙
 
+**Code 7.8**: 대수적 속성을 가진 Discount 타입
 ```java
 // 할인 규칙도 대수적 속성을 가질 수 있음
 sealed interface Discount {
@@ -204,7 +220,10 @@ sealed interface Discount {
     record Percentage(int rate) implements Discount {}
     record FixedAmount(Money amount) implements Discount {}
 }
+```
 
+**Code 7.9**: DiscountCalculator - 결합법칙 만족
+```java
 public class DiscountCalculator {
 
     // 할인 적용 (결합법칙 만족)

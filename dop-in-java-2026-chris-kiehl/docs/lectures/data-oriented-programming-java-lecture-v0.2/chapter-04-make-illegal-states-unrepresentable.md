@@ -11,8 +11,7 @@
 
 ## 4.1 유효성 검증이 필요 없는 설계
 
-### Before: 전통적인 방식 - 런타임 검증
-
+**Code 4.1**: 전통적인 방식 - 런타임 검증 (안티패턴)
 ```java
 // 전통적인 방식
 public class OrderService {
@@ -35,8 +34,7 @@ public class OrderService {
 }
 ```
 
-### After: DOP 방식 - 컴파일 타임 강제
-
+**Code 4.2**: DOP 방식 - 컴파일 타임 강제
 ```java
 // DOP 방식: 불가능한 상태가 타입으로 표현 불가능
 sealed interface OrderStatus {
@@ -73,8 +71,7 @@ public record Order(OrderId id, List<OrderItem> items, OrderStatus status) {}
 
 ## 4.2 실전 예제: 이메일 인증 상태
 
-### Before: Boolean으로 모델링
-
+**Code 4.3**: Boolean으로 모델링 (안티패턴)
 ```java
 // 불가능한 상태가 가능한 설계
 class User {
@@ -88,8 +85,7 @@ class User {
 }
 ```
 
-### After: 합 타입으로 모델링
-
+**Code 4.4**: 합 타입으로 모델링 (DOP 권장)
 ```java
 // 불가능한 상태가 불가능한 설계
 sealed interface UserEmail {
@@ -110,6 +106,7 @@ public record User(UserId id, String name, UserEmail email) {}
 
 Sealed Interface는 컴파일러가 모든 케이스를 처리했는지 검증합니다.
 
+**Code 4.5**: 망라성 검증 - 모든 케이스 처리
 ```java
 public String getStatusMessage(UserEmail email) {
     return switch (email) {
@@ -122,6 +119,7 @@ public String getStatusMessage(UserEmail email) {
 
 ### 새 상태 추가 시 컴파일러의 도움
 
+**Code 4.6**: 새 상태 추가 시 컴파일 에러 발생
 ```java
 // 새로운 상태 추가
 sealed interface UserEmail {
@@ -144,6 +142,7 @@ public String getStatusMessage(UserEmail email) {
 
 ## 4.4 상태 전이를 타입으로 강제하기
 
+**Code 4.7**: 상태 전이 메서드 - 가능한 전이만 정의
 ```java
 // 각 상태 타입에서 가능한 전이만 메서드로 정의
 sealed interface OrderStatus {

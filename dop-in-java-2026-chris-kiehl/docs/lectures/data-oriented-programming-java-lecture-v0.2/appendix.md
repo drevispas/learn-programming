@@ -6,6 +6,7 @@
 
 ### A.1 Record에 가변 컬렉션 저장 (방어적 복사 누락)
 
+**Code A.1**: Record에 가변 컬렉션 저장 - 안티패턴과 올바른 방법
 ```java
 // ❌ 안티패턴
 public record Cart(List<CartItem> items) {}
@@ -21,6 +22,7 @@ public record Cart(List<CartItem> items) {
 
 ### A.2 sealed interface에 default 사용
 
+**Code A.2**: sealed interface에 default 사용 - 안티패턴과 올바른 방법
 ```java
 // ❌ 새 상태 추가 시 누락 감지 안 됨
 return switch (status) {
@@ -37,6 +39,7 @@ return switch (status) {
 
 ### A.3 Entity에 비즈니스 로직 추가 (Active Record)
 
+**Code A.3**: Entity에 비즈니스 로직 추가 - 안티패턴과 올바른 방법
 ```java
 // ❌ DOP 철학 위반
 public record User(String id, String name) {
@@ -50,6 +53,7 @@ public class UserRepository { void save(User u) {...} }
 
 ### A.4 Rule Engine에서 값과 속성 혼동
 
+**Code A.4**: Rule Engine에서 값과 속성 혼동 - 안티패턴과 올바른 방법
 ```java
 // ❌ 규칙 생성 시점에 결과 확정
 record GTE(int left, int right) implements Rule {}
@@ -60,6 +64,7 @@ record GTE(String attribute, int threshold) implements Rule {}
 
 ### A.5 Optional을 필드로 사용
 
+**Code A.5**: Optional을 필드로 사용 - 안티패턴과 올바른 방법
 ```java
 // ❌ 안티패턴: Record 필드에 Optional 사용
 public record Order(
@@ -82,6 +87,7 @@ public record Order(OrderId id, AppliedCoupon coupon) {}
 
 ### B.1 Record 기본 문법 (Java 16+)
 
+**Code B.1**: Record 기본 문법
 ```java
 // 기본 Record (Java 16+)
 public record Point(int x, int y) {}
@@ -112,6 +118,7 @@ public record Order(OrderId id, OrderStatus status) {
 
 ### B.2 Sealed Interface 문법 (Java 17+)
 
+**Code B.2**: Sealed Interface 문법
 ```java
 // 기본 Sealed Interface
 sealed interface Shape permits Circle, Rectangle, Triangle {}
@@ -129,6 +136,7 @@ sealed interface PaymentStatus {
 
 ### B.3 Pattern Matching (Java 21+)
 
+**Code B.3**: Pattern Matching
 ```java
 // Record Patterns in switch (Java 21+ JEP 440, 441)
 String describe(Shape shape) {
@@ -161,6 +169,7 @@ String getPaymentId(OrderStatus status) {
 
 ### B.4 Result 타입 활용
 
+**Code B.4**: Result 타입 활용
 ```java
 // Result 정의
 sealed interface Result<S, F> {
@@ -185,6 +194,7 @@ result
 
 ### B.5 불변 컬렉션 (Java 9+)
 
+**Code B.5**: 불변 컬렉션
 ```java
 // 불변 리스트 생성 (Java 9+)
 List<String> immutable = List.of("a", "b", "c");
@@ -204,6 +214,7 @@ List<String> reversed = list.reversed();  // ["c", "b", "a"]
 
 ### B.6 방어적 복사 패턴
 
+**Code B.6**: 방어적 복사 패턴
 ```java
 // Record에서 불변성 보장
 public record Order(OrderId id, List<OrderItem> items) {
@@ -217,6 +228,7 @@ public record Order(OrderId id, List<OrderItem> items) {
 
 ### B.7 Java 25 DOP 기능
 
+**Code B.7**: Java 25 DOP 기능
 ```java
 // Primitive Types in Patterns (Java 25 Preview - JEP 507)
 // --enable-preview 플래그 필요
@@ -249,7 +261,7 @@ void processRequest(User user) {
 
 ## Appendix C: 전체 정답 및 해설 (강화)
 
-### 정답표
+**Table C.1**: 전체 정답표
 
 | Ch | Q1 | Q2 | Q3 | Q4 | Q5 |
 |----|----|----|----|----|-----|
@@ -323,6 +335,7 @@ void processRequest(User user) {
 
 ### 문제 1: 불변성의 함정
 
+**Code D.1**: Final Boss 문제 1 - 불변성의 함정
 ```java
 public record Team(String name, List<String> members) {}
 

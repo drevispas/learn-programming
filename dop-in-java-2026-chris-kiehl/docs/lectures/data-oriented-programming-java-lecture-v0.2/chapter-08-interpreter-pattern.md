@@ -24,6 +24,7 @@
 
 ### Step 1: 기본 Equals 조건
 
+**Code 8.1**: 기본 Equals 조건
 ```java
 public record Customer(String country, String type, int totalSpend) {}
 
@@ -46,6 +47,7 @@ public class RuleEngine {
 
 ### Step 2: And/Or/Not 논리 연산 추가
 
+**Code 8.2**: 논리 연산 추가
 ```java
 public sealed interface Rule {
     record Equals(String attribute, String value) implements Rule {}
@@ -59,13 +61,13 @@ public sealed interface Rule {
 
 #### [Trap] "데이터"와 "값"의 시점 차이
 
-**잘못된 설계** (흔한 실수):
+**Code 8.3**: 잘못된 GTE 설계 (흔한 실수)
 ```java
 // ❌ 값(int)을 직접 받음 - 규칙 생성 시점에 결과 확정!
 record GTE(int left, int right) implements Rule {}
 ```
 
-**올바른 설계**:
+**Code 8.4**: 올바른 GTE 설계
 ```java
 // ✅ 속성 이름(String)을 저장 - 평가 시점에 데이터 참조
 record GTE(String attribute, int threshold) implements Rule {}
@@ -82,6 +84,7 @@ case Rule.GTE(var attr, var threshold) -> switch (attr) {
 
 "한국(KR)에 살면서, (구매액 100만원 이상이거나 VIP)"
 
+**Code 8.5**: 복잡한 할인 규칙 예제
 ```java
 Rule krDiscountRule = new Rule.And(
     new Rule.Equals("country", "KR"),
@@ -99,6 +102,7 @@ boolean discountable = RuleEngine.evaluate(krDiscountRule, krCustomer); // true
 
 ## 8.4 동적 규칙 로딩 (DB/JSON)
 
+**Code 8.6**: JSON으로 표현된 규칙
 ```json
 {
   "type": "and",
@@ -113,7 +117,7 @@ boolean discountable = RuleEngine.evaluate(krDiscountRule, krCustomer); // true
 
 ## 8.5 Before/After: if-else vs Rule Engine
 
-### Before: 하드코딩
+**Code 8.7**: Before - 하드코딩
 ```java
 if (customer.country().equals("KR") && customer.type().equals("VIP")) {
     return true;
@@ -121,7 +125,7 @@ if (customer.country().equals("KR") && customer.type().equals("VIP")) {
 // 새 규칙마다 코드 수정 필요...
 ```
 
-### After: 데이터 주도
+**Code 8.8**: After - 데이터 주도
 ```java
 List<Rule> rules = loadFromDatabase();
 return rules.stream().anyMatch(r -> RuleEngine.evaluate(r, customer));

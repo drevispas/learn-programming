@@ -15,6 +15,7 @@
 
 우리는 수십 년간 **"데이터와 그 데이터를 조작하는 메서드를 한 클래스에 묶어야 한다(캡슐화)"**고 배웠습니다. 이 이론은 작은 프로그램에서는 완벽하게 작동합니다. 하지만 수백만 라인의 엔터프라이즈 시스템에서는 다음과 같은 문제를 야기합니다.
 
+**Code 1.1**: God Class 안티패턴 - 모든 것을 담은 Order 클래스
 ```java
 // 안티패턴: 모든 것을 담은 God Class
 public class Order {
@@ -83,6 +84,8 @@ public class Order {
 
 ### God Class의 실제 피해
 
+**Table 1.1**: God Class가 야기하는 문제 유형과 결과
+
 | 문제 유형 | 증상 | 결과 |
 |----------|-----|------|
 | 정보의 감옥 | 데이터가 객체 안에 갇힘 | DTO 변환 코드가 전체의 50% |
@@ -98,8 +101,7 @@ Chris Kiehl은 이러한 문제를 해결하기 위해 4가지 원칙을 제시�
 
 ### 원칙 1: 코드와 데이터를 분리하라
 
-#### Before (OOP): 데이터와 로직이 섞여있음
-
+**Code 1.2**: OOP 방식 - 데이터와 로직이 섞여있음
 ```java
 public class Order {
     private BigDecimal amount;
@@ -114,8 +116,7 @@ public class Order {
 }
 ```
 
-#### After (DOP): 데이터와 로직을 분리
-
+**Code 1.3**: DOP 방식 - 데이터와 로직을 분리
 ```java
 // 데이터: Record
 public record Order(BigDecimal amount, String couponCode) {}
@@ -146,6 +147,7 @@ public class OrderCalculator {
 
 ### 원칙 2: 데이터를 일반적인 형태로 표현하라
 
+**Code 1.4**: 데이터 표현 비교 - Bad vs Good
 ```java
 // Bad: 비슷한 구조가 여러 클래스로 분산
 public class OrderSummary {
@@ -167,8 +169,7 @@ public record PaymentSummary(PaymentId id, Money amount, PaymentMethod method) {
 
 ### 원칙 3: 데이터는 불변(Immutable)이다
 
-#### Before: 가변 객체
-
+**Code 1.5**: 가변 객체 (안티패턴)
 ```java
 public class MutableOrder {
     private String status;
@@ -179,8 +180,7 @@ public class MutableOrder {
 }
 ```
 
-#### After: 불변 객체
-
+**Code 1.6**: 불변 객체 (DOP 권장)
 ```java
 public record Order(OrderId id, Money amount, OrderStatus status) {
     public Order withStatus(OrderStatus newStatus) {
@@ -191,6 +191,7 @@ public record Order(OrderId id, Money amount, OrderStatus status) {
 
 ### 원칙 4: 스키마와 표현을 분리하라
 
+**Code 1.7**: 스키마와 표현 분리 - Bad vs Good
 ```java
 // Bad: 생성자에서 모든 검증 수행
 public record Order(OrderId id, Money amount) {
@@ -220,6 +221,8 @@ public class OrderValidator {
 
 ## 1.3 DOP vs OOP 비교
 
+**Table 1.2**: DOP와 OOP의 핵심 차이점 비교
+
 | 관점 | OOP | DOP |
 |-----|-----|-----|
 | 기본 단위 | 객체 (데이터 + 행위) | 데이터(Record) + 함수(Class) |
@@ -234,8 +237,7 @@ public class OrderValidator {
 
 ## 1.4 이커머스 리팩토링 예시: Before/After
 
-### Before: God Class
-
+**Code 1.8**: God Class OrderService (리팩토링 전)
 ```java
 public class OrderService {
     private OrderRepository orderRepository;
@@ -281,8 +283,7 @@ public class OrderService {
 }
 ```
 
-### After: DOP 스타일
-
+**Code 1.9**: DOP 스타일 리팩토링 (리팩토링 후)
 ```java
 // 1. 순수한 데이터 정의
 public record OrderItem(ProductId productId, Quantity quantity, Money unitPrice) {}

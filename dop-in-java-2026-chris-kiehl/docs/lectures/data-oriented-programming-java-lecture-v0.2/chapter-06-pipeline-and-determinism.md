@@ -11,6 +11,7 @@
 
 ## 6.1 결정론적 함수란?
 
+**Code 6.1**: 결정론적 함수 (순수 함수)
 ```java
 // 결정론적 함수 (순수 함수)
 public static Money calculateTotal(List<OrderItem> items) {
@@ -18,7 +19,10 @@ public static Money calculateTotal(List<OrderItem> items) {
         .map(item -> item.unitPrice().multiply(item.quantity().value()))
         .reduce(Money.zero(), Money::add);
 }
+```
 
+**Code 6.2**: 비결정론적 함수 (부수효과 포함)
+```java
 // 비결정론적 함수
 public Money calculateTotal(List<OrderItem> items) {
     // 외부 상태(taxRate) 참조 - 비결정론적
@@ -48,6 +52,7 @@ public Money calculateTotal(List<OrderItem> items) {
 
 ## 6.2 샌드위치 아키텍처
 
+**Figure 6.1**: 샌드위치 아키텍처 구조
 ```
 ┌─────────────────────────────────────┐
 │  Top Bun (Impure): 재료 수집        │  ← DB 조회, API 호출
@@ -58,8 +63,7 @@ public Money calculateTotal(List<OrderItem> items) {
 └─────────────────────────────────────┘
 ```
 
-### Before: I/O가 로직에 섞여있음
-
+**Code 6.3**: I/O가 로직에 섞여있음 (안티패턴)
 ```java
 // 안티패턴: 비즈니스 로직 중간에 I/O
 public Order processOrder(OrderRequest request) {
@@ -79,8 +83,7 @@ public Order processOrder(OrderRequest request) {
 }
 ```
 
-### After: 샌드위치 구조
-
+**Code 6.4**: 샌드위치 구조 적용 (DOP 권장)
 ```java
 public Result<Order, OrderError> processOrder(OrderRequest request) {
     // === Top Bun: 데이터 수집 (Impure) ===
@@ -209,6 +212,7 @@ public Order applyPromotion(OrderId orderId) {
 > - `IntStream`/`DoubleStream`에는 `.sum()`, `.average()`, `.max()`, `.min()` 등 편리한 메서드 제공
 > - 일반 `Stream<Integer>`에서는 `.reduce()`를 써야 해서 번거로움
 >
+> **Code 6.5**: 숫자 스트림 비교
 > ```java
 > // 권장: 숫자 전용 스트림
 > int total = items.stream()

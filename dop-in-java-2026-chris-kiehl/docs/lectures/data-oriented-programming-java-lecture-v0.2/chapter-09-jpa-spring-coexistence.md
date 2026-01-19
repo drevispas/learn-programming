@@ -13,6 +13,7 @@
 
 JPA Entity는 **Identity(정체성)**이자 **가변 객체**입니다. DOP의 **Value(값)**와는 상극입니다.
 
+**Code 9.1**: JPA Entity - 가변, Identity 기반
 ```java
 // JPA Entity: 가변, Identity 기반
 @Entity
@@ -63,6 +64,7 @@ public class OrderEntity {
 
 ## 9.2 레이어 분리 전략
 
+**Figure 9.1**: 레이어 분리 아키텍처
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Controller / API Layer                    │
@@ -86,6 +88,7 @@ public class OrderEntity {
 
 ### Before: 직접 Entity 사용
 
+**Code 9.2**: Before - 직접 Entity 사용 (안티패턴)
 ```java
 public class OrderService {
     public OrderEntity createOrder(CreateOrderRequest request) {
@@ -100,6 +103,7 @@ public class OrderService {
 
 ### After: Mapper 활용
 
+**Code 9.3**: After - Mapper 활용
 ```java
 public class OrderMapper {
     // Entity → Domain Record
@@ -138,6 +142,7 @@ public class OrderMapper {
 
 ### 단계 1: 가장 복잡한 로직 선정
 
+**Code 9.4**: Before - 복잡한 로직이 Service에 섞여있음
 ```java
 // Before: 복잡한 가격 계산 로직이 Service에 섞여있음
 public class OrderService {
@@ -150,6 +155,7 @@ public class OrderService {
 
 ### 단계 2: 순수 함수 추출
 
+**Code 9.5**: After - 순수 함수로 추출
 ```java
 // After: 순수 함수로 추출
 public class PriceCalculations {
@@ -176,6 +182,7 @@ public class PriceCalculations {
 
 ### 단계 3: 테스트 작성 (Mocking 없이!)
 
+**Code 9.6**: 테스트 작성 - Mocking 없이
 ```java
 class PriceCalculationsTest {
 
@@ -205,6 +212,8 @@ class PriceCalculationsTest {
 
 ## 9.5 주의사항 및 팁
 
+**Table 9.1**: JPA/DOP 공존 시 주의사항
+
 | 상황 | 권장 사항 |
 |-----|----------|
 | 기존 Entity에 Setter 제거 | 한 번에 다 제거하지 말고, 새 기능부터 Record 사용 |
@@ -212,6 +221,7 @@ class PriceCalculationsTest {
 | Lazy Loading | Domain 레이어에서는 이미 로드된 데이터만 사용 |
 | 트랜잭션 경계 | Application Layer(Orchestrator)에서 관리 |
 
+**Code 9.7**: 권장 - ID 참조 vs 비권장 - 객체 그래프
 ```java
 // 권장: ID 참조
 public record Order(

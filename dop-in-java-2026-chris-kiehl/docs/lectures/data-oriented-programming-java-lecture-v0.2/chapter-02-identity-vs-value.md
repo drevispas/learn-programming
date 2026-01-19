@@ -13,6 +13,8 @@
 
 시스템의 모든 데이터는 두 가지 범주 중 하나에 속합니다.
 
+**Table 2.1**: Value와 Identity의 핵심 차이점
+
 | 구분 | Value (값) | Identity (정체성) |
 |-----|-----------|------------------|
 | 동등성 | 내용이 같으면 같음 | ID가 같으면 같음 |
@@ -38,6 +40,7 @@
 
 ## 2.2 이커머스에서의 Identity vs Value
 
+**Code 2.1**: Value Types - 값으로 동등성 판단
 ```java
 // ========== Value Types (값) ==========
 
@@ -49,8 +52,10 @@ public record Coordinate(double latitude, double longitude) {}
 
 // 주소: 내용이 같으면 같은 주소
 public record Address(String city, String street, String zipCode) {}
+```
 
-
+**Code 2.2**: Identity Types - ID로 동등성 판단
+```java
 // ========== Identity Types (정체성) ==========
 
 // 회원: 이름을 바꿔도 같은 회원
@@ -69,6 +74,7 @@ public record Product(ProductId id, ProductName name, Money price) {}
 
 ### Compact Constructor로 불변식 강제
 
+**Code 2.3**: Money Record - Compact Constructor와 비즈니스 연산
 ```java
 public record Money(BigDecimal amount, Currency currency) {
     // Compact Constructor - 검증 로직
@@ -104,8 +110,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 Record는 필드 자체를 `final`로 만들지만, 필드가 참조하는 객체의 내부까지 얼리지는 못합니다.
 
-#### Before: 불변성이 깨지는 코드
-
+**Code 2.4**: 불변성이 깨지는 코드 (안티패턴)
 ```java
 // 위험한 코드!
 public record Order(OrderId id, List<OrderItem> items) {}
@@ -122,8 +127,7 @@ mutableList.add(new OrderItem(anotherProduct, anotherQuantity));
 // order.items()의 크기가 변경됨 - 불변성 파괴!
 ```
 
-#### After: 방어적 복사로 깊은 불변성 확보
-
+**Code 2.5**: 방어적 복사로 깊은 불변성 확보
 ```java
 public record Order(OrderId id, List<OrderItem> items) {
     // Compact Constructor에서 방어적 복사
@@ -156,6 +160,7 @@ mutableList.add(new OrderItem(anotherProduct, anotherQuantity));
 > 💡 **JEP 468 미포함 안내**: Java 25까지도 `with` expression은 정식 기능으로
 > 포함되지 않았습니다. 따라서 수동으로 `withXxx()` 메서드를 작성해야 합니다.
 
+**Code 2.6**: Wither 패턴 - 불변 객체의 값 변경
 ```java
 public record Order(
     OrderId id,

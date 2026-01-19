@@ -13,6 +13,7 @@
 
 ### 시그니처가 거짓말을 한다
 
+**Code 5.1**: 부분 함수 - 거짓말하는 시그니처
 ```java
 // 시그니처: id를 주면 User를 반환
 public User findUser(int id) {
@@ -51,20 +52,7 @@ public User findUser(int id) {
 
 ## 5.2 전체 함수(Total Function) 만들기
 
-### Before: 부분 함수 (거짓말하는 시그니처)
-
-```java
-public User findUser(int id) {
-    User user = database.find(id);
-    if (user == null) {
-        throw new NotFoundException("User not found: " + id);
-    }
-    return user;
-}
-```
-
-### After: 전체 함수 (정직한 시그니처)
-
+**Code 5.2**: 전체 함수 - 정직한 시그니처
 ```java
 public Result<User, UserError> findUser(int id) {
     User user = database.find(id);
@@ -86,6 +74,7 @@ sealed interface UserError {
 
 ## 5.3 Result 타입 완전 구현
 
+**Code 5.3**: Result Sealed Interface 구현
 ```java
 public sealed interface Result<S, F> {
     record Success<S, F>(S value) implements Result<S, F> {}
@@ -130,6 +119,7 @@ public sealed interface Result<S, F> {
 
 ## 5.4 이커머스 실전 예제: 주문 처리
 
+**Code 5.4**: OrderError Sealed Interface - 에러 타입 정의
 ```java
 // 에러 타입 정의
 sealed interface OrderError {
@@ -139,7 +129,10 @@ sealed interface OrderError {
         implements OrderError {}
     record InvalidCoupon(CouponCode code, String reason) implements OrderError {}
 }
+```
 
+**Code 5.5**: Result를 활용한 파이프라인 조합
+```java
 // 파이프라인 조합
 public Result<Order, OrderError> createOrder(CreateOrderRequest request) {
     return findUser(request.userId())
