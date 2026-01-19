@@ -1,10 +1,6 @@
-# Part I: 사고의 전환 (Foundations)
+# Chapter 1: 객체 지향의 환상과 데이터의 실체
 
----
-
-## Chapter 1: 객체 지향의 환상과 데이터의 실체
-
-### 학습 목표
+## 학습 목표
 1. OOP의 캡슐화가 대규모 시스템에서 야기하는 문제를 설명할 수 있다
 2. DOP의 4대 원칙을 이해하고 각각의 의미를 설명할 수 있다
 3. 데이터와 로직 분리의 장점을 코드로 보여줄 수 있다
@@ -13,9 +9,9 @@
 
 ---
 
-### 1.1 왜 우리는 고통스러운가?
+## 1.1 왜 우리는 고통스러운가?
 
-#### 캡슐화의 약속과 현실
+### 캡슐화의 약속과 현실
 
 우리는 수십 년간 **"데이터와 그 데이터를 조작하는 메서드를 한 클래스에 묶어야 한다(캡슐화)"**고 배웠습니다. 이 이론은 작은 프로그램에서는 완벽하게 작동합니다. 하지만 수백만 라인의 엔터프라이즈 시스템에서는 다음과 같은 문제를 야기합니다.
 
@@ -68,7 +64,7 @@ public class Order {
 }
 ```
 
-#### 비유: 레고 vs 점토
+### 비유: 레고 vs 점토
 
 > **OOP의 God Class는 점토 덩어리와 같습니다.**
 >
@@ -85,7 +81,7 @@ public class Order {
 > - 여러 사람이 동시에 다른 블록을 조립할 수 있습니다
 > - 같은 블록을 여러 구조물에서 재사용할 수 있습니다
 
-#### God Class의 실제 피해
+### God Class의 실제 피해
 
 | 문제 유형 | 증상 | 결과 |
 |----------|-----|------|
@@ -96,13 +92,13 @@ public class Order {
 
 ---
 
-### 1.2 DOP의 4대 원칙
+## 1.2 DOP의 4대 원칙
 
 Chris Kiehl은 이러한 문제를 해결하기 위해 4가지 원칙을 제시합니다.
 
-#### 원칙 1: 코드와 데이터를 분리하라
+### 원칙 1: 코드와 데이터를 분리하라
 
-##### Before (OOP): 데이터와 로직이 섞여있음
+#### Before (OOP): 데이터와 로직이 섞여있음
 
 ```java
 public class Order {
@@ -118,7 +114,7 @@ public class Order {
 }
 ```
 
-##### After (DOP): 데이터와 로직을 분리
+#### After (DOP): 데이터와 로직을 분리
 
 ```java
 // 데이터: Record
@@ -148,7 +144,7 @@ public class OrderCalculator {
 > - **네임스페이스(Namespace)**: `OrderCalculator`는 관련된 함수들을 모아놓은 폴더 개념입니다
 > - `java.lang.Math.max()`를 쓸 때 `new Math()`를 하지 않는 것과 같은 이치입니다
 
-#### 원칙 2: 데이터를 일반적인 형태로 표현하라
+### 원칙 2: 데이터를 일반적인 형태로 표현하라
 
 ```java
 // Bad: 비슷한 구조가 여러 클래스로 분산
@@ -169,9 +165,9 @@ public record OrderSummary(OrderId id, Money amount, OrderStatus status) {}
 public record PaymentSummary(PaymentId id, Money amount, PaymentMethod method) {}
 ```
 
-#### 원칙 3: 데이터는 불변(Immutable)이다
+### 원칙 3: 데이터는 불변(Immutable)이다
 
-##### Before: 가변 객체
+#### Before: 가변 객체
 
 ```java
 public class MutableOrder {
@@ -183,7 +179,7 @@ public class MutableOrder {
 }
 ```
 
-##### After: 불변 객체
+#### After: 불변 객체
 
 ```java
 public record Order(OrderId id, Money amount, OrderStatus status) {
@@ -193,7 +189,7 @@ public record Order(OrderId id, Money amount, OrderStatus status) {
 }
 ```
 
-#### 원칙 4: 스키마와 표현을 분리하라
+### 원칙 4: 스키마와 표현을 분리하라
 
 ```java
 // Bad: 생성자에서 모든 검증 수행
@@ -222,7 +218,7 @@ public class OrderValidator {
 
 ---
 
-### 1.3 DOP vs OOP 비교
+## 1.3 DOP vs OOP 비교
 
 | 관점 | OOP | DOP |
 |-----|-----|-----|
@@ -236,9 +232,9 @@ public class OrderValidator {
 
 ---
 
-### 1.4 이커머스 리팩토링 예시: Before/After
+## 1.4 이커머스 리팩토링 예시: Before/After
 
-#### Before: God Class
+### Before: God Class
 
 ```java
 public class OrderService {
@@ -285,7 +281,7 @@ public class OrderService {
 }
 ```
 
-#### After: DOP 스타일
+### After: DOP 스타일
 
 ```java
 // 1. 순수한 데이터 정의
@@ -362,9 +358,9 @@ public class OrderOrchestrator {
 
 ---
 
-### 퀴즈 Chapter 1
+## 퀴즈 Chapter 1
 
-#### Q1.1 [개념 확인] DOP의 4대 원칙
+### Q1.1 [개념 확인] DOP의 4대 원칙
 다음 중 DOP의 원칙이 **아닌** 것은?
 
 A. 코드와 데이터를 분리하라
@@ -374,7 +370,7 @@ D. 스키마와 표현을 분리하라
 
 ---
 
-#### Q1.2 [코드 분석] God Class 식별
+### Q1.2 [코드 분석] God Class 식별
 다음 코드에서 God Class 안티패턴의 증거가 **아닌** 것은?
 
 ```java
@@ -400,7 +396,7 @@ D. 외부 시스템(검색엔진)과의 통신이 도메인 객체에 있음
 
 ---
 
-#### Q1.3 [설계 문제] 리팩토링 방향
+### Q1.3 [설계 문제] 리팩토링 방향
 위의 `Product` 클래스를 DOP 스타일로 리팩토링할 때 가장 적절한 접근은?
 
 A. 모든 메서드를 private으로 바꿔서 캡슐화를 강화한다
@@ -410,7 +406,7 @@ D. 각 메서드마다 별도의 Product 하위 클래스를 만든다
 
 ---
 
-#### Q1.4 [개념 확인] 불변성의 장점
+### Q1.4 [개념 확인] 불변성의 장점
 데이터 불변성이 제공하는 장점으로 **올바르지 않은** 것은?
 
 A. 멀티스레드 환경에서 동기화 없이 안전하게 공유할 수 있다
@@ -420,7 +416,7 @@ D. 함수의 부수효과를 줄여 테스트가 쉬워진다
 
 ---
 
-#### Q1.5 [코드 작성] DOP 스타일 변환
+### Q1.5 [코드 작성] DOP 스타일 변환
 다음 OOP 코드를 DOP 스타일로 변환하세요.
 
 ```java
@@ -444,7 +440,7 @@ public class ShoppingCart {
 
 ---
 
-#### Q1.6 [함정 문제] DOP 철학 ⭐
+### Q1.6 [함정 문제] DOP 철학 ⭐
 다음 중 DOP(Data-Oriented Programming) 철학에 **가장 어긋나는** 코드는?
 
 **A. 레코드 내에 검증 로직 포함**
@@ -476,274 +472,6 @@ public record Point(int x, int y) {
     public Point withX(int newX) { return new Point(newX, y); }
 }
 ```
-
----
-
-정답은 Appendix C에서 확인할 수 있습니다.
-
----
-
-## Chapter 2: 데이터란 무엇인가? (Identity vs Value)
-
-### 학습 목표
-1. 정체성(Identity)과 값(Value)의 개념적 차이를 명확히 구분할 수 있다
-2. Java Record가 Value Type을 표현하는 방식을 이해한다
-3. 얕은 불변성과 깊은 불변성의 차이를 설명할 수 있다
-4. 방어적 복사를 통해 깊은 불변성을 확보할 수 있다
-5. 이커머스 도메인에서 Identity와 Value를 올바르게 식별할 수 있다
-
----
-
-### 2.1 정체성(Identity)과 값(Value)의 차이
-
-시스템의 모든 데이터는 두 가지 범주 중 하나에 속합니다.
-
-| 구분 | Value (값) | Identity (정체성) |
-|-----|-----------|------------------|
-| 동등성 | 내용이 같으면 같음 | ID가 같으면 같음 |
-| 불변성 | 항상 불변 | 상태가 변할 수 있음 |
-| 비교 방식 | `equals()` (값 비교) | `==` 또는 ID 비교 |
-| 예시 | 금액, 좌표, 날짜 | 회원, 주문, 상품 |
-
-#### 비유: 여권과 이름표
-
-> **Identity는 여권이고, Value는 이름표입니다.**
->
-> **여권(Identity)**:
-> - 여권 번호가 같으면 같은 사람입니다
-> - 이름을 개명해도, 주소를 바꿔도 여전히 같은 사람입니다
-> - 여권은 "누구인가"를 식별합니다
->
-> **이름표(Value)**:
-> - "홍길동"이라고 적힌 이름표 두 개는 같은 이름표입니다
-> - 이름표에는 고유 번호가 없습니다
-> - 이름표는 "무엇인가"를 나타냅니다
-
----
-
-### 2.2 이커머스에서의 Identity vs Value
-
-```java
-// ========== Value Types (값) ==========
-
-// 금액: 10000원은 어디에서든 10000원
-public record Money(BigDecimal amount, Currency currency) {}
-
-// 좌표: (37.5, 127.0)은 어디에서든 같은 위치
-public record Coordinate(double latitude, double longitude) {}
-
-// 주소: 내용이 같으면 같은 주소
-public record Address(String city, String street, String zipCode) {}
-
-
-// ========== Identity Types (정체성) ==========
-
-// 회원: 이름을 바꿔도 같은 회원
-public record Member(MemberId id, String name, EmailAddress email) {}
-
-// 주문: 상태가 바뀌어도 같은 주문
-public record Order(OrderId id, List<OrderItem> items, OrderStatus status) {}
-
-// 상품: 가격이 바뀌어도 같은 상품
-public record Product(ProductId id, ProductName name, Money price) {}
-```
-
----
-
-### 2.3 Java Record: Value Type의 완벽한 도구
-
-#### Compact Constructor로 불변식 강제
-
-```java
-public record Money(BigDecimal amount, Currency currency) {
-    // Compact Constructor - 검증 로직
-    public Money {
-        Objects.requireNonNull(amount, "금액은 null일 수 없습니다");
-        Objects.requireNonNull(currency, "통화는 null일 수 없습니다");
-        if (amount.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("금액은 음수가 될 수 없습니다: " + amount);
-        }
-        // this.amount = amount; 자동 실행
-    }
-
-    // 팩토리 메서드
-    public static Money krw(long amount) {
-        return new Money(BigDecimal.valueOf(amount), Currency.KRW);
-    }
-
-    // 비즈니스 연산 (새 객체 반환)
-    public Money add(Money other) {
-        if (this.currency != other.currency) {
-            throw new IllegalArgumentException("통화가 다릅니다");
-        }
-        return new Money(this.amount.add(other.amount), this.currency);
-    }
-}
-```
-
----
-
-### 2.4 얕은 불변성 vs 깊은 불변성
-
-#### 얕은 불변성의 함정
-
-Record는 필드 자체를 `final`로 만들지만, 필드가 참조하는 객체의 내부까지 얼리지는 못합니다.
-
-##### Before: 불변성이 깨지는 코드
-
-```java
-// 위험한 코드!
-public record Order(OrderId id, List<OrderItem> items) {}
-
-// 문제 발생
-List<OrderItem> mutableList = new ArrayList<>();
-mutableList.add(new OrderItem(productId, quantity));
-
-Order order = new Order(orderId, mutableList);
-
-// Order 외부에서 내부 데이터 변경 가능!
-mutableList.add(new OrderItem(anotherProduct, anotherQuantity));
-
-// order.items()의 크기가 변경됨 - 불변성 파괴!
-```
-
-##### After: 방어적 복사로 깊은 불변성 확보
-
-```java
-public record Order(OrderId id, List<OrderItem> items) {
-    // Compact Constructor에서 방어적 복사
-    public Order {
-        Objects.requireNonNull(id);
-        Objects.requireNonNull(items);
-        // 불변 리스트로 복사 - 외부에서 변경 불가
-        items = List.copyOf(items);
-    }
-}
-
-// 이제 안전!
-List<OrderItem> mutableList = new ArrayList<>();
-mutableList.add(new OrderItem(productId, quantity));
-
-Order order = new Order(orderId, mutableList);
-
-// 원본 리스트를 수정해도 Order에 영향 없음
-mutableList.add(new OrderItem(anotherProduct, anotherQuantity));
-
-// order.items()는 여전히 1개의 아이템만 가짐
-```
-
----
-
-### 2.5 값 변경 패턴: with 메서드
-
-불변 객체에서 값을 "변경"하려면 새 객체를 만들어야 합니다.
-
-> 💡 **JEP 468 미포함 안내**: Java 25까지도 `with` expression은 정식 기능으로
-> 포함되지 않았습니다. 따라서 수동으로 `withXxx()` 메서드를 작성해야 합니다.
-
-```java
-public record Order(
-    OrderId id,
-    CustomerId customerId,
-    List<OrderItem> items,
-    Money totalAmount,
-    OrderStatus status
-) {
-    public Order {
-        items = List.copyOf(items);
-    }
-
-    // with 패턴: 하나의 필드만 바꾼 새 객체 반환
-    public Order withStatus(OrderStatus newStatus) {
-        return new Order(id, customerId, items, totalAmount, newStatus);
-    }
-
-    public Order withTotalAmount(Money newAmount) {
-        return new Order(id, customerId, items, newAmount, status);
-    }
-}
-
-// 사용
-Order unpaidOrder = new Order(id, customerId, items, total, new Unpaid());
-Order paidOrder = unpaidOrder.withStatus(new Paid(LocalDateTime.now(), paymentId));
-// unpaidOrder는 여전히 Unpaid 상태 (불변)
-```
-
----
-
-### 퀴즈 Chapter 2
-
-#### Q2.1 [개념 확인] Identity vs Value
-다음 중 **Value Type**으로 모델링해야 하는 것은?
-
-A. 고객 (Customer)
-B. 주문 금액 (OrderAmount)
-C. 상품 (Product)
-D. 장바구니 (ShoppingCart)
-
----
-
-#### Q2.2 [코드 분석] 불변성 위반
-다음 코드에서 불변성이 깨지는 지점은?
-
-```java
-public record ShoppingCart(CartId id, List<CartItem> items) {}
-
-public class CartService {
-    public void addItem(ShoppingCart cart, CartItem item) {
-        cart.items().add(item);  // Line A
-    }
-
-    public ShoppingCart createCart(CartId id) {
-        return new ShoppingCart(id, new ArrayList<>());  // Line B
-    }
-}
-```
-
-A. Line A만 문제
-B. Line B만 문제
-C. Line A와 Line B 모두 문제
-D. 문제없음
-
----
-
-#### Q2.3 [함정 문제] 불변성의 함정 ⭐
-다음 코드를 실행했을 때, 콘솔에 출력되는 결과는?
-
-```java
-import java.util.*;
-
-public record Team(String name, List<String> members) {
-    // 콤팩트 생성자가 정의되지 않음 (기본 생성자 사용)
-}
-
-public class Main {
-    public static void main(String[] args) {
-        List<String> list = new ArrayList<>();
-        list.add("Alice");
-
-        Team team = new Team("Alpha", list);
-        list.add("Bob");
-
-        System.out.println(team.members());
-    }
-}
-```
-
-A. `[Alice]`
-B. `[Alice, Bob]`
-C. 컴파일 에러
-D. `NullPointerException`
-
----
-
-#### Q2.4 [설계 문제] 적절한 타입 선택
-이커머스에서 "배송 주소"를 모델링할 때 적절한 방식은?
-
-A. Entity로 모델링 - 주소도 고유 ID가 있어야 함
-B. Value Object로 모델링 - 주소 내용이 같으면 같은 주소
-C. String으로 충분 - "서울시 강남구 역삼동"
-D. Map<String, String>으로 모델링 - 유연성 확보
 
 ---
 

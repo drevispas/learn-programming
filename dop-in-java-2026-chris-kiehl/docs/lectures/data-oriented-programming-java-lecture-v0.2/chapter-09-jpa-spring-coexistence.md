@@ -1,10 +1,6 @@
-# Part V: 레거시 탈출 (Refactoring & Architecture)
+# Chapter 9: 현실 세계의 DOP: JPA/Spring과의 공존
 
----
-
-## Chapter 9: 현실 세계의 DOP: JPA/Spring과의 공존
-
-### 학습 목표
+## 학습 목표
 1. JPA Entity와 DOP Domain Record의 차이를 이해한다
 2. Entity에서 Domain Record로의 변환 전략을 적용할 수 있다
 3. Spring Boot 프로젝트에서 DOP를 적용하는 구조를 설계할 수 있다
@@ -13,7 +9,7 @@
 
 ---
 
-### 9.1 JPA Entity의 한계
+## 9.1 JPA Entity의 한계
 
 JPA Entity는 **Identity(정체성)**이자 **가변 객체**입니다. DOP의 **Value(값)**와는 상극입니다.
 
@@ -48,7 +44,7 @@ public class OrderEntity {
 }
 ```
 
-#### 비유: 통역사
+### 비유: 통역사
 
 > **Entity와 Domain Record 사이에는 통역사가 필요합니다.**
 >
@@ -65,7 +61,7 @@ public class OrderEntity {
 
 ---
 
-### 9.2 레이어 분리 전략
+## 9.2 레이어 분리 전략
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -86,9 +82,9 @@ public class OrderEntity {
 
 ---
 
-### 9.3 Entity ↔ Domain Record 변환
+## 9.3 Entity ↔ Domain Record 변환
 
-#### Before: 직접 Entity 사용
+### Before: 직접 Entity 사용
 
 ```java
 public class OrderService {
@@ -102,7 +98,7 @@ public class OrderService {
 }
 ```
 
-#### After: Mapper 활용
+### After: Mapper 활용
 
 ```java
 public class OrderMapper {
@@ -138,9 +134,9 @@ public class OrderMapper {
 
 ---
 
-### 9.4 점진적 리팩토링 전략
+## 9.4 점진적 리팩토링 전략
 
-#### 단계 1: 가장 복잡한 로직 선정
+### 단계 1: 가장 복잡한 로직 선정
 
 ```java
 // Before: 복잡한 가격 계산 로직이 Service에 섞여있음
@@ -152,7 +148,7 @@ public class OrderService {
 }
 ```
 
-#### 단계 2: 순수 함수 추출
+### 단계 2: 순수 함수 추출
 
 ```java
 // After: 순수 함수로 추출
@@ -178,7 +174,7 @@ public class PriceCalculations {
 }
 ```
 
-#### 단계 3: 테스트 작성 (Mocking 없이!)
+### 단계 3: 테스트 작성 (Mocking 없이!)
 
 ```java
 class PriceCalculationsTest {
@@ -207,7 +203,7 @@ class PriceCalculationsTest {
 
 ---
 
-### 9.5 주의사항 및 팁
+## 9.5 주의사항 및 팁
 
 | 상황 | 권장 사항 |
 |-----|----------|
@@ -237,9 +233,9 @@ public record Order(
 
 ---
 
-### 퀴즈 Chapter 9
+## 퀴즈 Chapter 9
 
-#### Q9.1 [개념 확인] Entity vs Record
+### Q9.1 [개념 확인] Entity vs Record
 JPA Entity와 Domain Record의 차이로 **올바른** 것은?
 
 A. Entity는 불변, Record는 가변
@@ -249,7 +245,7 @@ D. Entity에서는 비즈니스 로직을 넣어야 함
 
 ---
 
-#### Q9.2 [코드 분석] Mapper의 역할
+### Q9.2 [코드 분석] Mapper의 역할
 Mapper 클래스의 역할은?
 
 A. Entity에 비즈니스 로직 추가
@@ -259,7 +255,7 @@ D. 트랜잭션 관리
 
 ---
 
-#### Q9.3 [설계 문제] 레이어 배치
+### Q9.3 [설계 문제] 레이어 배치
 "주문 금액 계산" 로직은 어느 레이어에 있어야 하나요?
 
 A. Controller Layer
@@ -269,7 +265,7 @@ D. Application Layer
 
 ---
 
-#### Q9.4 [코드 분석] 점진적 리팩토링
+### Q9.4 [코드 분석] 점진적 리팩토링
 레거시 코드 리팩토링 시 첫 단계로 적절한 것은?
 
 A. 모든 Entity를 Record로 한 번에 변환
@@ -279,7 +275,7 @@ D. 새 프로젝트로 처음부터 다시 작성
 
 ---
 
-#### Q9.5 [코드 작성] Mapper 구현
+### Q9.5 [코드 작성] Mapper 구현
 다음 Entity를 Domain Record로 변환하는 Mapper를 작성하세요.
 
 ```java
