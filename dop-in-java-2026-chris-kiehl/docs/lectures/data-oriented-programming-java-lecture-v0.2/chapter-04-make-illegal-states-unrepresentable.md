@@ -11,6 +11,19 @@
 
 ## 4.1 유효성 검증이 필요 없는 설계
 
+> **🎯 왜 배우는가?**
+>
+> if문으로 유효성 검증을 수십 줄씩 작성하느라 지치셨나요?
+> 타입 시스템으로 불가능한 상태를 표현 불가능하게 만들면 **런타임 검증 코드가 대폭 줄어들고**,
+> 컴파일러가 버그를 미리 잡아줍니다.
+
+### ❌ 안티패턴: 런타임 검증에 의존
+
+**왜 문제인가?**
+- **검증 누락 위험**: 개발자가 검증 코드를 빠뜨리면 버그 발생
+- **중복 검증**: 여러 곳에서 동일한 검증 로직 반복
+- **런타임 오류**: 컴파일은 통과하지만 실행 시 예외 발생
+
 **Code 4.1**: 전통적인 방식 - 런타임 검증 (안티패턴)
 ```java
 // 전통적인 방식
@@ -33,6 +46,13 @@ public class OrderService {
     }
 }
 ```
+
+### ✅ 권장패턴: 타입으로 불가능한 상태 차단
+
+**왜 좋은가?**
+- **컴파일 타임 보장**: 잘못된 상태는 컴파일 자체가 안 됨
+- **검증 코드 불필요**: 타입이 유효성을 보장하므로 검증 로직 감소
+- **자기 문서화**: 타입 정의만 봐도 가능한 상태가 명확함
 
 **Code 4.2**: DOP 방식 - 컴파일 타임 강제
 ```java
@@ -71,6 +91,11 @@ public record Order(OrderId id, List<OrderItem> items, OrderStatus status) {}
 
 ## 4.2 실전 예제: 이메일 인증 상태
 
+> **🎯 왜 배우는가?**
+>
+> "이메일이 null인데 인증됨 상태?"라는 논리적 모순을 경험해 본 적 있으신가요?
+> 실전 예제를 통해 **boolean 필드의 함정을 피하고 합 타입으로 안전하게 설계**하는 방법을 익힐 수 있습니다.
+
 **Code 4.3**: Boolean으로 모델링 (안티패턴)
 ```java
 // 불가능한 상태가 가능한 설계
@@ -103,6 +128,12 @@ public record User(UserId id, String name, UserEmail email) {}
 ---
 
 ## 4.3 Switch Expression과 망라성(Exhaustiveness)
+
+> **🎯 왜 배우는가?**
+>
+> 새로운 상태를 추가했는데 처리 코드를 깜빡 잊어서 버그가 발생한 적 있으신가요?
+> 망라성 검증을 활용하면 **새 상태 추가 시 컴파일러가 누락된 처리를 알려주므로**,
+> 휴먼 에러를 원천 차단할 수 있습니다.
 
 Sealed Interface는 컴파일러가 모든 케이스를 처리했는지 검증합니다.
 
@@ -141,6 +172,47 @@ public String getStatusMessage(UserEmail email) {
 ---
 
 ## 4.4 상태 전이를 타입으로 강제하기
+
+> **🎯 왜 배우는가?**
+>
+> "결제 전에 배송됨?" 같은 잘못된 상태 전이로 버그가 발생한 적 있으신가요?
+> 상태 전이를 타입으로 강제하면 **비즈니스 규칙을 코드로 표현**할 수 있고,
+> 잘못된 전이는 컴파일 단계에서 차단됩니다.
+
+### 상태 전이 다이어그램
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    주문 상태 전이 다이어그램                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│                         ┌──────────┐                                │
+│                         │  Unpaid  │                                │
+│                         │ (미결제) │                                │
+│                         └────┬─────┘                                │
+│                    pay()│          │cancel()                        │
+│                         ↓          ↓                                │
+│                  ┌──────────┐  ┌───────────┐                        │
+│                  │   Paid   │  │ Canceled  │                        │
+│                  │ (결제됨) │  │  (취소됨) │                        │
+│                  └────┬─────┘  └───────────┘                        │
+│                       │                                             │
+│                       │ship()                                       │
+│                       ↓                                             │
+│                  ┌──────────┐                                       │
+│                  │ Shipped  │    ✗ Paid에서 cancel() 불가           │
+│                  │ (배송중) │    ✗ Shipped에서 cancel() 불가        │
+│                  └────┬─────┘    ✗ Canceled에서 어떤 전이도 불가    │
+│                       │                                             │
+│                       │deliver()                                    │
+│                       ↓                                             │
+│                  ┌───────────┐                                      │
+│                  │ Delivered │  → 타입 시스템이 잘못된 전이를       │
+│                  │ (배송완료)│     컴파일 에러로 차단!               │
+│                  └───────────┘                                      │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 **Code 4.7**: 상태 전이 메서드 - 가능한 전이만 정의
 ```java
@@ -188,9 +260,9 @@ Shipped shipped = paid.ship(tracking); // OK
 ### Q4.1 [개념 확인] 불가능한 상태
 "Make Illegal States Unrepresentable"의 의미는?
 
-A. 모든 상태를 enum으로 정의한다
-B. 유효하지 않은 상태를 타입으로 표현할 수 없게 설계한다
-C. 런타임에 철저히 검증한다
+A. 모든 상태를 enum으로 정의한다<br/>
+B. 유효하지 않은 상태를 타입으로 표현할 수 없게 설계한다<br/>
+C. 런타임에 철저히 검증한다<br/>
 D. 모든 필드를 private으로 숨긴다
 
 ---
@@ -206,9 +278,9 @@ record DeliveryInfo(
 ) {}
 ```
 
-A. Record를 사용한 것이 문제
-B. isDelivered가 false인데 deliveredAt, receiverName이 있을 수 있음
-C. 필드가 너무 적음
+A. Record를 사용한 것이 문제<br/>
+B. isDelivered가 false인데 deliveredAt, receiverName이 있을 수 있음<br/>
+C. 필드가 너무 적음<br/>
 D. 문제없음
 
 ### Q4.3 [버그 찾기] 망라성 문제
@@ -226,9 +298,9 @@ String getMessage(OrderStatus status) {
 }
 ```
 
-A. default가 있어서 Shipped가 처리되지 않음
-B. sealed interface를 잘못 사용함
-C. switch가 아닌 if-else를 써야 함
+A. default가 있어서 Shipped가 처리되지 않음<br/>
+B. sealed interface를 잘못 사용함<br/>
+C. switch가 아닌 if-else를 써야 함<br/>
 D. 문제없음
 
 ---
@@ -245,9 +317,9 @@ class Coupon {
 }
 ```
 
-A. Unused(code)와 Used(code, usedAt, usedByMemberId)로 분리
-B. isUsed를 enum으로 변경
-C. usedAt과 usedByMemberId를 Optional로 변경
+A. Unused(code)와 Used(code, usedAt, usedByMemberId)로 분리<br/>
+B. isUsed를 enum으로 변경<br/>
+C. usedAt과 usedByMemberId를 Optional로 변경<br/>
 D. 현재 설계가 적절함
 
 ---
