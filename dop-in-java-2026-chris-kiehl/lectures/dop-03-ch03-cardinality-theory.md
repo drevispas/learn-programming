@@ -1,6 +1,6 @@
-# Chapter 3: 타입 시스템의 기수(Cardinality) 이론
+# Chapter 3: 타입 시스템의 기수 이론 (Type System Cardinality Theory)
 
-## 학습 목표
+## 학습 목표 (Learning Objectives)
 1. 기수(Cardinality)의 개념을 이해하고 타입의 상태 개수를 계산할 수 있다
 2. 곱 타입(Product Type)이 상태 폭발을 일으키는 원리를 설명할 수 있다
 3. 합 타입(Sum Type)이 상태를 축소하는 원리를 설명할 수 있다
@@ -9,7 +9,11 @@
 
 ---
 
-## 3.1 기수(Cardinality)란?
+## 3.1 기수란? (What is Cardinality?)
+
+> **다른 말로 (In other words):**
+> - "타입이 표현할 수 있는 가능한 값의 개수"
+> - "복잡도 ∝ 기수, 기수가 클수록 시스템이 복잡해진다"
 
 > **🎯 왜 배우는가?**
 >
@@ -36,7 +40,11 @@
 
 ---
 
-## 3.2 곱 타입 (Product Type): 상태의 폭발
+## 3.2 곱 타입: 상태의 폭발 (Product Type: State Explosion)
+
+> **다른 말로 (In other words):**
+> - "필드를 추가하면 상태 수가 곱셈으로 증가 (2×2×2 = 8)"
+> - "boolean 5개 = 32가지 상태, 대부분은 불가능한 상태"
 
 > **🎯 왜 배우는가?**
 >
@@ -125,9 +133,56 @@ record Canceled(LocalDateTime at, CancelReason reason) implements OrderStatus {}
 // 복잡도가 84% 감소!
 ```
 
+> **💡 Q&A: Record를 sealed interface 안에? 밖에?**
+>
+> **두 가지 스타일:**
+>
+> ```java
+> // 스타일 A: 외부 정의 (Top-level)
+> sealed interface OrderStatus permits Created, Paid, Shipped {}
+> record Created(LocalDateTime at) implements OrderStatus {}
+> record Paid(LocalDateTime at, PaymentId id) implements OrderStatus {}
+> record Shipped(LocalDateTime at, TrackingNumber num) implements OrderStatus {}
+>
+> // 스타일 B: 내부 정의 (Nested)
+> sealed interface OrderStatus {
+>     record Created(LocalDateTime at) implements OrderStatus {}
+>     record Paid(LocalDateTime at, PaymentId id) implements OrderStatus {}
+>     record Shipped(LocalDateTime at, TrackingNumber num) implements OrderStatus {}
+> }
+> ```
+>
+> **차이점 비교:**
+>
+> | 구분 | 외부 정의 (Top-level) | 내부 정의 (Nested) |
+> |-----|---------------------|-------------------|
+> | 접근 방식 | `new Created(...)` | `new OrderStatus.Created(...)` |
+> | `permits` 절 | 필수 | 생략 가능 (암묵적) |
+> | 파일 분리 | 각 record별 파일 가능 | 하나의 파일에 집중 |
+> | 네임스페이스 | 전역에 노출 | `OrderStatus.` 하위에 캡슐화 |
+> | 패턴 매칭 | `case Created c` | `case OrderStatus.Created c` |
+>
+> **언제 어떤 스타일을 쓸까?**
+>
+> | 상황 | 권장 스타일 | 이유 |
+> |-----|-----------|------|
+> | **독립적으로 의미 있는 타입** | 외부 정의 | `Money`, `Address` 등은 다른 곳에서도 재사용 |
+> | **부모 타입 없이 의미 없는 타입** | 내부 정의 | `OrderStatus.Created`는 `OrderStatus` 맥락에서만 의미 |
+> | **파일당 하나의 public 클래스 규칙** | 외부 정의 | 각 variant를 별도 파일로 관리 가능 |
+> | **응집도 높은 ADT** | 내부 정의 | 모든 variant를 한눈에 파악 |
+>
+> **실무 가이드라인:**
+> - **상태/이벤트 타입** (OrderStatus, PaymentEvent) → 내부 정의 권장
+> - **도메인 엔티티/값 객체** (Member, Product, Money) → 외부 정의 권장
+> - **팀 컨벤션이 있다면** → 팀 규칙 우선
+
 ---
 
-## 3.3 enum vs sealed interface
+## 3.3 enum vs sealed interface (Enum vs Sealed Interface)
+
+> **다른 말로 (In other words):**
+> - "enum: 모든 상수가 동일한 구조 (필드가 같음)"
+> - "sealed interface: 각 상태마다 다른 데이터를 가질 수 있음"
 
 > **🎯 왜 배우는가?**
 >
@@ -162,7 +217,7 @@ record Delivered(String trackingNumber, LocalDateTime deliveredAt)
 
 ---
 
-## 퀴즈 Chapter 3
+## 퀴즈 Chapter 3 (Quiz Chapter 3)
 
 ### Q3.1 [개념 확인] 기수 계산
 다음 타입의 기수(Cardinality)는?

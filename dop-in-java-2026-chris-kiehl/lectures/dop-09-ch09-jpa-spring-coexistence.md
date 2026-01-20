@@ -1,6 +1,6 @@
-# Chapter 9: 현실 세계의 DOP: JPA/Spring과의 공존
+# Chapter 9: 현실 세계의 DOP - JPA/Spring과의 공존 (Real-World DOP: Coexistence with JPA/Spring)
 
-## 학습 목표
+## 학습 목표 (Learning Objectives)
 1. JPA Entity와 DOP Domain Record의 차이를 이해한다
 2. Entity에서 Domain Record로의 변환 전략을 적용할 수 있다
 3. Spring Boot 프로젝트에서 DOP를 적용하는 구조를 설계할 수 있다
@@ -9,7 +9,11 @@
 
 ---
 
-## 9.1 JPA Entity의 한계
+## 9.1 JPA Entity의 한계 (Limitations of JPA Entity)
+
+> **다른 말로 (In other words):**
+> - "JPA Entity는 가변(Mutable) + Identity 기반, DOP Record는 불변(Immutable) + Value 기반"
+> - "두 세계 사이에는 Mapper(통역사)가 필요"
 
 > **🎯 왜 배우는가?**
 >
@@ -68,7 +72,11 @@ public class OrderEntity {
 
 ---
 
-## 9.2 레이어 분리 전략
+## 9.2 레이어 분리 전략 (Layer Separation Strategy)
+
+> **다른 말로 (In other words):**
+> - "인프라(Entity) → 도메인(Record) → 표현(DTO) 각 레이어의 책임 분리"
+> - "도메인 레이어는 JPA/HTTP를 모른다 - 순수 비즈니스 로직만"
 
 > **🎯 왜 배우는가?**
 >
@@ -130,7 +138,7 @@ public class OrderEntity {
 
 ---
 
-## 9.3 Entity ↔ Domain Record 변환
+## 9.3 Entity ↔ Domain Record 변환 (Entity ↔ Domain Record Conversion)
 
 > **🎯 왜 배우는가?**
 >
@@ -190,7 +198,7 @@ public class OrderMapper {
 
 ---
 
-## 9.4 점진적 리팩토링 전략
+## 9.4 점진적 리팩토링 전략 (Gradual Refactoring Strategy)
 
 > **🎯 왜 배우는가?**
 >
@@ -268,7 +276,7 @@ class PriceCalculationsTest {
 
 ---
 
-## 9.5 주의사항 및 팁
+## 9.5 주의사항 및 팁 (Cautions and Tips)
 
 > **🎯 왜 배우는가?**
 >
@@ -306,7 +314,7 @@ public record Order(
 
 ---
 
-## 퀴즈 Chapter 9
+## 퀴즈 Chapter 9 (Quiz Chapter 9)
 
 ### Q9.1 [개념 확인] Entity vs Record
 JPA Entity와 Domain Record의 차이로 **올바른** 것은?

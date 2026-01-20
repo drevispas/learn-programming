@@ -1,6 +1,11 @@
-# Chapter 4: 불가능한 상태를 표현 불가능하게 만들기
+# Chapter 4: 불가능한 상태를 표현 불가능하게 만들기 (Make Illegal States Unrepresentable)
 
-## 학습 목표
+> **다른 말로 (In other words):**
+> - "모든 케이스를 포함한 단일 타입보다는 존재 가능한 케이스별 타입들의 합으로 표현하기"
+> - "타입으로 허용되는 상태만 정의하여 잘못된 상태는 코드로 작성조차 못하게 막기"
+> - "런타임 if 검증 대신 컴파일 타임 타입 검증으로 대체"
+
+## 학습 목표 (Learning Objectives)
 1. "Make Illegal States Unrepresentable" 원칙의 의미를 이해한다
 2. 유효성 검증 없이 안전한 코드를 설계할 수 있다
 3. Sealed Interface의 망라성(Exhaustiveness)을 활용할 수 있다
@@ -9,7 +14,11 @@
 
 ---
 
-## 4.1 유효성 검증이 필요 없는 설계
+## 4.1 유효성 검증이 필요 없는 설계 (Design Without Runtime Validation)
+
+> **다른 말로 (In other words):**
+> - "타입으로 허용되는 상태만 정의하여 잘못된 상태는 코드로 작성조차 못하게 막기"
+> - "런타임 if 검증 대신 컴파일 타임 타입 검증으로 대체"
 
 > **🎯 왜 배우는가?**
 >
@@ -89,7 +98,11 @@ public record Order(OrderId id, List<OrderItem> items, OrderStatus status) {}
 
 ---
 
-## 4.2 실전 예제: 이메일 인증 상태
+## 4.2 실전 예제: 이메일 인증 상태 (Practical Example: Email Verification Status)
+
+> **다른 말로 (In other words):**
+> - "boolean 필드들의 조합 대신 각 상태를 별도 타입으로 분리"
+> - "상태마다 필요한 데이터만 갖는 합 타입(Sum Type)으로 모델링"
 
 > **🎯 왜 배우는가?**
 >
@@ -127,7 +140,11 @@ public record User(UserId id, String name, UserEmail email) {}
 
 ---
 
-## 4.3 Switch Expression과 망라성(Exhaustiveness)
+## 4.3 Switch Expression과 망라성 (Switch Expression and Exhaustiveness)
+
+> **다른 말로 (In other words):**
+> - "컴파일러가 모든 케이스를 처리했는지 자동으로 검증하는 기능"
+> - "새로운 상태 추가 시 처리 누락을 컴파일 에러로 알려주는 안전장치"
 
 > **🎯 왜 배우는가?**
 >
@@ -171,7 +188,11 @@ public String getStatusMessage(UserEmail email) {
 
 ---
 
-## 4.4 상태 전이를 타입으로 강제하기
+## 4.4 상태 전이를 타입으로 강제하기 (Enforcing State Transitions with Types)
+
+> **다른 말로 (In other words):**
+> - "각 상태에서 허용되는 전이만 메서드로 정의하여 잘못된 전이를 컴파일 에러로 차단"
+> - "비즈니스 규칙(전이 가능 여부)을 코드가 아닌 타입으로 표현"
 
 > **🎯 왜 배우는가?**
 >
@@ -249,9 +270,47 @@ Shipped shipped = paid.ship(tracking); // OK
 // paid.cancel(reason);                // 컴파일 에러! Paid에는 cancel이 없음
 ```
 
+> **💡 Q&A: 상태 전이 함수는 어디에 두어야 할까? (Where to Place State Transition Functions?)**
+>
+> 상태를 전이시키는 함수는 도메인 서비스 클래스가 아니라 레코드 내장 함수가 더 맞는 선택인가?
+>
+> | 위치 | 적합한 경우 | 예시 |
+> |-----|-----------|------|
+> | **Record 내장 메서드** | 단순 전이, 자기 상태만 변경 | `Unpaid.pay() → Paid` |
+> | **DomainService** | 복잡한 검증, 다중 aggregate 참조 | 만료 체크, 재고 확인 후 전이 |
+>
+> **DOP 원칙:**
+> - Record 메서드: 순수 함수, 자기 데이터만 참조
+> - DomainService: 여러 데이터 조합, Result 반환으로 실패 처리
+>
+> **실무 패턴 (dop-travel-platform):**
+> ```java
+> // 1. Status에 전이 로직 정의
+> sealed interface BookingStatus {
+>     default Confirmed confirm(String paymentId) { ... }
+> }
+>
+> // 2. Aggregate가 위임
+> public record Booking(...) {
+>     public Booking confirm(String paymentId) {
+>         return withStatus(status.confirm(paymentId));
+>     }
+> }
+>
+> // 3. DomainService가 검증 후 호출
+> public static Result<Booking, BookingError> confirmBooking(Booking booking, String paymentId) {
+>     if (!(booking.status() instanceof Pending)) {
+>         return Result.failure(new InvalidStatus(...));
+>     }
+>     return Result.success(booking.confirm(paymentId));
+> }
+> ```
+>
+> **결론:** 단순 전이는 Record, 복잡한 규칙은 DomainService. 둘은 상호 보완적.
+
 ---
 
-## 퀴즈 Chapter 4
+## 퀴즈 Chapter 4 (Quiz Chapter 4)
 
 ### Q4.1 [개념 확인] 불가능한 상태
 "Make Illegal States Unrepresentable"의 의미는?

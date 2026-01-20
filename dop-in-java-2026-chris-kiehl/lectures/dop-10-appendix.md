@@ -1,10 +1,10 @@
-# Appendix
+# Appendix (부록)
 
 ---
 
-## Appendix A: 흔한 실수와 안티패턴 모음 (강화)
+## Appendix A: 흔한 실수와 안티패턴 모음 (Common Mistakes and Anti-Patterns)
 
-### A.1 Record에 가변 컬렉션 저장 (방어적 복사 누락)
+### A.1 Record에 가변 컬렉션 저장 - 방어적 복사 누락 (Mutable Collection in Record - Missing Defensive Copy)
 
 **Code A.1**: Record에 가변 컬렉션 저장 - 안티패턴과 올바른 방법
 ```java
@@ -20,7 +20,7 @@ public record Cart(List<CartItem> items) {
 }
 ```
 
-### A.2 sealed interface에 default 사용
+### A.2 sealed interface에 default 사용 (Using default in Sealed Interface)
 
 **Code A.2**: sealed interface에 default 사용 - 안티패턴과 올바른 방법
 ```java
@@ -37,7 +37,7 @@ return switch (status) {
 };
 ```
 
-### A.3 Entity에 비즈니스 로직 추가 (Active Record)
+### A.3 Entity에 비즈니스 로직 추가 - Active Record (Adding Business Logic to Entity - Active Record)
 
 **Code A.3**: Entity에 비즈니스 로직 추가 - 안티패턴과 올바른 방법
 ```java
@@ -51,7 +51,7 @@ public record User(String id, String name) {}
 public class UserRepository { void save(User u) {...} }
 ```
 
-### A.4 Rule Engine에서 값과 속성 혼동
+### A.4 Rule Engine에서 값과 속성 혼동 (Confusing Values and Attributes in Rule Engine)
 
 **Code A.4**: Rule Engine에서 값과 속성 혼동 - 안티패턴과 올바른 방법
 ```java
@@ -62,7 +62,7 @@ record GTE(int left, int right) implements Rule {}
 record GTE(String attribute, int threshold) implements Rule {}
 ```
 
-### A.5 Optional을 필드로 사용
+### A.5 Optional을 필드로 사용 (Using Optional as a Field)
 
 **Code A.5**: Optional을 필드로 사용 - 안티패턴과 올바른 방법
 ```java
@@ -83,9 +83,9 @@ public record Order(OrderId id, AppliedCoupon coupon) {}
 
 ---
 
-## Appendix B: DOP Java 치트시트
+## Appendix B: DOP Java 치트시트 (DOP Java Cheat Sheet)
 
-### B.1 Record 기본 문법 (Java 16+)
+### B.1 Record 기본 문법 (Record Basic Syntax - Java 16+)
 
 **Code B.1**: Record 기본 문법
 ```java
@@ -116,7 +116,7 @@ public record Order(OrderId id, OrderStatus status) {
 }
 ```
 
-### B.2 Sealed Interface 문법 (Java 17+)
+### B.2 Sealed Interface 문법 (Sealed Interface Syntax - Java 17+)
 
 **Code B.2**: Sealed Interface 문법
 ```java
@@ -134,7 +134,7 @@ sealed interface PaymentStatus {
 }
 ```
 
-### B.3 Pattern Matching (Java 21+)
+### B.3 패턴 매칭 (Pattern Matching - Java 21+)
 
 **Code B.3**: Pattern Matching
 ```java
@@ -167,7 +167,7 @@ String getPaymentId(OrderStatus status) {
 }
 ```
 
-### B.4 Result 타입 활용
+### B.4 Result 타입 활용 (Result Type Usage)
 
 **Code B.4**: Result 타입 활용
 ```java
@@ -192,7 +192,7 @@ result
     .flatMap(email -> sendEmail(email));
 ```
 
-### B.5 불변 컬렉션 (Java 9+)
+### B.5 불변 컬렉션 (Immutable Collections - Java 9+)
 
 **Code B.5**: 불변 컬렉션
 ```java
@@ -212,7 +212,7 @@ String last = list.getLast();    // "c"
 List<String> reversed = list.reversed();  // ["c", "b", "a"]
 ```
 
-### B.6 방어적 복사 패턴
+### B.6 방어적 복사 패턴 (Defensive Copy Pattern)
 
 **Code B.6**: 방어적 복사 패턴
 ```java
@@ -226,7 +226,7 @@ public record Order(OrderId id, List<OrderItem> items) {
 }
 ```
 
-### B.7 Java 25 DOP 기능
+### B.7 Java 25 DOP 기능 (Java 25 DOP Features)
 
 **Code B.7**: Java 25 DOP 기능
 ```java
@@ -259,7 +259,7 @@ void processRequest(User user) {
 
 ---
 
-## Appendix C: 전체 정답 및 해설 (강화)
+## Appendix C: 전체 정답 및 해설 (Complete Answers and Explanations)
 
 **Table C.1**: 전체 정답표
 
@@ -331,7 +331,7 @@ void processRequest(User user) {
 
 ---
 
-## Appendix D: Final Boss Quiz - DOP 마스터 검증 (신규)
+## Appendix D: Final Boss Quiz - DOP 마스터 검증 (DOP Master Verification)
 
 ### 문제 1: 불변성의 함정
 

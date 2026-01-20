@@ -1,6 +1,6 @@
-# Chapter 5: 전체 함수(Total Functions)와 실패 처리
+# Chapter 5: 전체 함수와 실패 처리 (Total Functions and Failure Handling)
 
-## 학습 목표
+## 학습 목표 (Learning Objectives)
 1. 부분 함수(Partial Function)와 전체 함수(Total Function)의 차이를 설명할 수 있다
 2. 예외(Exception)가 왜 "거짓말"인지 이해한다
 3. Result 타입을 구현하고 활용할 수 있다
@@ -9,7 +9,11 @@
 
 ---
 
-## 5.1 부분 함수(Partial Function)의 위험
+## 5.1 부분 함수의 위험 (The Danger of Partial Functions)
+
+> **다른 말로 (In other words):**
+> - "부분 함수: 일부 입력에 대해서만 결과를 반환하고 나머지는 예외를 던지는 함수"
+> - "시그니처가 거짓말을 하면 호출자가 실패 케이스를 놓친다"
 
 > **🎯 왜 배우는가?**
 >
@@ -91,7 +95,11 @@ public User findUser(int id) {
 
 ---
 
-## 5.2 전체 함수(Total Function) 만들기
+## 5.2 전체 함수 만들기 (Creating Total Functions)
+
+> **다른 말로 (In other words):**
+> - "전체 함수: 모든 입력에 대해 항상 유효한 출력을 반환하는 함수"
+> - "실패도 정상적인 반환 값(Result.Failure)으로 표현"
 
 > **🎯 왜 배우는가?**
 >
@@ -119,7 +127,7 @@ sealed interface UserError {
 
 ---
 
-## 5.3 Result 타입 완전 구현
+## 5.3 Result 타입 완전 구현 (Complete Result Type Implementation)
 
 > **🎯 왜 배우는가?**
 >
@@ -170,7 +178,7 @@ public sealed interface Result<S, F> {
 
 ---
 
-## 5.4 이커머스 실전 예제: 주문 처리
+## 5.4 이커머스 실전 예제: 주문 처리 (E-commerce Example: Order Processing)
 
 > **🎯 왜 배우는가?**
 >
@@ -207,7 +215,7 @@ public Result<Order, OrderError> createOrder(CreateOrderRequest request) {
 
 ---
 
-## 퀴즈 Chapter 5
+## 퀴즈 Chapter 5 (Quiz Chapter 5)
 
 ### Q5.1 [개념 확인] 전체 함수
 다음 중 전체 함수(Total Function)의 특징은?

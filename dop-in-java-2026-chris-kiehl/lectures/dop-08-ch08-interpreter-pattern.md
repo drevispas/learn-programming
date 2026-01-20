@@ -1,6 +1,6 @@
-# Chapter 8: 인터프리터 패턴 - Rule as Data ⭐ (강화)
+# Chapter 8: 인터프리터 패턴 - Rule as Data (Interpreter Pattern - Rule as Data) ⭐
 
-## 학습 목표
+## 학습 목표 (Learning Objectives)
 1. 인터프리터 패턴의 개념과 필요성을 이해한다
 2. 비즈니스 로직을 데이터로 표현하는 방법을 알 수 있다
 3. 재귀적 데이터 구조를 설계할 수 있다
@@ -9,7 +9,11 @@
 
 ---
 
-## 8.1 왜 로직을 데이터로 만드는가?
+## 8.1 왜 로직을 데이터로 만드는가? (Why Turn Logic into Data?)
+
+> **다른 말로 (In other words):**
+> - "if-else 코드 대신 규칙을 데이터(ADT)로 표현하고 해석기가 실행"
+> - "코드 배포 없이 규칙을 변경하려면 규칙을 데이터로 관리"
 
 > **🎯 왜 배우는가?**
 >
@@ -26,7 +30,7 @@
 
 ---
 
-## 8.2 Rule Engine 단계별 구현 ⭐
+## 8.2 Rule Engine 단계별 구현 (Step-by-Step Rule Engine Implementation) ⭐
 
 > **🎯 왜 배우는가?**
 >
@@ -92,7 +96,7 @@ case Rule.GTE(var attr, var threshold) -> switch (attr) {
 
 ---
 
-## 8.3 복잡한 할인 규칙 예제
+## 8.3 복잡한 할인 규칙 예제 (Complex Discount Rule Example)
 
 > **🎯 왜 배우는가?**
 >
@@ -153,7 +157,7 @@ boolean discountable = RuleEngine.evaluate(krDiscountRule, krCustomer); // true
 
 ---
 
-## 8.4 동적 규칙 로딩 (DB/JSON)
+## 8.4 동적 규칙 로딩 (Dynamic Rule Loading from DB/JSON)
 
 > **🎯 왜 배우는가?**
 >
@@ -174,7 +178,7 @@ boolean discountable = RuleEngine.evaluate(krDiscountRule, krCustomer); // true
 
 ---
 
-## 8.5 Before/After: if-else vs Rule Engine
+## 8.5 Before/After: if-else vs Rule Engine (Before/After: if-else vs Rule Engine)
 
 > **🎯 왜 배우는가?**
 >
@@ -213,7 +217,7 @@ return rules.stream().anyMatch(r -> RuleEngine.evaluate(r, customer));
 
 ---
 
-## 퀴즈 Chapter 8
+## 퀴즈 Chapter 8 (Quiz Chapter 8)
 
 ### Q8.1 [함정 문제] GTE 규칙 설계 실수 ⭐
 다음 GTE 규칙 설계의 문제점은?

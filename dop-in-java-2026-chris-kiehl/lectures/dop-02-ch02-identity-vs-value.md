@@ -1,6 +1,6 @@
-# Chapter 2: 데이터란 무엇인가? (Identity vs Value)
+# Chapter 2: 데이터란 무엇인가? - 정체성과 값 (What is Data? - Identity vs Value)
 
-## 학습 목표
+## 학습 목표 (Learning Objectives)
 1. 정체성(Identity)과 값(Value)의 개념적 차이를 명확히 구분할 수 있다
 2. Java Record가 Value Type을 표현하는 방식을 이해한다
 3. 얕은 불변성과 깊은 불변성의 차이를 설명할 수 있다
@@ -9,7 +9,11 @@
 
 ---
 
-## 2.1 정체성(Identity)과 값(Value)의 차이
+## 2.1 정체성과 값의 차이 (The Difference Between Identity and Value)
+
+> **다른 말로 (In other words):**
+> - "Identity는 '누구인가'를 ID로 식별, Value는 '무엇인가'를 내용으로 비교"
+> - "Identity는 가변 허용(이름 바꿔도 같은 사람), Value는 불변 필수(10원은 항상 10원)"
 
 > **🎯 왜 배우는가?**
 >
@@ -70,7 +74,7 @@
 
 ---
 
-## 2.2 이커머스에서의 Identity vs Value
+## 2.2 이커머스에서의 Identity vs Value (Identity vs Value in E-commerce)
 
 > **🎯 왜 배우는가?**
 >
@@ -108,7 +112,11 @@ public record Product(ProductId id, ProductName name, Money price) {}
 
 ---
 
-## 2.3 Java Record: Value Type의 완벽한 도구
+## 2.3 Java Record: Value Type의 완벽한 도구 (Java Record: The Perfect Tool for Value Types)
+
+> **다른 말로 (In other words):**
+> - "Record는 equals/hashCode/toString을 자동 생성하는 불변 데이터 캐리어"
+> - "Compact Constructor로 불변식(Invariant)을 강제하는 방법"
 
 > **🎯 왜 배우는가?**
 >
@@ -146,9 +154,56 @@ public record Money(BigDecimal amount, Currency currency) {
 }
 ```
 
+> **💡 Q&A: 검증은 compact constructor에? 아니면 별도 Validator에?**
+>
+> **핵심 구분: 불변식 vs 비즈니스 규칙**
+>
+> | 구분 | 불변식(Invariant) | 비즈니스 규칙(Business Rule) |
+> |-----|------------------|---------------------------|
+> | 정의 | 객체가 "존재"하기 위한 필수 조건 | 특정 컨텍스트에서 "유효"하기 위한 조건 |
+> | 위치 | Compact Constructor | 별도 Validator 클래스 |
+> | 예시 | null 불가, 음수 불가 | 최소 금액 10,000원, VIP 할인 적용 |
+> | 실패 시 | `IllegalArgumentException` | `Result.failure(ValidationError)` |
+>
+> ```java
+> // [O] Compact Constructor: 불변식 (객체 존재 조건)
+> public record Money(BigDecimal amount, Currency currency) {
+>     public Money {
+>         Objects.requireNonNull(amount);   // null이면 Money 자체가 성립 안 함
+>         Objects.requireNonNull(currency);
+>         if (amount.compareTo(BigDecimal.ZERO) < 0) {
+>             throw new IllegalArgumentException("음수 금액 불가");
+>         }
+>     }
+> }
+>
+> // [O] Validator 클래스: 비즈니스 규칙 (컨텍스트 의존)
+> public class OrderValidator {
+>     public static Result<Order, ValidationError> validate(Order order) {
+>         // "주문 금액은 10,000원 이상" - 이건 비즈니스 정책
+>         if (order.totalAmount().isLessThan(Money.krw(10_000))) {
+>             return Result.failure(new MinimumOrderAmountError());
+>         }
+>         return Result.success(order);
+>     }
+> }
+> ```
+>
+> **리트머스 테스트:**
+> - "이 검증이 실패하면 객체 자체가 의미 없는가?" → Yes → Compact Constructor
+> - "이 검증은 상황에 따라 달라지는가?" → Yes → Validator
+>
+> **dop-01과의 관계:**
+> - dop-01 Code 1.7의 "Bad"는 **수십 가지 비즈니스 규칙**을 compact constructor에 넣은 경우
+> - 여기 Code 2.3은 **기본 불변식**만 compact constructor에 있으므로 올바름
+
 ---
 
-## 2.4 얕은 불변성 vs 깊은 불변성
+## 2.4 얕은 불변성 vs 깊은 불변성 (Shallow Immutability vs Deep Immutability)
+
+> **다른 말로 (In other words):**
+> - "얕은 불변성: 필드 참조는 바꿀 수 없지만, 참조하는 객체 내부는 변경 가능"
+> - "깊은 불변성: 객체 전체와 그 내부까지 완전히 변경 불가능"
 
 > **🎯 왜 배우는가?**
 >
@@ -215,7 +270,11 @@ mutableList.add(new OrderItem(anotherProduct, anotherQuantity));
 
 ---
 
-## 2.5 값 변경 패턴: with 메서드
+## 2.5 값 변경 패턴: with 메서드 (Value Update Pattern: Wither Methods)
+
+> **다른 말로 (In other words):**
+> - "불변 객체에서 값을 '변경'하려면 새 객체를 생성하고 반환"
+> - "withXxx() 메서드로 하나의 필드만 바꾼 새 인스턴스를 생성"
 
 > **🎯 왜 배우는가?**
 >
@@ -257,9 +316,42 @@ Order paidOrder = unpaidOrder.withStatus(new Paid(LocalDateTime.now(), paymentId
 // unpaidOrder는 여전히 Unpaid 상태 (불변)
 ```
 
+> **💡 스타일 가이드: Record에서 `this.` 접두사**
+>
+> ```java
+> // 스타일 A: this. 생략 (권장)
+> public Order withStatus(OrderStatus newStatus) {
+>     return new Order(id, customerId, items, totalAmount, newStatus);
+> }
+>
+> // 스타일 B: this. 명시
+> public Order withStatus(OrderStatus newStatus) {
+>     return new Order(this.id, this.customerId, this.items, this.totalAmount, newStatus);
+> }
+> ```
+>
+> **권장: 스타일 A (this. 생략)**
+>
+> | 이유 | 설명 |
+> |-----|------|
+> | **Record 관용적 스타일** | Record는 투명한 데이터 캐리어, 간결함이 미덕 |
+> | **이름 충돌 없음** | 파라미터가 `newStatus`이므로 `status`와 충돌 없음 |
+> | **가독성** | 5개 필드를 한 줄에 쓸 때 `this.`가 없으면 더 읽기 쉬움 |
+>
+> **단, 이름이 충돌할 때는 `this.` 필수:**
+> ```java
+> // 파라미터명이 필드명과 같을 때
+> public Order withStatus(OrderStatus status) {
+>     return new Order(this.id, this.customerId, this.items, this.totalAmount, status);
+>     //                ^^^^^^^ this. 필수 (status와 구분)
+> }
+> ```
+>
+> **팀 규칙이 있다면 팀 규칙을 따르세요.** 일관성이 스타일보다 중요합니다.
+
 ---
 
-## 퀴즈 Chapter 2
+## 퀴즈 Chapter 2 (Quiz Chapter 2)
 
 ### Q2.1 [개념 확인] Identity vs Value
 다음 중 **Value Type**으로 모델링해야 하는 것은?
