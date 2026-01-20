@@ -21,6 +21,8 @@
 
 God Class는 "모든 것을 알고 모든 것을 하는" 클래스입니다. 다음 조건 중 **2개 이상** 해당되면 God Class를 의심하세요:
 
+**Table 0.1**: God Class 판별 기준표
+
 | 기준 | 설명 | 예시 |
 |-----|------|------|
 | **높은 LOC** | 500줄 이상의 코드 | `OrderService.java` 2000줄 |
@@ -32,6 +34,7 @@ God Class는 "모든 것을 알고 모든 것을 하는" 클래스입니다. 다
 
 ### 리트머스 테스트
 
+**Code 0.1**: God Class 경고 신호 - 리트머스 테스트
 ```java
 // God Class 경고 신호
 public class OrderService {
@@ -77,6 +80,7 @@ public class OrderService {
 
 도메인 특화 컬렉션 대신 **표준 자료구조**(List, Map, Set, Record)를 사용합니다.
 
+**Code 0.2**: 커스텀 컬렉션 vs DOP 표준 자료구조
 ```java
 // [X] 안티패턴: 커스텀 컬렉션
 public class OrderItems extends ArrayList<OrderItem> {
@@ -93,6 +97,8 @@ public class OrderCalculations {
 ```
 
 #### 왜 중요한가?
+
+**Table 0.2**: 표준 자료구조 사용의 장점
 
 | 관점 | 설명 |
 |-----|------|
@@ -122,6 +128,7 @@ public class OrderCalculations {
 
 #### 관점 2: 새 팀원이 왔을 때
 
+**Code 0.3**: 새 팀원의 관점 - 커스텀 vs 표준 타입
 ```java
 // 시나리오: 새 팀원이 주문 시스템 코드를 처음 봄
 
@@ -140,6 +147,7 @@ List<OrderItem> items = order.items();
 
 #### 관점 3: 요구사항 변경 시
 
+**Code 0.4**: 요구사항 변경 시 - 커스텀 vs 표준 타입
 ```java
 // 새 요구사항: "주문 아이템을 카테고리별로 그룹핑해주세요"
 
@@ -161,6 +169,7 @@ Map<Category, List<OrderItem>> grouped = items.stream()
 
 #### 관점 4: 디버깅할 때
 
+**Code 0.5**: 디버깅 시 - 커스텀 vs 표준 타입
 ```java
 // 프로덕션에서 NPE 발생. 로그에 데이터를 찍어봐야 함.
 
@@ -180,6 +189,7 @@ log.info("items: {}", items);
 
 #### 관점 5: 다른 시스템과 통신할 때
 
+**Code 0.6**: 외부 시스템 통신 시 - 커스텀 vs 표준 타입
 ```java
 // 외부 결제 API에 주문 정보를 전송해야 함
 
@@ -222,6 +232,7 @@ public record Order(List<OrderItem> items, Money total) {}
 - **스키마(Schema)**: 데이터의 **구조와 규칙** (타입 정의, 검증 규칙)
 - **표현(Representation)**: 데이터의 **실제 값** (인스턴스)
 
+**Code 0.7**: 스키마와 표현의 분리 예제
 ```java
 // 스키마: 구조 정의
 public sealed interface PaymentMethod {
@@ -286,6 +297,7 @@ PaymentMethod method = new CreditCard("4111-1111-1111-1111", YearMonth.of(2027, 
 
 #### 관점 3: Java 개발자가 이미 아는 것
 
+**Code 0.8**: Java에서의 스키마와 표현
 ```java
 // Java 개발자는 이미 스키마와 표현을 분리하고 있습니다!
 
@@ -322,6 +334,7 @@ User user = new User("홍길동", 30);
 
 #### 관점 4: API 문서 관점
 
+**Code 0.9**: API 문서 관점의 스키마와 표현
 ```java
 // OpenAPI/Swagger 스펙을 생각해보세요
 
@@ -345,6 +358,7 @@ User user = new User("홍길동", 30);
 
 #### 관점 5: 왜 굳이 분리해야 하나? (실전 문제)
 
+**Code 0.10**: 새로운 상태 추가 시 - OOP vs DOP
 ```java
 // 문제 상황: 주문 상태에 "REFUNDED"를 추가해야 함
 
@@ -376,6 +390,8 @@ public sealed interface OrderStatus {
 
 #### 관점 6: 한 줄 요약
 
+**Table 0.3**: 스키마와 표현 한 줄 요약
+
 | 개념 | 비유 | Java 코드 |
 |-----|------|----------|
 | 스키마 | 설계도 | `sealed interface`, `record` 정의 |
@@ -390,6 +406,8 @@ public sealed interface OrderStatus {
 
 #### 왜 분리하는가?
 
+**Table 0.4**: 스키마와 표현의 책임 분리
+
 | 관점 | 스키마 책임 | 표현 책임 |
 |-----|-----------|----------|
 | **검증** | 컴파일 타임 타입 체크 | 런타임 값 보유 |
@@ -399,6 +417,7 @@ public sealed interface OrderStatus {
 
 #### 실전 예제: 다형적 JSON 직렬화
 
+**Code 0.11**: 다형적 JSON 직렬화 예제
 ```java
 // 스키마: sealed interface로 가능한 모든 상태 정의
 public sealed interface OrderStatus {
@@ -414,6 +433,8 @@ public sealed interface OrderStatus {
 ```
 
 #### OOP와의 차이
+
+**Table 0.5**: OOP와 DOP의 차이
 
 | OOP | DOP |
 |-----|-----|
@@ -435,6 +456,7 @@ public sealed interface OrderStatus {
 
 ### 관점 1: 한 눈에 보는 코드 비교
 
+**Code 0.12**: DOP vs DMMF - 이메일 주소 처리 비교
 ```java
 // ===== 문제: "이메일 주소"를 어떻게 다룰 것인가? =====
 
@@ -467,6 +489,7 @@ public record ValidatedEmail(String value) {     // 검증 후
 
 ### 관점 2: 에러 처리 철학
 
+**Code 0.13**: DOP vs DMMF - 에러 처리 비교
 ```java
 // ===== 문제: 주문 생성 시 여러 검증을 거쳐야 함 =====
 
@@ -507,6 +530,7 @@ public Result<Order, OrderError> createOrder(Request req) {
 
 ### 관점 3: 워크플로우를 타입으로 강제 (DMMF의 강점)
 
+**Code 0.14**: DMMF 스타일 - 워크플로우를 타입으로 강제
 ```java
 // ===== 문제: 주문이 "결제 없이 배송됨" 버그 발생 =====
 
@@ -544,6 +568,7 @@ public ShippedOrder ship(PaidOrder order, TrackingNumber tracking) {
 
 ### 관점 4: Primitive Obsession 해결
 
+**Code 0.15**: Primitive Obsession 해결 - Constrained Types
 ```java
 // ===== 문제: String, int를 남용하는 코드 =====
 
@@ -588,6 +613,7 @@ public Order createOrder(
 
 ### 관점 5: Spring Boot 개발자를 위한 실전 비교
 
+**Code 0.16**: Spring Boot에서의 DOP vs DMMF 스타일
 ```java
 // ===== Spring Boot에서 DOP vs DMMF 스타일 =====
 
@@ -634,6 +660,8 @@ public class OrderWorkflows {
 
 ### 공통 철학 (둘 다 동의하는 것)
 
+**Table 0.6**: DOP와 DMMF의 공통 철학
+
 | 원칙 | DOP 표현 | DMMF 표현 | Java 코드 |
 |-----|---------|----------|----------|
 | 불변 데이터 | Record는 불변 | Immutable by default | `record Order(...)` |
@@ -645,6 +673,8 @@ public class OrderWorkflows {
 ---
 
 ### 차이점 요약
+
+**Table 0.7**: DOP와 DMMF의 차이점
 
 | 관점 | DOP (Java) | DMMF (F#) |
 |-----|-----------|-----------|
@@ -658,6 +688,8 @@ public class OrderWorkflows {
 
 ### 언제 무엇을 적용할까?
 
+**Table 0.8**: DOP vs DMMF 적용 가이드
+
 | 상황 | 추천 | 이유 |
 |-----|------|------|
 | Spring Boot + JPA 레거시 | **DOP** | 점진적 도입 용이, 기존 코드와 공존 |
@@ -669,6 +701,7 @@ public class OrderWorkflows {
 
 ### 핵심 교훈: DMMF에서 Java로 가져올 것
 
+**Code 0.17**: DMMF에서 Java로 가져올 핵심 패턴
 ```java
 // 1. 워크플로우를 타입으로 강제
 public sealed interface OrderWorkflow {
@@ -695,6 +728,8 @@ Placed place(Priced order);             // Priced -> Placed만 가능
 ---
 
 ## Java 17 → Java 25 DOP 관련 변경 사항 (Java 17 → Java 25 DOP-Related Changes)
+
+**Table 0.9**: Java 17 → Java 25 DOP 관련 주요 기능
 
 | 버전 | 핵심 기능 | JEP | 상태 | DOP 영향 |
 |------|----------|-----|------|---------|
