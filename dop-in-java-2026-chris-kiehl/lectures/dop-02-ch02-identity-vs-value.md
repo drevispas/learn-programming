@@ -11,6 +11,10 @@
 
 ## 2.1 정체성과 값의 차이 (The Difference Between Identity and Value)
 
+> **Visual Reference - Value Object Pattern:**
+> See [Martin Fowler - Value Object](https://www.martinfowler.com/bliki/ValueObject.html) for conceptual diagrams
+> See [Martin Fowler - DDD Aggregate](https://martinfowler.com/bliki/DDD_Aggregate.html) for Entity/Value distinction
+
 > **다른 말로 (In other words):**
 > - "Identity는 '누구인가'를 ID로 식별, Value는 '무엇인가'를 내용으로 비교"
 > - "Identity는 가변 허용(이름 바꿔도 같은 사람), Value는 불변 필수(10원은 항상 10원)"

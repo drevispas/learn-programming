@@ -200,6 +200,10 @@ public String getStatusMessage(UserEmail email) {
 > 상태 전이를 타입으로 강제하면 **비즈니스 규칙을 코드로 표현**할 수 있고,
 > 잘못된 전이는 컴파일 단계에서 차단됩니다.
 
+> **Visual Reference - State Machine Diagrams:**
+> ![State Diagram Example](https://cdn-images.visual-paradigm.com/guide/uml/what-is-state-machine-diagram/01-state-machine-diagram-example.png)
+> *Source: [Visual Paradigm - State Diagrams Guide](https://guides.visual-paradigm.com/introduction-to-state-diagrams-a-comprehensive-guide-for-software-engineering/)*
+
 ### 상태 전이 다이어그램
 
 ```

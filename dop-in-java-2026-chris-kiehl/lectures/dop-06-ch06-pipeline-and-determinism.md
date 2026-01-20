@@ -83,6 +83,10 @@ public Money calculateTotal(List<OrderItem> items) {
 └─────────────────────────────────────┘
 ```
 
+> **Visual Reference - Sandwich Architecture (Functional Core / Imperative Shell):**
+> ![Functional Core Imperative Shell](https://kennethlange.com/wp-content/uploads/2020/04/Functional-Core-Imperative-Shell.png)
+> *Source: [Kenneth Lange - Functional Core, Imperative Shell](https://kennethlange.com/functional-core-imperative-shell/)*
+
 ### ❌ 안티패턴: I/O와 로직 혼합
 
 **왜 문제인가?**

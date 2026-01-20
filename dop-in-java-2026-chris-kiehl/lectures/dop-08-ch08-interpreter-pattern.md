@@ -105,6 +105,12 @@ case Rule.GTE(var attr, var threshold) -> switch (attr) {
 
 "한국(KR)에 살면서, (구매액 100만원 이상이거나 VIP)"
 
+> **Visual Reference - Rule Engine Architecture:**
+> ![Rule Engine Components](https://decisimo.com/decision-engine/images/rule-engine-architecture.png)
+> *Source: [Decisimo - Rule Engine Architecture](https://decisimo.com/decision-engine/5-components-of-rule-engine-architecture.html)*
+>
+> For additional context: [Nected - Rules Engine Design Pattern](https://www.nected.ai/blog/rules-engine-design-pattern)
+
 ### Rule Engine 트리 구조
 
 ```

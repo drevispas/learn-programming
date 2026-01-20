@@ -7,7 +7,15 @@
       "Bash(git mv:*)",
       "Bash(ls:*)",
       "Bash(mvn test:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:martinfowler.com)",
+      "WebFetch(domain:blog.bytebytego.com)",
+      "WebFetch(domain:www.infoq.com)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:guides.visual-paradigm.com)",
+      "WebFetch(domain:8thlight.com)",
+      "WebFetch(domain:medium.com)"
     ]
   }
 }

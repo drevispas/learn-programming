@@ -136,6 +136,12 @@ public class OrderEntity {
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **Visual Reference - Layered Architecture:**
+> ![Clean Architecture Layers](https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/images/n-tier-logical.svg)
+> *Source: [Microsoft Azure - N-tier Architecture](https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/n-tier)*
+>
+> For hexagonal approach: [8th Light - Ports and Adapters](https://8thlight.com/insights/a-color-coded-guide-to-ports-and-adapters)
+
 ---
 
 ## 9.3 Entity ↔ Domain Record 변환 (Entity ↔ Domain Record Conversion)

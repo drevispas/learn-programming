@@ -54,6 +54,10 @@
 
 필드를 추가하는 것은 경우의 수를 **곱하는(Multiply)** 행위입니다.
 
+> **Visual Reference - Algebraic Data Types:**
+> For theoretical foundation, see [Stanford CS 242 - Algebraic Data Types](https://stanford-cs242.github.io/f19/lectures/03-2-algebraic-data-types.html)
+> For practical examples, see [DEV Community - Functional Design ADTs](https://dev.to/gcanti/functional-design-algebraic-data-types-36kf)
+
 ### 곱타입 vs 합타입 상태 공간 시각화
 
 ```

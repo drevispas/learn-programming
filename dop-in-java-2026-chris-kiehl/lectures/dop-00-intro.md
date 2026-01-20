@@ -58,6 +58,10 @@ public class OrderService {
 
 ## DOP 4대 원칙 상세 (DOP 4 Core Principles in Detail)
 
+> **Visual Reference:**
+> ![Software Architecture Patterns](https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F8c543b87-0714-4781-b5e4-0c0b98371a63_1280x1664.gif)
+> *Source: [ByteByteGo - Software Architecture Patterns](https://blog.bytebytego.com/p/software-architecture-patterns)*
+
 > **다른 말로 (In other words):**
 > - "데이터는 투명하게, 로직은 순수하게, 변경은 새 객체로"
 > - "타입으로 복잡성을 제어하고 컴파일러에게 검증을 위임"

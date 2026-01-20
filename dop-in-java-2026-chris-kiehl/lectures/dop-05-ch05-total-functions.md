@@ -11,6 +11,10 @@
 
 ## 5.1 부분 함수의 위험 (The Danger of Partial Functions)
 
+> **Visual Reference - Functional Core / Imperative Shell:**
+> See [Kenneth Lange - Functional Core, Imperative Shell](https://kennethlange.com/functional-core-imperative-shell/) for pattern explanation
+> See [Ploeh Blog - Restaurant Sandwich](https://blog.ploeh.dk/2024/12/16/a-restaurant-sandwich/) for practical example
+
 > **다른 말로 (In other words):**
 > - "부분 함수: 일부 입력에 대해서만 결과를 반환하고 나머지는 예외를 던지는 함수"
 > - "시그니처가 거짓말을 하면 호출자가 실패 케이스를 놓친다"

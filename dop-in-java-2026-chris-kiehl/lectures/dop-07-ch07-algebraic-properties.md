@@ -76,6 +76,9 @@
 
 ## 7.2 결합법칙 (Associativity)
 
+> **Visual Reference - Distributed Processing Patterns:**
+> See [System Design Primer](https://github.com/donnemartin/system-design-primer) for MapReduce and parallel processing diagrams
+
 > **다른 말로 (In other words):**
 > - "(A ⊕ B) ⊕ C = A ⊕ (B ⊕ C), 어떻게 묶어서 연산해도 결과가 같음"
 > - "결합법칙이 있으면 parallelStream으로 안전하게 병렬 처리 가능"
