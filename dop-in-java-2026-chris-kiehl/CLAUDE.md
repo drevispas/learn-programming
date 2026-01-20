@@ -71,3 +71,31 @@ Tests in `src/test/java/com/travel/sample/` are organized by DOP concepts:
 - Error handling: `Result<Success, Failure>` with `flatMap`/`map` chaining
 - State changes: Wither methods returning new record instances
 - Javadoc: Includes `[Key Point]` sections explaining DOP concepts
+
+## ASCII Diagram Guidelines (for lecture .md files)
+
+When creating or editing ASCII box diagrams in `lectures/*.md`:
+
+1. **Define fixed column width first** - Determine exact character width for each column (e.g., 35 chars between `│` borders)
+2. **Calculate padding precisely** - For each line: `padding = fixed_width - content_length`
+3. **Never estimate visually** - Always count characters; longer text = less padding
+4. **Verify alignment after editing** - Check that all rightmost `│` borders align at the same column
+5. **Use ASCII only** - Replace emojis with ASCII equivalents:
+   - `❌` → `[X]`
+   - `✅` → `[O]`
+   - `✓` → `o`
+   - `✗` → `x`
+   - `↓` → `v`
+   - `↑` → `^`
+   - `→` → `->`
+   - `←` → `<-`
+6. **Translate Korean to English** - All diagram text should be in English for consistent character width (Korean characters are double-width in monospace fonts)
+7. **Nested boxes require extra care**:
+   - When placing two boxes side-by-side: `left_pad + box1 + middle_space + box2 + right_pad = total_width`
+   - Deeper nesting = more calculation errors; verify each nesting level
+   - Asymmetric content (e.g., `v (SQL)` vs `v (JSON)`) needs explicit character counting
+8. **Connector alignment** - `┴` and `┬` connectors must be at the exact same column as the `│` they connect to:
+   - Don't estimate visually; count characters or use awk to find column positions
+   - When adjusting connector position, compensate elsewhere to maintain total line length
+   - Verify with: `awk 'NR==X {for(i=1;i<=length($0);i++) if(substr($0,i,1)=="│") print i}'`
+9. **Verify with `awk`** - Run `awk '{print NR": ["length($0)"]"}' file.md` to check all lines have equal length

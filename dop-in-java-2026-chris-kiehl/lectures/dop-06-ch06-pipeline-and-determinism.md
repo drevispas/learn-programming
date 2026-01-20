@@ -64,14 +64,14 @@ public Money calculateTotal(List<OrderItem> items) {
 > 샌드위치 아키텍처를 적용하면 **순수 함수로 핵심 로직을 분리**하여
 > Mock 없이도 테스트할 수 있고, I/O를 명확히 격리할 수 있습니다.
 
-**Figure 6.1**: 샌드위치 아키텍처 구조
+**Figure 6.1**: Sandwich Architecture Structure
 ```
 ┌─────────────────────────────────────┐
-│  Top Bun (Impure): 재료 수집        │  ← DB 조회, API 호출
+│  Top Bun (Impure): Gather Data      │  <- DB query, API call
 ├─────────────────────────────────────┤
-│  Meat (Pure): 요리                  │  ← 비즈니스 로직 (순수 함수)
+│  Meat (Pure): Cook                  │  <- Business logic (pure function)
 ├─────────────────────────────────────┤
-│  Bottom Bun (Impure): 서빙          │  ← DB 저장, 알림 발송
+│  Bottom Bun (Impure): Serve         │  <- DB save, send notification
 └─────────────────────────────────────┘
 ```
 
