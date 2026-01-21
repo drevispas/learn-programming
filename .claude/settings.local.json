@@ -15,7 +15,11 @@
       "WebSearch",
       "WebFetch(domain:guides.visual-paradigm.com)",
       "WebFetch(domain:8thlight.com)",
-      "WebFetch(domain:medium.com)"
+      "WebFetch(domain:medium.com)",
+      "Bash(mvn test:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(git push:*)"
     ]
   }
 }

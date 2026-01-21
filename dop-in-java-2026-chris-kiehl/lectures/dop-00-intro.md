@@ -69,8 +69,288 @@ public class OrderService {
 > - "데이터는 투명하게, 로직은 순수하게, 변경은 새 객체로"
 > - "타입으로 복잡성을 제어하고 컴파일러에게 검증을 위임"
 
-### 원칙 1: 코드와 데이터의 분리 (Separate Code from Data)
-데이터는 Record로, 로직은 static 메서드로 분리합니다. Chapter 1에서 자세히 다룹니다.
+### 원칙 1: 코드와 데이터의 분리 (Separate Code from Data) ⭐
+
+> **핵심 질문**: "이 클래스에서 데이터(상태)와 로직(행동)이 분리되어 있는가?"
+
+#### 무엇을 의미하는가?
+
+데이터는 **Record**로, 로직은 **static 메서드**로 분리합니다.
+
+**Code 0.2**: OOP vs DOP - 코드와 데이터 분리
+```java
+// [X] OOP: 데이터와 로직이 하나의 클래스에
+public class Order {
+    private List<OrderItem> items;
+    private OrderStatus status;
+
+    public Money calculateTotal() { ... }  // 로직
+    public void addItem(OrderItem item) { ... }  // 로직 + 상태 변경
+    public void ship() { ... }  // 로직 + 상태 변경
+}
+
+// [O] DOP: 데이터와 로직 분리
+public record Order(List<OrderItem> items, OrderStatus status) {}  // 데이터만
+
+public class OrderCalculations {  // 로직만
+    public static Money calculateTotal(Order order) { ... }
+    public static Order addItem(Order order, OrderItem item) { ... }
+    public static Order ship(Order order) { ... }
+}
+```
+
+#### 왜 분리하는가?
+
+**Table 0.2**: 코드와 데이터 분리의 장점
+
+| 관점 | 설명 |
+|-----|------|
+| **테스트 용이성** | 순수 함수는 입력만 주면 출력 검증 가능, Mock 불필요 |
+| **재사용성** | 로직이 특정 클래스에 묶이지 않아 다양한 데이터에 적용 가능 |
+| **병렬 처리** | 상태 없는 함수는 스레드 안전, 동기화 불필요 |
+| **추론 가능성** | 함수가 외부 상태를 변경하지 않아 동작 예측 쉬움 |
+
+---
+
+#### 관점 1: 레스토랑 비유
+
+> **요리사(로직)와 재료(데이터)의 분리**
+>
+> - **재료(데이터)**: 당근, 양파, 소고기 — 그 자체로는 아무 일도 하지 않음
+> - **레시피(로직)**: "당근과 양파를 볶고, 소고기를 넣어 조리한다"
+>
+> OOP는 "똑똑한 재료"를 만듭니다:
+> ```java
+> carrot.cookYourself();  // 당근이 스스로를 요리?
+> ```
+>
+> DOP는 "멍청한 재료 + 똑똑한 요리사"입니다:
+> ```java
+> Chef.cook(carrot, onion, beef);  // 요리사가 재료를 요리
+> ```
+>
+> **이점**: 요리사(로직)를 바꾸면 같은 재료로 다른 요리 가능.
+> OOP에서는 재료 클래스를 수정해야 새로운 요리법 추가 가능.
+
+---
+
+#### 관점 2: Spring Service 관점
+
+**Code 0.3**: Spring에서의 코드-데이터 분리
+```java
+// [X] 전통적 Spring: Entity에 로직 포함 (Rich Domain Model)
+@Entity
+public class Order {
+    @Id private Long id;
+    private OrderStatus status;
+    @OneToMany private List<OrderItem> items;
+
+    public Money calculateTotal() {  // 로직이 Entity에
+        return items.stream()
+            .map(OrderItem::getPrice)
+            .reduce(Money.ZERO, Money::add);
+    }
+
+    public void ship() {  // 상태 변경 로직도 Entity에
+        if (this.status != OrderStatus.PAID)
+            throw new IllegalStateException();
+        this.status = OrderStatus.SHIPPED;
+    }
+}
+
+// [O] DOP 스타일 Spring: Record + @Service
+public record OrderData(Long id, OrderStatus status, List<OrderItem> items) {}
+
+@Service
+public class OrderService {
+    public Money calculateTotal(OrderData order) {
+        return order.items().stream()
+            .map(OrderItem::price)
+            .reduce(Money.ZERO, Money::add);
+    }
+
+    public OrderData ship(OrderData order) {
+        if (order.status() != OrderStatus.PAID)
+            throw new IllegalStateException();
+        return new OrderData(order.id(), OrderStatus.SHIPPED, order.items());
+    }
+}
+```
+
+> **Spring 개발자에게 익숙한 패턴**: 사실 `@Service`, `@Repository`에 로직을 두고 DTO/Entity에 데이터만 두는 것이 이미 DOP입니다!
+> DOP는 이 패턴을 도메인 레이어까지 확장합니다.
+
+---
+
+#### 관점 3: 테스트 관점
+
+**Code 0.4**: 테스트 용이성 - OOP vs DOP
+```java
+// [X] OOP 테스트: Mock이 필요한 경우가 많음
+@Test
+void testCalculateTotal_OOP() {
+    // Order 내부에서 Repository를 호출한다면?
+    Order order = new Order();
+    order.addItem(mockItem1);  // 내부 상태 변경
+    order.addItem(mockItem2);
+
+    // 내부에서 할인 서비스를 호출한다면 Mock 필요
+    when(mockDiscountService.getDiscount(any())).thenReturn(0.1);
+
+    assertEquals(Money.of(9000), order.calculateTotal());
+}
+
+// [O] DOP 테스트: 순수 함수, Mock 불필요
+@Test
+void testCalculateTotal_DOP() {
+    // 입력 데이터만 준비
+    OrderData order = new OrderData(
+        1L,
+        OrderStatus.PENDING,
+        List.of(
+            new OrderItem(1L, Money.of(5000)),
+            new OrderItem(2L, Money.of(5000))
+        )
+    );
+
+    // 순수 함수 호출 - 외부 의존성 없음
+    Money total = OrderCalculations.calculateTotal(order);
+
+    assertEquals(Money.of(10000), total);
+}
+```
+
+> **핵심**: 순수 함수는 **같은 입력 → 같은 출력**이 보장됩니다.
+> 외부 상태에 의존하지 않아 테스트가 결정론적(deterministic)입니다.
+
+---
+
+#### 관점 4: 동시성 관점
+
+**Code 0.5**: 멀티스레드 환경 - OOP vs DOP
+```java
+// [X] OOP: 상태 공유로 인한 동시성 문제
+public class ShoppingCart {
+    private List<Item> items = new ArrayList<>();
+
+    public void addItem(Item item) {
+        items.add(item);  // 동시에 여러 스레드가 호출하면?
+    }
+
+    public Money getTotal() {
+        return items.stream()...;  // 순회 중 다른 스레드가 수정하면?
+    }
+}
+// ConcurrentModificationException 또는 데이터 손상 위험
+
+// [O] DOP: 상태 없는 함수는 스레드 안전
+public record ShoppingCart(List<Item> items) {}
+
+public class CartCalculations {
+    // 순수 함수: 입력만 사용, 상태 변경 없음
+    public static Money getTotal(ShoppingCart cart) {
+        return cart.items().stream()
+            .map(Item::price)
+            .reduce(Money.ZERO, Money::add);
+    }
+
+    // 새 객체 반환: 원본 불변
+    public static ShoppingCart addItem(ShoppingCart cart, Item item) {
+        var newItems = new ArrayList<>(cart.items());
+        newItems.add(item);
+        return new ShoppingCart(List.copyOf(newItems));
+    }
+}
+// 여러 스레드가 동시에 호출해도 안전 (각자 새 객체 생성)
+```
+
+> **핵심**: 상태 없는 함수(Stateless Function)는 **동기화 없이도 스레드 안전**합니다.
+> 함수가 외부 상태를 읽지도, 쓰지도 않기 때문입니다.
+
+---
+
+#### 관점 5: AI 코드 생성 관점
+
+**Code 0.6**: AI 도구와의 협업 - 명확한 입출력
+```java
+// [X] OOP: AI가 이해하기 어려운 코드
+public class OrderProcessor {
+    @Autowired private PaymentGateway gateway;
+    @Autowired private InventoryService inventory;
+    @Autowired private NotificationService notifier;
+
+    public void processOrder(Order order) {
+        // AI 질문: "이 메서드가 뭘 반환하나요? 어떤 부수효과가 있나요?"
+        // 답: void 반환, 3개 외부 서비스 호출, order 상태 변경...
+        // AI가 전체 컨텍스트 파악 어려움
+    }
+}
+
+// [O] DOP: AI가 이해하기 쉬운 코드
+public class OrderCalculations {
+    // AI 질문: "이 함수가 뭘 하나요?"
+    // 답: Order를 받아서 Money를 반환 (입출력이 시그니처에 명시)
+    public static Money calculateTotal(Order order) { ... }
+
+    // AI 질문: "주문에 할인을 적용하려면?"
+    // 답: Order와 Discount를 받아서 새 Order 반환
+    public static Order applyDiscount(Order order, Discount discount) { ... }
+}
+```
+
+> **AI 도구(Copilot, Claude)는 순수 함수를 더 잘 이해합니다:**
+> - 입력 타입과 출력 타입이 시그니처에 명확히 드러남
+> - 부수효과가 없어 함수의 동작 범위가 예측 가능
+> - 테스트 코드 생성도 용이 (입력 데이터만 만들면 됨)
+
+---
+
+#### 관점 6: OOP vs DOP 배치 비교
+
+**Table 0.3**: OOP vs DOP 코드 배치
+
+| 요소 | OOP | DOP |
+|-----|-----|-----|
+| **데이터 위치** | 클래스 필드 (private) | Record (public, 불변) |
+| **로직 위치** | 클래스 메서드 (인스턴스) | *Calculations 클래스 (static) |
+| **상태 변경** | `this.field = newValue` | 새 Record 인스턴스 반환 |
+| **테스트** | Mock 객체, 상태 설정 | 순수 입출력 검증 |
+| **동시성** | synchronized, Lock | 불변 + 순수 함수 |
+
+---
+
+#### 경계선: 언제 데이터에 메서드를 넣는가?
+
+**예외적으로 데이터에 포함해도 되는 메서드:**
+
+1. **유효성 검증** (Compact Constructor):
+   ```java
+   public record Email(String value) {
+       public Email {
+           if (!value.contains("@")) throw new IllegalArgumentException();
+       }
+   }
+   ```
+
+2. **Wither 메서드** (불변 업데이트 헬퍼):
+   ```java
+   public record Order(Long id, OrderStatus status, List<Item> items) {
+       public Order withStatus(OrderStatus newStatus) {
+           return new Order(id, newStatus, items);
+       }
+   }
+   ```
+
+3. **단순 파생 값** (다른 필드에서 바로 계산):
+   ```java
+   public record Rectangle(int width, int height) {
+       public int area() { return width * height; }
+   }
+   ```
+
+> **핵심**: 외부 의존성이 필요하거나 복잡한 로직은 반드시 외부 함수로 분리하세요.
+
+---
 
 ### 원칙 2: 일반적 형태로 데이터 표현 (Represent Data with Generic Structures) ⭐
 
@@ -80,7 +360,7 @@ public class OrderService {
 
 도메인 특화 컬렉션 대신 **표준 자료구조**(List, Map, Set, Record)를 사용합니다.
 
-**Code 0.2**: 커스텀 컬렉션 vs DOP 표준 자료구조
+**Code 0.7**: 커스텀 컬렉션 vs DOP 표준 자료구조
 ```java
 // [X] 안티패턴: 커스텀 컬렉션
 public class OrderItems extends ArrayList<OrderItem> {
@@ -98,7 +378,7 @@ public class OrderCalculations {
 
 #### 왜 중요한가?
 
-**Table 0.2**: 표준 자료구조 사용의 장점
+**Table 0.4**: 표준 자료구조 사용의 장점
 
 | 관점 | 설명 |
 |-----|------|
@@ -128,7 +408,7 @@ public class OrderCalculations {
 
 #### 관점 2: 새 팀원이 왔을 때
 
-**Code 0.3**: 새 팀원의 관점 - 커스텀 vs 표준 타입
+**Code 0.8**: 새 팀원의 관점 - 커스텀 vs 표준 타입
 ```java
 // 시나리오: 새 팀원이 주문 시스템 코드를 처음 봄
 
@@ -147,7 +427,7 @@ List<OrderItem> items = order.items();
 
 #### 관점 3: 요구사항 변경 시
 
-**Code 0.4**: 요구사항 변경 시 - 커스텀 vs 표준 타입
+**Code 0.9**: 요구사항 변경 시 - 커스텀 vs 표준 타입
 ```java
 // 새 요구사항: "주문 아이템을 카테고리별로 그룹핑해주세요"
 
@@ -169,7 +449,7 @@ Map<Category, List<OrderItem>> grouped = items.stream()
 
 #### 관점 4: 디버깅할 때
 
-**Code 0.5**: 디버깅 시 - 커스텀 vs 표준 타입
+**Code 0.10**: 디버깅 시 - 커스텀 vs 표준 타입
 ```java
 // 프로덕션에서 NPE 발생. 로그에 데이터를 찍어봐야 함.
 
@@ -189,7 +469,7 @@ log.info("items: {}", items);
 
 #### 관점 5: 다른 시스템과 통신할 때
 
-**Code 0.6**: 외부 시스템 통신 시 - 커스텀 vs 표준 타입
+**Code 0.11**: 외부 시스템 통신 시 - 커스텀 vs 표준 타입
 ```java
 // 외부 결제 API에 주문 정보를 전송해야 함
 
@@ -218,8 +498,321 @@ public record Order(List<OrderItem> items, Money total) {}
 
 ---
 
-### 원칙 3: 불변성 (Data is Immutable / Immutability)
-모든 변경은 새로운 객체 생성으로. Chapter 2에서 자세히 다룹니다.
+### 원칙 3: 불변성 (Data is Immutable / Immutability) ⭐
+
+> **핵심 질문**: "이 객체가 생성된 후에 내부 상태가 변경될 수 있는가?"
+
+#### 무엇을 의미하는가?
+
+모든 변경은 **새로운 객체 생성**으로. 기존 객체는 절대 수정하지 않습니다.
+
+**Code 0.12**: 가변 vs 불변 - 객체 변경 방식
+```java
+// [X] 가변 (Mutable): 기존 객체 수정
+public class Order {
+    private OrderStatus status;
+
+    public void ship() {
+        this.status = OrderStatus.SHIPPED;  // 기존 객체 상태 변경
+    }
+}
+
+Order order = new Order(OrderStatus.PAID);
+order.ship();  // order 자체가 변경됨
+
+// [O] 불변 (Immutable): 새 객체 생성
+public record Order(OrderStatus status) {
+    public Order withStatus(OrderStatus newStatus) {
+        return new Order(newStatus);  // 새 객체 반환, 원본 불변
+    }
+}
+
+Order paidOrder = new Order(OrderStatus.PAID);
+Order shippedOrder = paidOrder.withStatus(OrderStatus.SHIPPED);
+// paidOrder는 여전히 PAID, shippedOrder는 SHIPPED
+```
+
+#### 왜 불변성인가?
+
+**Table 0.5**: 불변성의 장점
+
+| 관점 | 설명 |
+|-----|------|
+| **예측 가능성** | 객체가 한번 생성되면 절대 변하지 않아 추론이 쉬움 |
+| **스레드 안전** | 동기화 없이 여러 스레드에서 안전하게 공유 |
+| **디버깅 용이** | 상태 변경 지점 추적 불필요, 모든 상태가 명시적 |
+| **캐싱 안전** | 불변 데이터는 부작용 없이 캐싱 가능 |
+| **Undo 구현 용이** | 이전 상태 객체를 보관하면 바로 복원 가능 |
+
+---
+
+#### 관점 1: 시간 여행 디버깅 비유
+
+> **모든 상태가 스냅샷으로 보존됩니다.**
+>
+> 가변 객체는 "현재 상태"만 존재합니다:
+> ```
+> t=0: Order(PENDING)
+> t=1: Order(PAID)      // PENDING 상태는 사라짐
+> t=2: Order(SHIPPED)   // PAID 상태도 사라짐
+> 버그 발생! "어? 주문이 언제 PAID가 됐지?" -> 추적 불가
+> ```
+>
+> 불변 객체는 "모든 시점의 상태"가 존재합니다:
+> ```
+> t=0: pendingOrder  = Order(PENDING)
+> t=1: paidOrder     = Order(PAID)
+> t=2: shippedOrder  = Order(SHIPPED)
+> 버그 발생! -> 모든 상태를 로그에서 확인 가능
+> ```
+>
+> **마치 Git처럼**: 모든 커밋(상태)이 보존되어 언제든 과거로 돌아갈 수 있습니다.
+
+---
+
+#### 관점 2: Git 비유
+
+**Code 0.13**: Git 커밋처럼 불변한 데이터
+```java
+// Git은 "수정"이 아니라 "새 커밋 생성"입니다
+// git commit --amend도 실제로는 새 커밋을 만들고 포인터를 이동
+
+// [X] 가변: 파일을 직접 수정 (히스토리 없음)
+document.setContent("새 내용");  // 이전 내용 사라짐
+
+// [O] 불변: Git처럼 새 버전 생성
+record Document(String content, int version) {
+    Document withContent(String newContent) {
+        return new Document(newContent, version + 1);
+    }
+}
+
+Document v1 = new Document("초안", 1);
+Document v2 = v1.withContent("수정본");
+Document v3 = v2.withContent("최종본");
+
+// v1, v2, v3 모두 존재 - 언제든 이전 버전 참조 가능
+List<Document> history = List.of(v1, v2, v3);
+```
+
+> **핵심**: 불변 데이터는 **자동으로 히스토리를 형성**합니다.
+> 각 상태 변경이 새 객체이므로, 이전 참조만 보관하면 전체 히스토리 추적 가능.
+
+---
+
+#### 관점 3: 멀티스레드 관점
+
+**Code 0.14**: 멀티스레드 환경 - 가변 vs 불변
+```java
+// [X] 가변: 동기화가 필요한 위험한 코드
+public class MutableCounter {
+    private int count = 0;
+
+    public void increment() {
+        count++;  // 읽기-수정-쓰기: 원자적이지 않음!
+    }
+
+    public int getCount() {
+        return count;  // 다른 스레드가 수정 중일 수 있음
+    }
+}
+
+// 두 스레드가 동시에 increment() 호출하면?
+// 기대값: 2, 실제값: 1 또는 2 (Race Condition)
+
+// [O] 불변: 동기화 없이 안전
+public record ImmutableCounter(int count) {
+    public ImmutableCounter increment() {
+        return new ImmutableCounter(count + 1);  // 새 객체 반환
+    }
+}
+
+// 여러 스레드가 같은 counter를 읽어도 안전
+ImmutableCounter counter = new ImmutableCounter(0);
+
+// Thread 1
+ImmutableCounter c1 = counter.increment();  // counter는 여전히 0
+
+// Thread 2
+ImmutableCounter c2 = counter.increment();  // counter는 여전히 0
+
+// 각 스레드는 독립적인 새 객체를 가짐
+// 원본 counter는 절대 변하지 않음
+```
+
+> **핵심**: 불변 객체는 **공유해도 안전**합니다.
+> 읽기만 가능하므로 동기화(synchronized, Lock)가 필요 없습니다.
+
+---
+
+#### 관점 4: 캐싱/메모이제이션 관점
+
+**Code 0.15**: 불변 데이터의 안전한 캐싱
+```java
+// [X] 가변: 캐싱이 위험함
+public class MutableProduct {
+    private Money price;
+    public void setPrice(Money price) { this.price = price; }
+    public Money getPrice() { return price; }
+}
+
+Map<ProductId, MutableProduct> cache = new HashMap<>();
+MutableProduct product = cache.get(productId);
+product.setPrice(Money.of(0));  // 캐시 안의 데이터가 오염됨!
+
+// [O] 불변: 캐싱이 안전함
+public record Product(ProductId id, Money price) {
+    public Product withPrice(Money newPrice) {
+        return new Product(id, newPrice);
+    }
+}
+
+Map<ProductId, Product> cache = new ConcurrentHashMap<>();
+Product product = cache.get(productId);
+Product discounted = product.withPrice(Money.of(0));
+// cache 안의 원본은 변경되지 않음!
+
+// 메모이제이션도 안전
+Map<Order, Money> totalCache = new ConcurrentHashMap<>();
+Money total = totalCache.computeIfAbsent(order, OrderCalculations::calculateTotal);
+// order가 불변이므로 캐시 키로 안전하게 사용 가능
+```
+
+> **핵심**: 불변 데이터는 **캐시 무효화 걱정이 없습니다.**
+> 데이터가 변하지 않으므로 캐시된 값이 항상 유효합니다.
+
+---
+
+#### 관점 5: Undo/Redo 관점
+
+**Code 0.16**: Undo/Redo 구현 - 불변 데이터의 강점
+```java
+// [X] 가변: Undo 구현이 복잡함
+public class MutableEditor {
+    private String content;
+    private Stack<String> undoStack = new Stack<>();
+
+    public void type(String text) {
+        undoStack.push(content);  // 수동으로 백업
+        content += text;
+    }
+
+    public void undo() {
+        if (!undoStack.isEmpty()) {
+            content = undoStack.pop();  // 복원
+        }
+    }
+}
+
+// [O] 불변: Undo가 자연스럽게 구현됨
+public record EditorState(String content) {
+    public EditorState type(String text) {
+        return new EditorState(content + text);
+    }
+}
+
+// 사용
+List<EditorState> history = new ArrayList<>();
+EditorState state = new EditorState("");
+
+state = state.type("Hello");
+history.add(state);
+
+state = state.type(" World");
+history.add(state);
+
+// Undo: 이전 상태로 돌아가기
+state = history.get(history.size() - 2);  // "Hello"
+
+// Redo: 다음 상태로 이동
+state = history.get(history.size() - 1);  // "Hello World"
+```
+
+> **핵심**: 불변 데이터에서 Undo는 **이전 객체 참조**일 뿐입니다.
+> 별도의 백업/복원 로직이 필요 없습니다.
+
+---
+
+#### 관점 6: 가변 vs 불변 트레이드오프
+
+**Table 0.6**: 가변 vs 불변 트레이드오프
+
+| 관점 | 가변 (Mutable) | 불변 (Immutable) |
+|-----|---------------|-----------------|
+| **메모리** | 객체 재사용 (효율적) | 새 객체 생성 (GC 부담) |
+| **성능** | 직접 수정 (빠름) | 복사 후 수정 (약간 느림) |
+| **스레드 안전** | Lock 필요 | 기본 안전 |
+| **디버깅** | 상태 추적 어려움 | 모든 상태 보존 |
+| **예측성** | 어디서 변경될지 모름 | 변경 불가, 예측 쉬움 |
+| **캐싱** | 무효화 관리 필요 | 항상 안전 |
+
+> **현대 JVM 최적화**: 단명 객체(short-lived object)는 Eden 영역에서 빠르게 GC됩니다.
+> 불변 객체의 "메모리 오버헤드"는 대부분의 애플리케이션에서 무시할 수준입니다.
+
+---
+
+#### Java Record와 불변성
+
+**Code 0.17**: Record의 얕은 불변성 주의사항
+```java
+// Record는 필드 재할당은 막지만, 필드 내용물의 변경은 막지 않음
+
+// [X] 위험: 얕은 불변성의 함정
+public record Order(List<OrderItem> items) {}
+
+Order order = new Order(new ArrayList<>());
+order.items().add(new OrderItem(...));  // 컴파일 됨! 내부 리스트가 변경됨
+
+// [O] 안전: 깊은 불변성 보장
+public record Order(List<OrderItem> items) {
+    public Order {
+        items = List.copyOf(items);  // 불변 리스트로 복사
+    }
+}
+
+Order order = new Order(new ArrayList<>());
+order.items().add(...);  // UnsupportedOperationException!
+```
+
+> **핵심**: Record 사용 시 **컬렉션 필드는 반드시 `List.copyOf()`** 등으로 불변 보장하세요.
+
+---
+
+#### 불변 업데이트 패턴: Wither
+
+**Code 0.18**: Wither 패턴으로 불변 업데이트
+```java
+public record Order(
+    OrderId id,
+    OrderStatus status,
+    List<OrderItem> items,
+    Money total
+) {
+    // Wither 메서드들
+    public Order withStatus(OrderStatus newStatus) {
+        return new Order(id, newStatus, items, total);
+    }
+
+    public Order withAddedItem(OrderItem item) {
+        var newItems = new ArrayList<>(items);
+        newItems.add(item);
+        return new Order(id, status, List.copyOf(newItems), total);
+    }
+
+    public Order withTotal(Money newTotal) {
+        return new Order(id, status, items, newTotal);
+    }
+}
+
+// 사용 예시: 메서드 체이닝
+Order finalOrder = initialOrder
+    .withAddedItem(newItem)
+    .withTotal(calculatedTotal)
+    .withStatus(OrderStatus.CONFIRMED);
+```
+
+> **참고**: JEP 468 (Derived Record Creation / `with` expression)은 Java 25에 포함되지 않았습니다.
+> 따라서 수동으로 Wither 메서드를 작성해야 합니다.
 
 ---
 
@@ -232,7 +825,7 @@ public record Order(List<OrderItem> items, Money total) {}
 - **스키마(Schema)**: 데이터의 **구조와 규칙** (타입 정의, 검증 규칙)
 - **표현(Representation)**: 데이터의 **실제 값** (인스턴스)
 
-**Code 0.7**: 스키마와 표현의 분리 예제
+**Code 0.19**: 스키마와 표현의 분리 예제
 ```java
 // 스키마: 구조 정의
 public sealed interface PaymentMethod {
@@ -297,7 +890,7 @@ PaymentMethod method = new CreditCard("4111-1111-1111-1111", YearMonth.of(2027, 
 
 #### 관점 3: Java 개발자가 이미 아는 것
 
-**Code 0.8**: Java에서의 스키마와 표현
+**Code 0.20**: Java에서의 스키마와 표현
 ```java
 // Java 개발자는 이미 스키마와 표현을 분리하고 있습니다!
 
@@ -334,7 +927,7 @@ User user = new User("홍길동", 30);
 
 #### 관점 4: API 문서 관점
 
-**Code 0.9**: API 문서 관점의 스키마와 표현
+**Code 0.21**: API 문서 관점의 스키마와 표현
 ```java
 // OpenAPI/Swagger 스펙을 생각해보세요
 
@@ -358,7 +951,7 @@ User user = new User("홍길동", 30);
 
 #### 관점 5: 왜 굳이 분리해야 하나? (실전 문제)
 
-**Code 0.10**: 새로운 상태 추가 시 - OOP vs DOP
+**Code 0.22**: 새로운 상태 추가 시 - OOP vs DOP
 ```java
 // 문제 상황: 주문 상태에 "REFUNDED"를 추가해야 함
 
@@ -390,7 +983,7 @@ public sealed interface OrderStatus {
 
 #### 관점 6: 한 줄 요약
 
-**Table 0.3**: 스키마와 표현 한 줄 요약
+**Table 0.7**: 스키마와 표현 한 줄 요약
 
 | 개념 | 비유 | Java 코드 |
 |-----|------|----------|
@@ -406,7 +999,7 @@ public sealed interface OrderStatus {
 
 #### 왜 분리하는가?
 
-**Table 0.4**: 스키마와 표현의 책임 분리
+**Table 0.8**: 스키마와 표현의 책임 분리
 
 | 관점 | 스키마 책임 | 표현 책임 |
 |-----|-----------|----------|
@@ -417,7 +1010,7 @@ public sealed interface OrderStatus {
 
 #### 실전 예제: 다형적 JSON 직렬화
 
-**Code 0.11**: 다형적 JSON 직렬화 예제
+**Code 0.23**: 다형적 JSON 직렬화 예제
 ```java
 // 스키마: sealed interface로 가능한 모든 상태 정의
 public sealed interface OrderStatus {
@@ -434,7 +1027,7 @@ public sealed interface OrderStatus {
 
 #### OOP와의 차이
 
-**Table 0.5**: OOP와 DOP의 차이
+**Table 0.9**: OOP와 DOP의 차이
 
 | OOP | DOP |
 |-----|-----|
@@ -456,7 +1049,7 @@ public sealed interface OrderStatus {
 
 ### 관점 1: 한 눈에 보는 코드 비교
 
-**Code 0.12**: DOP vs DMMF - 이메일 주소 처리 비교
+**Code 0.24**: DOP vs DMMF - 이메일 주소 처리 비교
 ```java
 // ===== 문제: "이메일 주소"를 어떻게 다룰 것인가? =====
 
@@ -489,7 +1082,7 @@ public record ValidatedEmail(String value) {     // 검증 후
 
 ### 관점 2: 에러 처리 철학
 
-**Code 0.13**: DOP vs DMMF - 에러 처리 비교
+**Code 0.25**: DOP vs DMMF - 에러 처리 비교
 ```java
 // ===== 문제: 주문 생성 시 여러 검증을 거쳐야 함 =====
 
@@ -530,7 +1123,7 @@ public Result<Order, OrderError> createOrder(Request req) {
 
 ### 관점 3: 워크플로우를 타입으로 강제 (DMMF의 강점)
 
-**Code 0.14**: DMMF 스타일 - 워크플로우를 타입으로 강제
+**Code 0.26**: DMMF 스타일 - 워크플로우를 타입으로 강제
 ```java
 // ===== 문제: 주문이 "결제 없이 배송됨" 버그 발생 =====
 
@@ -568,7 +1161,7 @@ public ShippedOrder ship(PaidOrder order, TrackingNumber tracking) {
 
 ### 관점 4: Primitive Obsession 해결
 
-**Code 0.15**: Primitive Obsession 해결 - Constrained Types
+**Code 0.27**: Primitive Obsession 해결 - Constrained Types
 ```java
 // ===== 문제: String, int를 남용하는 코드 =====
 
@@ -613,7 +1206,7 @@ public Order createOrder(
 
 ### 관점 5: Spring Boot 개발자를 위한 실전 비교
 
-**Code 0.16**: Spring Boot에서의 DOP vs DMMF 스타일
+**Code 0.28**: Spring Boot에서의 DOP vs DMMF 스타일
 ```java
 // ===== Spring Boot에서 DOP vs DMMF 스타일 =====
 
@@ -660,7 +1253,7 @@ public class OrderWorkflows {
 
 ### 공통 철학 (둘 다 동의하는 것)
 
-**Table 0.6**: DOP와 DMMF의 공통 철학
+**Table 0.10**: DOP와 DMMF의 공통 철학
 
 | 원칙 | DOP 표현 | DMMF 표현 | Java 코드 |
 |-----|---------|----------|----------|
@@ -674,7 +1267,7 @@ public class OrderWorkflows {
 
 ### 차이점 요약
 
-**Table 0.7**: DOP와 DMMF의 차이점
+**Table 0.11**: DOP와 DMMF의 차이점
 
 | 관점 | DOP (Java) | DMMF (F#) |
 |-----|-----------|-----------|
@@ -688,7 +1281,7 @@ public class OrderWorkflows {
 
 ### 언제 무엇을 적용할까?
 
-**Table 0.8**: DOP vs DMMF 적용 가이드
+**Table 0.12**: DOP vs DMMF 적용 가이드
 
 | 상황 | 추천 | 이유 |
 |-----|------|------|
@@ -701,7 +1294,7 @@ public class OrderWorkflows {
 
 ### 핵심 교훈: DMMF에서 Java로 가져올 것
 
-**Code 0.17**: DMMF에서 Java로 가져올 핵심 패턴
+**Code 0.29**: DMMF에서 Java로 가져올 핵심 패턴
 ```java
 // 1. 워크플로우를 타입으로 강제
 public sealed interface OrderWorkflow {
