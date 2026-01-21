@@ -27,43 +27,6 @@
 
 **Figure 7.1**: Algebraic Properties Visualization
 
-```
-┌───────────────────────────────────────────────────────────────────────┐
-│                   Algebraic Properties Visualization                  │
-├───────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  * Associativity: (A + B) + C = A + (B + C)                           │
-│                                                                       │
-│    Sequential:                 Parallel possible:                     │
-│    A -> B -> C -> D            ┌─── A+B ───┐                          │
-│        |                       │           │                          │
-│        v                       └──> Sum <──┘                          │
-│     Result (slow)              ┌─── C+D ───┐                          │
-│                                │           │                          │
-│                                └───────────┘                          │
-│                                    (fast!)                            │
-├───────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  * Idempotence: f(f(x)) = f(x)                                        │
-│                                                                       │
-│    [X] Not idempotent:         [O] Idempotent:                        │
-│                                                                       │
-│    pay() -> pay()              setStatus(PAID) -> setStatus(PAID)     │
-│      |                               |                                │
-│      v                               v                                │
-│    Double charge!              No state change (safe!)                │
-│                                                                       │
-│    Dangerous on retry          Safe on retry                          │
-│                                                                       │
-├───────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  * Identity Element: A + e = A                                        │
-│                                                                       │
-│    Money.zero() + 10,000 KRW = 10,000 KRW                             │
-│    Safely apply reduce even on empty list!                            │
-│                                                                       │
-└───────────────────────────────────────────────────────────────────────┘
-```
 ![alt text](images/fig_7_1_algebraic_properties_visualization.png)
 
 **Table 7.1**: 주요 대수적 속성과 활용

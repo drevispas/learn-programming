@@ -88,56 +88,10 @@ public class OrderEntity {
 
 **Figure 9.1**: Entity to Domain Record Conversion Flow
 
-```
-┌───────────────────────────────────────────────────────────────────────┐
-│                 Entity <-> Domain Record Conversion Flow              │
-├───────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  ┌──────────┐                                          ┌──────────┐   │
-│  │ Database │                                          │   API    │   │
-│  └────┬─────┘                                          └────┬─────┘   │
-│       │                                                     │         │
-│       v (SQL)                                               v (JSON)  │
-│  ┌──────────────┐                                  ┌──────────────┐   │
-│  │ JPA Entity   │                                  │     DTO      │   │
-│  │(mutable,ORM) │                                  │(serializable)│   │
-│  └──────┬───────┘                                  └──────┬───────┘   │
-│         │                                                 │           │
-│         v Mapper.toDomain()                 Mapper.toDto()v           │
-│         │                                                 │           │
-│  ┌──────┴─────────────────────────────────────────────────┴───────┐   │
-│  │                   Domain Record (immutable)                    │   │
-│  │                                                                │   │
-│  │  ┌──────────────────────────────────────────────────────────┐  │   │
-│  │  │                  Pure Business Logic                     │  │   │
-│  │  │            (OrderCalculations, Validations)              │  │   │
-│  │  └──────────────────────────────────────────────────────────┘  │   │
-│  │                                                                │   │
-│  └────────────────────────────────────────────────────────────────┘   │
-│                                                                       │
-│  Key: Domain layer knows nothing about JPA/HTTP! Pure business only!  │
-│                                                                       │
-└───────────────────────────────────────────────────────────────────────┘
-```
 ![alt text](images/fig_9_1_entity_to_domain_record_conversion_flow.png)
 
 **Figure 9.2**: Layer Separation Architecture
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Controller / API Layer                   │
-│                (DTO <-> Domain Record conversion)           │
-├─────────────────────────────────────────────────────────────┤
-│                    Application Layer                        │
-│                (Orchestration, flow control)                │
-├─────────────────────────────────────────────────────────────┤
-│                    Domain Layer (DOP)                       │
-│          (Record, Sealed Interface, pure functions)         │
-├─────────────────────────────────────────────────────────────┤
-│                   Infrastructure Layer                      │
-│             (JPA Entity, Repository impl)                   │
-│              (Entity <-> Domain Record conversion)          │
-└─────────────────────────────────────────────────────────────┘
-```
+
 ![alt text](images/fig_9_2_layer_separation_architecture.png)
 
 > **Visual Reference - Layered Architecture:**

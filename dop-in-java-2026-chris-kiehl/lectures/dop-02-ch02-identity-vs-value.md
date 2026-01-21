@@ -31,29 +31,6 @@
 
 **Figure 2.1**: Value vs Identity Comparison
 
-```
-┌───────────────────────────────────────────────────────────────────────┐
-│                        Value vs Identity                              │
-├───────────────────────────────────┬───────────────────────────────────┤
-│            [$] Value              │           [#] Identity            │
-├───────────────────────────────────┼───────────────────────────────────┤
-│                                   │                                   │
-│   10,000 KRW  ═══  10,000 KRW     │   Member #123  ≠  Member #456     │
-│        ↓                          │         ↓                         │
-│   Same if content matches         │   Same if ID matches              │
-│                                   │                                   │
-│  ┌───────────┐ ┌───────────┐      │  ┌─────────────────────────────┐  │
-│  │  Money    │ │  Money    │      │  │ Member                      │  │
-│  │  10,000   │=│  10,000   │      │  │ id: 123                     │  │
-│  │  KRW      │ │  KRW      │      │  │ name: "Hong" → "Kim"        │  │
-│  └───────────┘ └───────────┘      │  │ (Same member if name changes│  │
-│         Equal!                    │  └─────────────────────────────┘  │
-│                                   │                                   │
-│  Examples: Money, Coordinates,    │  Examples: Member, Order,         │
-│            Date                   │            Product                │
-│  Immutable, equals() comparison   │  Mutable allowed, ID comparison   │
-└───────────────────────────────────┴───────────────────────────────────┘
-```
 ![alt text](images/fig_2_1_value_vs_identity_comparison.png)
 
 **Table 2.1**: Value와 Identity의 핵심 차이점

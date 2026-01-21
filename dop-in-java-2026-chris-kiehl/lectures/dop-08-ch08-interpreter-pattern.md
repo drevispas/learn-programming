@@ -115,39 +115,6 @@ case Rule.GTE(var attr, var threshold) -> switch (attr) {
 
 **Figure 8.1**: Rule Engine Tree Structure
 
-```
-┌───────────────────────────────────────────────────────────────────────┐
-│               Rule Engine Tree Structure Visualization                │
-│                                                                       │
-│  Rule: "Lives in KR AND (totalSpend >= 1M OR VIP)"                    │
-├───────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│                          ┌───────────┐                                │
-│                          │    And    │ <- Root node                   │
-│                          └─────┬─────┘                                │
-│                     ┌──────────┴──────────┐                           │
-│                     v                     v                           │
-│              ┌───────────┐          ┌───────────┐                     │
-│              │  Equals   │          │    Or     │                     │
-│              │ country   │          └─────┬─────┘                     │
-│              │   "KR"    │       ┌────────┴────────┐                  │
-│              └───────────┘       v                 v                  │
-│                           ┌───────────┐     ┌───────────┐             │
-│                           │  Equals   │     │    GTE    │             │
-│                           │   type    │     │totalSpend │             │
-│                           │  "VIP"    │     │ 1,000,000 │             │
-│                           └───────────┘     └───────────┘             │
-│                                                                       │
-│  Evaluation:                                                          │
-│  1. Equals("country", "KR") -> true                                   │
-│  2. Or evaluation:                                                    │
-│     - Equals("type", "VIP") -> false                                  │
-│     - GTE("totalSpend", 1000000) -> true (1,500,000 >= 1,000,000)     │
-│     - Or result: true                                                 │
-│  3. And(true, true) -> true [O] Discount eligible!                    │
-│                                                                       │
-└───────────────────────────────────────────────────────────────────────┘
-```
 ![alt text](images/fig_8_1_rule_engine_tree_structure.png)
 
 **Code 8.5**: 복잡한 할인 규칙 예제
