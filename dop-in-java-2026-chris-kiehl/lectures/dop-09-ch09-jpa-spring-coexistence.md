@@ -86,6 +86,8 @@ public class OrderEntity {
 
 ### Entity ↔ Domain Record 데이터 흐름
 
+**Figure 9.1**: Entity to Domain Record Conversion Flow
+
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
 │                 Entity <-> Domain Record Conversion Flow              │
@@ -117,8 +119,9 @@ public class OrderEntity {
 │                                                                       │
 └───────────────────────────────────────────────────────────────────────┘
 ```
+![alt text](images/fig_9_1_entity_to_domain_record_conversion_flow.png)
 
-**Figure 9.1**: Layer Separation Architecture
+**Figure 9.2**: Layer Separation Architecture
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Controller / API Layer                   │
@@ -135,6 +138,7 @@ public class OrderEntity {
 │              (Entity <-> Domain Record conversion)          │
 └─────────────────────────────────────────────────────────────┘
 ```
+![alt text](images/fig_9_2_layer_separation_architecture.png)
 
 > **Visual Reference - Layered Architecture:**
 > ![Clean Architecture Layers](https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/images/n-tier-logical.svg)

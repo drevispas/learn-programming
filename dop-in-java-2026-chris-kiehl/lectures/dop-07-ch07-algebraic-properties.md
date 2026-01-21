@@ -25,6 +25,8 @@
 
 ### 결합법칙 / 멱등성 시각화
 
+**Figure 7.1**: Algebraic Properties Visualization
+
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
 │                   Algebraic Properties Visualization                  │
@@ -62,6 +64,7 @@
 │                                                                       │
 └───────────────────────────────────────────────────────────────────────┘
 ```
+![alt text](images/fig_7_1_algebraic_properties_visualization.png)
 
 **Table 7.1**: 주요 대수적 속성과 활용
 

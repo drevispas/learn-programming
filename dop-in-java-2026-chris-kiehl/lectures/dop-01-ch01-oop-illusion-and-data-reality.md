@@ -86,7 +86,7 @@ public class Order {
 > ![Hexagonal Architecture](https://8thlight.com/wp-content/uploads/2023/02/ports-adapters-1.png)
 > *Source: [8th Light - Ports and Adapters](https://8thlight.com/insights/a-color-coded-guide-to-ports-and-adapters)*
 
-**Figure 1.1**: God Class → DOP 분리 구조도
+**Figure 1.1**: God Class to DOP Separation Structure
 
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
@@ -124,6 +124,7 @@ public class Order {
 │        Data Only                         Logic Only                   │
 └───────────────────────────────────────────────────────────────────────┘
 ```
+![alt text](images/fig_1_1_god_class_to_dop_separation_structure.png)
 
 ### 비유: 레고 vs 점토
 

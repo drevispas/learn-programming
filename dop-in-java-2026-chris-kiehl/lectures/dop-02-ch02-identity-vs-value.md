@@ -29,6 +29,8 @@
 
 ### Value vs Identity 비교 다이어그램
 
+**Figure 2.1**: Value vs Identity Comparison
+
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
 │                        Value vs Identity                              │
@@ -52,6 +54,7 @@
 │  Immutable, equals() comparison   │  Mutable allowed, ID comparison   │
 └───────────────────────────────────┴───────────────────────────────────┘
 ```
+![alt text](images/fig_2_1_value_vs_identity_comparison.png)
 
 **Table 2.1**: Value와 Identity의 핵심 차이점
 

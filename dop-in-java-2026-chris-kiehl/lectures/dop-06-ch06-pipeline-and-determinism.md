@@ -82,6 +82,7 @@ public Money calculateTotal(List<OrderItem> items) {
 │  Bottom Bun (Impure): Serve         │  <- DB save, send notification
 └─────────────────────────────────────┘
 ```
+![alt text](images/fig_6_1_sandwich_architecture_structure.png)
 
 > **Visual Reference - Sandwich Architecture (Functional Core / Imperative Shell):**
 > ![Functional Core Imperative Shell](https://kennethlange.com/wp-content/uploads/2020/04/Functional-Core-Imperative-Shell.png)

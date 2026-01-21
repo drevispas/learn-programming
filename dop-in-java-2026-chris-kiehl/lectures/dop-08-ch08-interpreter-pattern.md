@@ -113,6 +113,8 @@ case Rule.GTE(var attr, var threshold) -> switch (attr) {
 
 ### Rule Engine 트리 구조
 
+**Figure 8.1**: Rule Engine Tree Structure
+
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
 │               Rule Engine Tree Structure Visualization                │
@@ -146,6 +148,7 @@ case Rule.GTE(var attr, var threshold) -> switch (attr) {
 │                                                                       │
 └───────────────────────────────────────────────────────────────────────┘
 ```
+![alt text](images/fig_8_1_rule_engine_tree_structure.png)
 
 **Code 8.5**: 복잡한 할인 규칙 예제
 ```java

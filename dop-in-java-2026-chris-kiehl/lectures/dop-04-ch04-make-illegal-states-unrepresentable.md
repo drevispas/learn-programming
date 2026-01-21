@@ -206,6 +206,8 @@ public String getStatusMessage(UserEmail email) {
 
 ### 상태 전이 다이어그램
 
+**Figure 4.1**: Order State Transition Diagram
+
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
 │                   Order State Transition Diagram                      │
@@ -234,6 +236,7 @@ public String getStatusMessage(UserEmail email) {
 │                                                                       │
 └───────────────────────────────────────────────────────────────────────┘
 ```
+![alt text](images/fig_4_1_order_state_transition_diagram.png)
 
 **Code 4.7**: 상태 전이 메서드 - 가능한 전이만 정의
 ```java

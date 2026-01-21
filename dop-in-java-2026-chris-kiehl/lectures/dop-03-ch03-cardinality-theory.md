@@ -60,6 +60,8 @@
 
 ### 곱타입 vs 합타입 상태 공간 시각화
 
+**Figure 3.1**: Product Type vs Sum Type State Space
+
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
 │                    Product Type vs Sum Type                           │
@@ -91,6 +93,7 @@
 │                                   │  Impossible states = 0!           │
 └───────────────────────────────────┴───────────────────────────────────┘
 ```
+![alt text](images/fig_3_1_product_type_vs_sum_type_state_space.png)
 
 ### ❌ 안티패턴: Boolean 필드로 상태 표현
 
