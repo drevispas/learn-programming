@@ -410,18 +410,23 @@ public record Order(OrderId id, Money amount, OrderStatus status) {
     public Order {
         Objects.requireNonNull(id, "주문 ID는 필수입니다");
         Objects.requireNonNull(amount, "금액은 필수입니다");
+        Objects.requireNonNull(status, "주문 상태는 필수입니다");
         if (amount.isNegative()) {
             throw new IllegalArgumentException("금액은 0 이상이어야 합니다");
         }
     }
 }
 
-// 내부 로직: 검증 없이 타입을 신뢰
+// 내부 로직: 검증 없이 타입을 신뢰 + status 활용
 public class OrderCalculations {
-    public static Money calculateTax(Order order) {
-        // order가 null이거나 amount가 음수일 가능성 없음
-        // 생성 시점에 이미 검증됨
-        return order.amount().multiply(TAX_RATE);
+    public static Money calculateRefundAmount(Order order) {
+        // 상태에 따라 환불 금액이 다름 - switch 표현식으로 모든 케이스 처리
+        return switch (order.status()) {
+            case OrderStatus.Pending p -> order.amount();  // 전액 환불
+            case OrderStatus.Paid p -> order.amount().multiply(0.95);  // 5% 수수료
+            case OrderStatus.Shipped s -> order.amount().multiply(0.80);  // 20% 수수료
+            case OrderStatus.Cancelled c -> Money.ZERO;  // 환불 불가
+        };
     }
 }
 
@@ -443,21 +448,51 @@ public class OrderController {
 
 **Code 1.7c**: 타입으로 보장되는 상태 전이
 ```java
-public sealed interface OrderStatus {
-    // 각 상태에서 가능한 전이만 메서드로 제공
-    default Paid pay(PaymentId paymentId) {
-        return switch (this) {
-            case Pending p -> new Paid(paymentId, Instant.now());
-            case Paid p -> throw new IllegalStateException("이미 결제됨");
-            case Shipped s -> throw new IllegalStateException("배송 시작됨");
-            case Cancelled c -> throw new IllegalStateException("취소됨");
+// 상태 전이 로직: 별도 클래스에서 순수 함수로 정의
+public class OrderTransitions {
+
+    // 결제 처리: Pending -> Paid
+    public static Order pay(Order order, PaymentId paymentId) {
+        return switch (order.status()) {
+            case OrderStatus.Pending p ->
+                new Order(order.id(), order.amount(),
+                    new OrderStatus.Paid(paymentId, Instant.now()));
+            case OrderStatus.Paid p ->
+                throw new IllegalStateException("이미 결제된 주문입니다");
+            case OrderStatus.Shipped s ->
+                throw new IllegalStateException("이미 배송된 주문입니다");
+            case OrderStatus.Cancelled c ->
+                throw new IllegalStateException("취소된 주문입니다");
         };
+        // 새로운 상태 Refunded를 추가하면?
+        // -> 컴파일 에러: "switch가 완전하지 않음, Refunded 케이스 누락"
     }
 
-    // 새로운 상태 Refunded를 추가하면?
-    // -> 컴파일 에러: "switch가 완전하지 않음, Refunded 케이스 누락"
+    // 배송 처리: Paid -> Shipped
+    public static Order ship(Order order, TrackingNumber tracking) {
+        return switch (order.status()) {
+            case OrderStatus.Paid p ->
+                new Order(order.id(), order.amount(),
+                    new OrderStatus.Shipped(tracking));
+            case OrderStatus.Pending p ->
+                throw new IllegalStateException("결제되지 않은 주문입니다");
+            case OrderStatus.Shipped s ->
+                throw new IllegalStateException("이미 배송된 주문입니다");
+            case OrderStatus.Cancelled c ->
+                throw new IllegalStateException("취소된 주문입니다");
+        };
+    }
 }
 ```
+
+> **💡 Q&A: 왜 OrderStatus에 pay() 메서드를 넣지 않나요?**
+>
+> DOP 원칙 1 "코드와 데이터를 분리하라"를 따릅니다:
+> - `OrderStatus`는 **데이터(상태값)**만 표현
+> - `pay()`, `ship()` 같은 **행위(상태 전이)**는 별도 함수로 분리
+>
+> 만약 상태 자체가 행위를 가지려면, `PendingOrder`, `PaidOrder`처럼
+> 완전한 주문 객체로 모델링하는 "타입 상태(Typestate)" 패턴을 사용해야 합니다.
 
 > **💡 Q&A: "Parse, Don't Validate"와 무슨 관계인가요?**
 >
