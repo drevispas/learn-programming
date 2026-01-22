@@ -52,6 +52,10 @@ public class OrderEntity {
         items.add(item);
         recalculateTotal();
     }
+
+    // 이하 상태별 필드 생략: createdAt, paidAt, paymentId, shippedAt,
+    // trackingNumber, deliveredAt, canceledAt, cancelReason, items
+    // (Mapper에서 사용되는 getter 메서드들 포함)
 }
 ```
 
@@ -234,6 +238,7 @@ public class PriceCalculations {
     public static Money calculateSubtotal(List<OrderItem> items) { ... }
     public static Money applyDiscount(Money subtotal, Discount discount) { ... }
     public static Money applyTax(Money amount, TaxRate taxRate) { ... }
+    public static Money applyShipping(Money amount, ShippingFee fee) { ... }
 
     // 통합
     public static Money calculateTotal(

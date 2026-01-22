@@ -142,7 +142,12 @@ Money total2 = orderTotals.parallelStream()
 **Code 7.3**: 결합법칙을 만족하는 Cart 병합
 ```java
 // 장바구니 아이템도 결합법칙 적용 가능
-public record CartItem(ProductId productId, Quantity quantity, Money price) {}
+public record CartItem(ProductId productId, Quantity quantity, Money price) {
+    // Wither 메서드: 수량을 더한 새 CartItem 반환
+    public CartItem addQuantity(Quantity additional) {
+        return new CartItem(productId, quantity.add(additional), price);
+    }
+}
 
 public record Cart(List<CartItem> items) {
 
@@ -336,13 +341,15 @@ public class DiscountCalculator {
         };
     }
 
-    // 여러 할인을 순차 적용 (결합법칙 덕분에 병렬화 가능)
+    // 여러 할인을 순차 적용
     public static Money applyAll(Money original, List<Discount> discounts) {
         return discounts.stream()
             .reduce(
                 original,
                 (money, discount) -> apply(money, discount),
-                (m1, m2) -> m1  // 병렬 스트림에서 사용
+                (m1, m2) -> m1  // combiner: 순차 스트림에서는 호출되지 않음
+                                // 병렬 스트림 사용 시에는 할인 적용 순서가
+                                // 보장되지 않으므로 순차 스트림 권장
             );
     }
 }

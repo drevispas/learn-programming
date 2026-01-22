@@ -314,7 +314,10 @@ public record Order(
     }
 }
 
-// 사용
+// 사용 (OrderStatus sealed interface는 Chapter 3 참조)
+// sealed interface OrderStatus permits Unpaid, Paid, ... {}
+// record Unpaid() implements OrderStatus {}
+// record Paid(LocalDateTime at, PaymentId id) implements OrderStatus {}
 Order unpaidOrder = new Order(id, customerId, items, total, new Unpaid());
 Order paidOrder = unpaidOrder.withStatus(new Paid(LocalDateTime.now(), paymentId));
 // unpaidOrder는 여전히 Unpaid 상태 (불변)

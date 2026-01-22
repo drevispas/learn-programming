@@ -136,7 +136,9 @@ public Result<Order, OrderError> processOrder(OrderRequest request) {
     TaxRate taxRate = taxService.getCurrentRate();
 
     // === Meat: 비즈니스 로직 (Pure) ===
-    Money total = OrderCalculations.calculateTotal(request.items(), coupon, taxRate);
+    Money subtotal = OrderCalculations.calculateTotal(request.items());  // Code 6.1의 함수
+    Money discounted = coupon.map(c -> subtotal.applyDiscount(c)).orElse(subtotal);
+    Money total = discounted.applyTax(taxRate);
     Order order = OrderCalculations.createOrder(user.id(), request.items(), total);
 
     // === Bottom Bun: 부수효과 (Impure) ===

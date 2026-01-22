@@ -147,7 +147,7 @@ public class Order {
 
     public Money calculateTotal() {  // 로직이 Entity에
         return items.stream()
-            .map(OrderItem::getPrice)
+            .map(OrderItem::getPrice)  // OOP 클래스: getXxx() 스타일
             .reduce(Money.ZERO, Money::add);
     }
 
@@ -165,7 +165,7 @@ public record OrderData(Long id, OrderStatus status, List<OrderItem> items) {}
 public class OrderService {
     public Money calculateTotal(OrderData order) {
         return order.items().stream()
-            .map(OrderItem::price)
+            .map(OrderItem::price)  // Record: xxx() 스타일 (get 접두사 없음)
             .reduce(Money.ZERO, Money::add);
     }
 

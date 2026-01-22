@@ -149,6 +149,8 @@ case Rule.GTE(var attr, var threshold) -> switch (attr) {
 
 **Code 8.5**: 복잡한 할인 규칙 예제
 ```java
+// Rule은 sealed interface이고 Equals, And, Or, Not, GTE는 중첩 record
+// (Code 8.1~8.4 참조: sealed interface Rule { record Equals(...); ... })
 Rule krDiscountRule = new Rule.And(
     new Rule.Equals("country", "KR"),
     new Rule.Or(

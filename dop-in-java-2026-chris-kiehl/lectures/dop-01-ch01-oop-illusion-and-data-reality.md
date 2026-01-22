@@ -299,8 +299,8 @@ public class OrderCalculations {
 }
 
 // 사용할 때
-Order order = new Order(id, List.of(item1, item2), Money.ZERO);
-Money total = OrderCalculations.calculateTotal(order.items());
+Money total = OrderCalculations.calculateTotal(List.of(item1, item2));
+Order order = new Order(id, List.of(item1, item2), total);  // 계산된 값으로 생성
 ```
 
 > **💡 Q&A: 그럼 Value Object(Money, Email 등)도 만들면 안 되나요?**
@@ -567,7 +567,7 @@ public class OrderService {
         }
 
         // 3. 금액 계산 (쿠폰 할인 적용)
-        BigDecimal total = calculateTotal(request.getItems());
+        BigDecimal total = calculateTotal(request.getItems());  // 클래스 내 private 메서드 (생략)
         BigDecimal discounted = coupon.apply(total);
 
         // 4. 주문 생성

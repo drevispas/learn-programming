@@ -177,6 +177,14 @@ public sealed interface Result<S, F> {
             case Failure(var error) -> onFailure.apply(error);
         };
     }
+
+    // 기본값 반환
+    default S getOrElse(S defaultValue) {
+        return switch (this) {
+            case Success(var value) -> value;
+            case Failure(var error) -> defaultValue;
+        };
+    }
 }
 ```
 
@@ -205,6 +213,7 @@ sealed interface OrderError {
 **Code 5.5**: Result를 활용한 파이프라인 조합
 ```java
 // 파이프라인 조합
+// 주의: __ (언더스코어 2개)는 Java 22+ 미사용 변수 패턴 (JEP 456)
 public Result<Order, OrderError> createOrder(CreateOrderRequest request) {
     return findUser(request.userId())
         .flatMap(user -> findProduct(request.productId())

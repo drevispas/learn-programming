@@ -207,6 +207,11 @@ public enum DeliveryStatus {
 
     private final String trackingNumber;  // 모든 필드를 가져야 함
     private final LocalDateTime deliveredAt;
+
+    DeliveryStatus(String trackingNumber, LocalDateTime deliveredAt) {
+        this.trackingNumber = trackingNumber;
+        this.deliveredAt = deliveredAt;
+    }
 }
 ```
 
