@@ -82,7 +82,10 @@ public record Money(
             throw new IllegalArgumentException("금액은 0 이상이어야 합니다: " + amount);
         }
         // [Key Point] 통화별 소수점 정규화
-        amount = amount.setScale(currency.decimalPlaces(), RoundingMode.HALF_UP);
+        // [Why HALF_EVEN?] Banker's Rounding - 금융 표준 반올림 방식
+        // - HALF_UP은 대량 거래 시 한쪽에 유리한 통계적 편향 발생
+        // - HALF_EVEN은 0.5일 때 짝수 방향으로 반올림하여 편향 제거
+        amount = amount.setScale(currency.decimalPlaces(), RoundingMode.HALF_EVEN);
     }
 
     // ============================================

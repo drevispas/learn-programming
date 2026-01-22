@@ -47,6 +47,12 @@ public final class Email<S> {
 
     /**
      * 미검증 상태 마커
+     *
+     * <p>[Why Impl?] sealed interface는 반드시 permitted 구현체가 필요 (Java 문법 제약)</p>
+     * <ul>
+     *   <li>sealed: 외부에서 {@code class X implements Unverified} 방지 → 타입 안전성 보장</li>
+     *   <li>private Impl: 외부 인스턴스화 방지 → Phantom Type은 런타임에 존재하지 않음</li>
+     * </ul>
      */
     public sealed interface Unverified permits UnverifiedImpl {}
     private static final class UnverifiedImpl implements Unverified {}
