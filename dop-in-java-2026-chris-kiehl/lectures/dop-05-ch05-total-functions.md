@@ -27,38 +27,9 @@
 
 ### 부분함수 vs 전체함수 흐름도
 
-```
-┌───────────────────────────────────────────────────────────────────────┐
-│                  Partial Function vs Total Function                   │
-├───────────────────────────────────┬───────────────────────────────────┤
-│     [X] Partial Function          │     [O] Total Function            │
-├───────────────────────────────────┼───────────────────────────────────┤
-│                                   │                                   │
-│  Signature:                       │  Signature:                       │
-│  User findUser(id)                │  Result<User,Error> findUser(id)  │
-│                                   │                                   │
-│       ┌───────┐                   │       ┌───────┐                   │
-│       │ Input │                   │       │ Input │                   │
-│       │  id   │                   │       │  id   │                   │
-│       └───┬───┘                   │       └───┬───┘                   │
-│           │                       │           │                       │
-│           v                       │           v                       │
-│    ┌──────────────┐               │    ┌──────────────┐               │
-│    │  findUser()  │               │    │  findUser()  │               │
-│    └──────┬───────┘               │    └──────┬───────┘               │
-│           │                       │           │                       │
-│     ┌─────┴─────┐                 │     ┌─────┴─────┐                 │
-│     v           v                 │     v           v                 │
-│ ┌──────┐   ┌──────────┐           │ ┌────────┐ ┌─────────┐            │
-│ │ User │   │Exception!│           │ │Success │ │ Failure │            │
-│ │return│   │ (hidden) │           │ │ (User) │ │ (Error) │            │
-│ └──────┘   └──────────┘           │ └────────┘ └─────────┘            │
-│     ^           ^                 │     ^           ^                 │
-│  Caller      Not in               │  All results declared in type     │
-│  unaware   signature!             │  Handle without missing cases!    │
-│                                   │                                   │
-└───────────────────────────────────┴───────────────────────────────────┘
-```
+**Figure 5.1**: Partial Function vs Total Function
+
+![alt text](images/fig_5_1_partial_function_vs_total_function.png)
 
 ### 시그니처가 거짓말을 한다
 

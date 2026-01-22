@@ -206,34 +206,9 @@ public String getStatusMessage(UserEmail email) {
 
 ### 상태 전이 다이어그램
 
-```
-┌───────────────────────────────────────────────────────────────────────┐
-│                   Order State Transition Diagram                      │
-├───────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│                          ┌──────────┐                                 │
-│                          │  Unpaid  │                                 │
-│                          └────┬─────┘                                 │
-│                     pay()│          │cancel()                         │
-│                          v          v                                 │
-│                   ┌──────────┐  ┌───────────┐                         │
-│                   │   Paid   │  │ Canceled  │                         │
-│                   └────┬─────┘  └───────────┘                         │
-│                        │                                              │
-│                        │ship()                                        │
-│                        v                                              │
-│                   ┌──────────┐                                        │
-│                   │ Shipped  │   [X] Cannot cancel() from Paid        │
-│                   └────┬─────┘   [X] Cannot cancel() from Shipped     │
-│                        │         [X] No transitions from Canceled     │
-│                        │deliver()                                     │
-│                        v                                              │
-│                   ┌───────────┐                                       │
-│                   │ Delivered │  -> Type system blocks invalid        │
-│                   └───────────┘     transitions with compile error!   │
-│                                                                       │
-└───────────────────────────────────────────────────────────────────────┘
-```
+**Figure 4.1**: Order State Transition Diagram
+
+![alt text](images/fig_4_1_order_state_transition_diagram.png)
 
 **Code 4.7**: 상태 전이 메서드 - 가능한 전이만 정의
 ```java

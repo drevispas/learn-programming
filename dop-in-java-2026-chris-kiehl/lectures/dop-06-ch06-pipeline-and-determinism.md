@@ -73,15 +73,8 @@ public Money calculateTotal(List<OrderItem> items) {
 > Mock 없이도 테스트할 수 있고, I/O를 명확히 격리할 수 있습니다.
 
 **Figure 6.1**: Sandwich Architecture Structure
-```
-┌─────────────────────────────────────┐
-│  Top Bun (Impure): Gather Data      │  <- DB query, API call
-├─────────────────────────────────────┤
-│  Meat (Pure): Cook                  │  <- Business logic (pure function)
-├─────────────────────────────────────┤
-│  Bottom Bun (Impure): Serve         │  <- DB save, send notification
-└─────────────────────────────────────┘
-```
+
+![alt text](images/fig_6_1_sandwich_architecture_structure.png)
 
 > **Visual Reference - Sandwich Architecture (Functional Core / Imperative Shell):**
 > ![Functional Core Imperative Shell](https://kennethlange.com/wp-content/uploads/2020/04/Functional-Core-Imperative-Shell.png)
