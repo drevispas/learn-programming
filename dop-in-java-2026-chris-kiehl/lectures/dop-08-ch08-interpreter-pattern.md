@@ -71,6 +71,23 @@ public sealed interface Rule {
     record Or(Rule left, Rule right) implements Rule {}
     record Not(Rule rule) implements Rule {}
 }
+
+// evaluate()도 새 case 추가
+public static boolean evaluate(Rule rule, Customer customer) {
+    return switch (rule) {
+        case Rule.Equals(var attr, var value) -> switch (attr) {
+            case "country" -> customer.country().equals(value);
+            case "type" -> customer.type().equals(value);
+            default -> false;
+        };
+        case Rule.And(var left, var right) ->
+            evaluate(left, customer) && evaluate(right, customer);
+        case Rule.Or(var left, var right) ->
+            evaluate(left, customer) || evaluate(right, customer);
+        case Rule.Not(var inner) ->
+            !evaluate(inner, customer);
+    };
+}
 ```
 
 ### Step 3: GTE 조건 추가 - 흔한 실수 사례 ⭐

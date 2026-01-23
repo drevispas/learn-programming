@@ -143,6 +143,22 @@ public record Cart(List<CartItem> items) {
 // 순서 상관없이 병합 가능!
 ```
 
+> **💡 `Map.merge()` 동작 방식:**
+>
+> ```java
+> merged.merge(key, value, remappingFunction)
+> ```
+> - **key가 없으면**: `value`를 그대로 put
+> - **key가 있으면**: `remappingFunction.apply(기존값, 새값)`의 결과를 put
+>
+> 위 코드에서의 동작:
+> ```java
+> merged.merge(item.productId(), item,
+>     (existing, newItem) -> existing.addQuantity(newItem.quantity()));
+> ```
+> - 같은 `productId`가 없으면 → `item`을 그대로 저장
+> - 같은 `productId`가 있으면 → 기존 아이템에 수량을 합산한 새 CartItem 반환
+
 ---
 
 ## 7.3 멱등성 (Idempotence)
@@ -200,6 +216,21 @@ public void processPayment(PaymentId id, PaymentRequest request) {
 retryOnFailure(() -> processPayment(paymentId, request));
 ```
 
+> **💡 Q&A: 모든 Application Service를 멱등하게 만들어야 하나요?**
+>
+> **원칙적으로는 Yes** — 특히 분산 시스템에서는 네트워크 재시도가 불가피합니다.
+>
+> **실무적 우선순위:**
+> | 우선순위 | 대상 | 이유 |
+> |---------|------|------|
+> | 필수 | 결제, 포인트 차감, 재고 감소 | 중복 실행 시 금전적 손실 |
+> | 권장 | 주문 상태 변경, 알림 발송 | 중복 실행 시 사용자 혼란 |
+> | 선택 | 로그 기록, 조회 API | 중복 실행해도 실질적 피해 없음 |
+>
+> **비용**: 멱등성 키 저장/조회에 따른 DB 부하, 코드 복잡도 증가
+>
+> **결론**: 부수효과가 있는 쓰기 연산(CUD)은 멱등하게, 읽기 연산(R)은 이미 멱등합니다.
+
 ### 이커머스 예제: 멱등한 주문 상태 변경
 
 **Code 7.6**: 멱등한 주문 상태 변경
@@ -256,10 +287,26 @@ public class OrderStateMachine {
 // 항등원이 있으면 reduce가 안전해짐
 List<Money> payments = Collections.emptyList();
 
-// 항등원과 함께 reduce하면 안전
+// ❌ 항등원 없이 reduce → 빈 리스트에서 예외 발생!
+Money total = payments.stream()
+    .reduce(Money::add)       // Optional<Money> 반환
+    .orElseThrow();           // NoSuchElementException!
+
+// ✅ 항등원과 함께 reduce → 빈 리스트에도 안전
 Money total = payments.stream()
     .reduce(Money.zero(Currency.KRW), Money::add);
-// 결과: 0원 (항등원)
+// 결과: 0원 (항등원) — 예외 없음
+
+// 실전 예: 주문의 부분 결제 합산
+public static Money totalPaid(Order order) {
+    // 부분 결제가 없어도 (빈 리스트) 0원을 안전하게 반환
+    return order.payments().stream()
+        .map(Payment::amount)
+        .reduce(Money.zero(order.currency()), Money::add);
+}
+
+Money remaining = order.total().subtract(totalPaid(order));
+// 결제 내역이 없으면: total - 0원 = total (자연스러운 결과)
 ```
 
 ---

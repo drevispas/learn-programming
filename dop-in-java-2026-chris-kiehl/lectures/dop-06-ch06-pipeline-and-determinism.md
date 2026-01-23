@@ -26,7 +26,7 @@
 // 결정론적 함수 (순수 함수)
 public static Money calculateTotal(List<OrderItem> items) {
     return items.stream()
-        .map(item -> item.unitPrice().multiply(item.quantity().value()))
+        .map(item -> item.unitPrice().multiply(item.quantity()))
         .reduce(Money.zero(), Money::add);
 }
 ```
@@ -38,10 +38,25 @@ public Money calculateTotal(List<OrderItem> items) {
     // 외부 상태(taxRate) 참조 - 비결정론적
     TaxRate taxRate = taxService.getCurrentRate();
     return items.stream()
-        .map(item -> item.unitPrice().multiply(item.quantity().value()))
+        .map(item -> item.unitPrice().multiply(item.quantity()))
         .reduce(Money.zero(), Money::add)
         .applyTax(taxRate);
 }
+```
+
+**Code 6.2b**: 결정론적으로 변환 (TaxRate를 파라미터로 전달)
+```java
+// 결정론적으로 변환: 외부 의존성을 파라미터로 받음
+public static Money calculateTotal(List<OrderItem> items, TaxRate taxRate) {
+    return items.stream()
+        .map(item -> item.unitPrice().multiply(item.quantity()))
+        .reduce(Money.zero(), Money::add)
+        .applyTax(taxRate);
+}
+
+// 호출부에서 I/O를 수행하고, 순수 함수에 값을 전달
+TaxRate taxRate = taxService.getCurrentRate();  // I/O는 바깥에서
+Money total = calculateTotal(items, taxRate);    // 순수 함수 호출
 ```
 
 ### 비유: 자판기 vs 바리스타
@@ -99,6 +114,9 @@ public Order processOrder(OrderRequest request) {
     }
 
     Money total = calculateTotal(request.items());
+    if (request.coupon().isPresent()) {
+        total = total.applyDiscount(request.coupon().get());  // I/O 결과에 의존!
+    }
     TaxRate taxRate = taxService.getCurrentRate();  // I/O in middle!
     total = total.applyTax(taxRate);
 
@@ -141,6 +159,15 @@ public Result<Order, OrderError> processOrder(OrderRequest request) {
     return Result.success(savedOrder);
 }
 ```
+
+> **💡 Code 6.3 → 6.4 핵심 변경점:**
+>
+> | 관점 | Code 6.3 (안티패턴) | Code 6.4 (샌드위치) |
+> |------|---------------------|---------------------|
+> | I/O 위치 | 로직 중간에 산재 (`couponService`, `taxService`) | 최상단에 모두 수집 |
+> | 비즈니스 로직 | I/O 호출과 뒤섞여 테스트 불가 | 순수 함수 호출만으로 구성 (Mock 불필요) |
+> | 부수효과 | `save()` 전후로 로직이 섞임 | 최하단에 격리 (`save`, `notify`) |
+> | 테스트 방법 | DB, API Mock 필수 | Meat 영역만 단위 테스트 가능 |
 
 ---
 
