@@ -18,6 +18,7 @@
 
   메서드 레퍼런스(`String::length`)는 단순 위임에서 람다보다 간결하고, 변환이나 조합이 필요할 때는 람다(`x -> x.length() + 1`)가 적합하다.
 
+**[그림 08.1]** 일급 함수 (First-Class Functions)
 ```
 +-------------------------------------------------------------------+
 |                  일급 함수 = 값처럼 다루는 함수                       |
@@ -41,41 +42,44 @@
 - **모든 인터페이스에 사용 가능**: 반드시 추상 메서드가 하나인 Functional Interface여야 한다.
 
 ### Before: Traditional OOP
+
+**[코드 08.1]** Traditional OOP: Strategy Pattern을 위해 인터페이스 + 구현 클래스 필요
 ```java
-// [X] Strategy Pattern을 위해 인터페이스 + 구현 클래스 필요
-interface Formatter {
-    String format(String input);
-}
-
-class UpperCaseFormatter implements Formatter {
-    @Override
-    public String format(String input) {
-        return input.toUpperCase();
-    }
-}
-
-class TrimFormatter implements Formatter {
-    @Override
-    public String format(String input) {
-        return input.trim();
-    }
-}
-
-public class TextProcessor {
-    private final List<Formatter> formatters;
-
-    public TextProcessor(List<Formatter> formatters) {
-        this.formatters = formatters;
-    }
-
-    public String process(String text) {
-        String result = text;
-        for (Formatter f : formatters) {
-            result = f.format(result);
-        }
-        return result;
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [X] Strategy Pattern을 위해 인터페이스 + 구현 클래스 필요
+ 3| interface Formatter {
+ 4|   String format(String input);
+ 5| }
+ 6| 
+ 7| class UpperCaseFormatter implements Formatter {
+ 8|   @Override
+ 9|   public String format(String input) {
+10|     return input.toUpperCase();
+11|   }
+12| }
+13| 
+14| class TrimFormatter implements Formatter {
+15|   @Override
+16|   public String format(String input) {
+17|     return input.trim();
+18|   }
+19| }
+20| 
+21| public class TextProcessor {
+22|   private final List<Formatter> formatters;
+23| 
+24|   public TextProcessor(List<Formatter> formatters) {
+25|     this.formatters = formatters;
+26|   }
+27| 
+28|   public String process(String text) {
+29|     String result = text;
+30|     for (Formatter f : formatters) {
+31|       result = f.format(result);
+32|     }
+33|     return result;
+34|   }
+35| }
 ```
 - **의도 및 코드 설명**: 텍스트를 여러 단계로 포맷팅하기 위해 Strategy 패턴을 사용한다. 각 포맷 전략을 인터페이스와 구현 클래스로 분리한다.
 - **뭐가 문제인가**:
@@ -85,40 +89,43 @@ public class TextProcessor {
   - 코드량 대비 실제 로직이 차지하는 비율이 극히 낮음
 
 ### After: Modern Approach
+
+**[코드 08.2]** Modern: 함수를 값으로 다뤄서 전략을 인라인으로 정의
 ```java
-// [O] 함수를 값으로 다뤄서 전략을 인라인으로 정의
-import java.util.function.UnaryOperator;
-import java.util.List;
-
-public class TextProcessor {
-    private final List<UnaryOperator<String>> formatters;
-
-    public TextProcessor(List<UnaryOperator<String>> formatters) {
-        this.formatters = formatters;
-    }
-
-    public String process(String text) {
-        String result = text;
-        for (var f : formatters) {
-            result = f.apply(result);
-        }
-        return result;
-    }
-
-    public static void main(String[] args) {
-        // 함수를 변수에 저장
-        UnaryOperator<String> trim = String::trim;
-        UnaryOperator<String> upper = String::toUpperCase;
-        UnaryOperator<String> exclaim = s -> s + "!";
-
-        // 함수를 컬렉션에 담기
-        var processor = new TextProcessor(List.of(trim, upper, exclaim));
-
-        // 함수를 인자로 전달
-        System.out.println(processor.process("  hello world  "));
-        // 출력: "HELLO WORLD!"
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [O] 함수를 값으로 다뤄서 전략을 인라인으로 정의
+ 3| import java.util.function.UnaryOperator;
+ 4| import java.util.List;
+ 5| 
+ 6| public class TextProcessor {
+ 7|   private final List<UnaryOperator<String>> formatters;
+ 8| 
+ 9|   public TextProcessor(List<UnaryOperator<String>> formatters) {
+10|     this.formatters = formatters;
+11|   }
+12| 
+13|   public String process(String text) {
+14|     String result = text;
+15|     for (var f : formatters) {
+16|       result = f.apply(result);
+17|     }
+18|     return result;
+19|   }
+20| 
+21|   public static void main(String[] args) {
+22|     // 함수를 변수에 저장
+23|     UnaryOperator<String> trim = String::trim;
+24|     UnaryOperator<String> upper = String::toUpperCase;
+25|     UnaryOperator<String> exclaim = s -> s + "!";
+26| 
+27|     // 함수를 컬렉션에 담기
+28|     var processor = new TextProcessor(List.of(trim, upper, exclaim));
+29| 
+30|     // 함수를 인자로 전달
+31|     System.out.println(processor.process("  hello world  "));
+32|     // 출력: "HELLO WORLD!"
+33|   }
+34| }
 ```
 - **의도 및 코드 설명**: `UnaryOperator<String>`을 활용해 변환 함수를 일급 값으로 다룬다. 메서드 레퍼런스와 람다로 전략을 인라인 정의한다.
 - **무엇이 좋아지나**:
@@ -129,6 +136,8 @@ public class TextProcessor {
 
 ### 이해를 위한 부가 상세
 Java의 주요 Functional Interface 정리:
+
+**[표 08.1]** 일급 함수 (First-Class Functions)
 | Interface | 시그니처 | 용도 |
 |-----------|----------|------|
 | `Function<T,R>` | `T -> R` | 변환 |
@@ -162,6 +171,7 @@ Java의 주요 Functional Interface 정리:
 
   또한 고차 함수는 의도를 명확히 표현한다. `filter`를 보면 "골라내기"임을 즉시 알 수 있고, `map`을 보면 "변환"임을 알 수 있다.
 
+**[그림 08.2]** 고차 함수 (Higher-Order Functions)
 ```
 +-------------------------------------------------------------------+
 |                  고차 함수의 세 가지 핵심 연산                        |
@@ -185,39 +195,42 @@ Java의 주요 Functional Interface 정리:
 - **콜백과 동일**: 콜백은 고차 함수의 한 활용이지만, 고차 함수는 더 넓은 개념이다(데코레이터, 합성 등 포함).
 
 ### Before: Traditional OOP
+
+**[코드 08.3]** Traditional OOP: 매번 for 루프를 복붙하며 로직 변경
 ```java
-// [X] 매번 for 루프를 복붙하며 로직 변경
-public class OrderService {
-    public BigDecimal getTotalPaidAmount(List<Order> orders) {
-        BigDecimal total = BigDecimal.ZERO;
-        for (Order order : orders) {
-            if (order.isPaid()) {
-                total = total.add(order.amount());
-            }
-        }
-        return total;
-    }
-
-    public List<String> getPaidProductNames(List<Order> orders) {
-        List<String> names = new ArrayList<>();
-        for (Order order : orders) {
-            if (order.isPaid()) {
-                names.add(order.productName());
-            }
-        }
-        return names;
-    }
-
-    public int countUnpaidOrders(List<Order> orders) {
-        int count = 0;
-        for (Order order : orders) {
-            if (!order.isPaid()) {
-                count++;
-            }
-        }
-        return count;
-    }
-}
+ 1| // package: com.ecommerce.order
+ 2| // [X] 매번 for 루프를 복붙하며 로직 변경
+ 3| public class OrderService {
+ 4|   public BigDecimal getTotalPaidAmount(List<Order> orders) {
+ 5|     BigDecimal total = BigDecimal.ZERO;
+ 6|     for (Order order : orders) {
+ 7|       if (order.isPaid()) {
+ 8|         total = total.add(order.amount());
+ 9|       }
+10|     }
+11|     return total;
+12|   }
+13| 
+14|   public List<String> getPaidProductNames(List<Order> orders) {
+15|     List<String> names = new ArrayList<>();
+16|     for (Order order : orders) {
+17|       if (order.isPaid()) {
+18|         names.add(order.productName());
+19|       }
+20|     }
+21|     return names;
+22|   }
+23| 
+24|   public int countUnpaidOrders(List<Order> orders) {
+25|     int count = 0;
+26|     for (Order order : orders) {
+27|       if (!order.isPaid()) {
+28|         count++;
+29|       }
+30|     }
+31|     return count;
+32|   }
+33| }
 ```
 - **의도 및 코드 설명**: 결제된 주문의 총액, 결제된 상품명 목록, 미결제 주문 수를 각각 구한다. 매번 for 루프와 조건문을 반복한다.
 - **뭐가 문제인가**:
@@ -227,42 +240,45 @@ public class OrderService {
   - 새로운 집계 기능 추가 시 동일한 보일러플레이트 재생산
 
 ### After: Modern Approach
+
+**[코드 08.4]** Modern: 고차 함수로 "무엇을"과 "어떻게"를 분리
 ```java
-// [O] 고차 함수로 "무엇을"과 "어떻게"를 분리
-import java.util.function.*;
-import java.util.stream.*;
-import java.math.BigDecimal;
-
-public class OrderService {
-    record Order(Long id, String productName, BigDecimal amount, boolean paid) {
-        public boolean isPaid() { return paid; }
-    }
-
-    public BigDecimal getTotalPaidAmount(List<Order> orders) {
-        return orders.stream()
-            .filter(Order::isPaid)
-            .map(Order::amount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    public List<String> getPaidProductNames(List<Order> orders) {
-        return orders.stream()
-            .filter(Order::isPaid)
-            .map(Order::productName)
-            .toList();
-    }
-
-    public long countUnpaidOrders(List<Order> orders) {
-        return orders.stream()
-            .filter(Predicate.not(Order::isPaid))
-            .count();
-    }
-
-    // 직접 고차 함수 정의: 함수를 반환하는 함수
-    public static <T> Predicate<T> not(Predicate<T> p) {
-        return t -> !p.test(t);
-    }
-}
+ 1| // package: com.ecommerce.order
+ 2| // [O] 고차 함수로 "무엇을"과 "어떻게"를 분리
+ 3| import java.util.function.*;
+ 4| import java.util.stream.*;
+ 5| import java.math.BigDecimal;
+ 6| 
+ 7| public class OrderService {
+ 8|   record Order(Long id, String productName, BigDecimal amount, boolean paid) {
+ 9|     public boolean isPaid() { return paid; }
+10|   }
+11| 
+12|   public BigDecimal getTotalPaidAmount(List<Order> orders) {
+13|     return orders.stream()
+14|       .filter(Order::isPaid)
+15|       .map(Order::amount)
+16|       .reduce(BigDecimal.ZERO, BigDecimal::add);
+17|   }
+18| 
+19|   public List<String> getPaidProductNames(List<Order> orders) {
+20|     return orders.stream()
+21|       .filter(Order::isPaid)
+22|       .map(Order::productName)
+23|       .toList();
+24|   }
+25| 
+26|   public long countUnpaidOrders(List<Order> orders) {
+27|     return orders.stream()
+28|       .filter(Predicate.not(Order::isPaid))
+29|       .count();
+30|   }
+31| 
+32|   // 직접 고차 함수 정의: 함수를 반환하는 함수
+33|   public static <T> Predicate<T> not(Predicate<T> p) {
+34|     return t -> !p.test(t);
+35|   }
+36| }
 ```
 - **의도 및 코드 설명**: Stream API의 고차 함수(filter, map, reduce)를 활용해 동일한 로직을 선언적으로 표현한다. 각 연산이 의도를 직접 드러낸다.
 - **무엇이 좋아지나**:
@@ -273,17 +289,20 @@ public class OrderService {
 
 ### 이해를 위한 부가 상세
 고차 함수를 직접 정의하면 도메인 특화 추상화를 만들 수 있다:
+
+**[코드 08.5]** 함수를 인자로 받아 로깅을 추가하는 데코레이터 고차 함수
 ```java
-// 함수를 인자로 받아 로깅을 추가하는 데코레이터 고차 함수
-public static <T, R> Function<T, R> withLogging(
-        String label, Function<T, R> fn) {
-    return input -> {
-        System.out.println("[" + label + "] input: " + input);
-        R result = fn.apply(input);
-        System.out.println("[" + label + "] output: " + result);
-        return result;
-    };
-}
+ 1| // package: com.ecommerce.order
+ 2| // 함수를 인자로 받아 로깅을 추가하는 데코레이터 고차 함수
+ 3| public static <T, R> Function<T, R> withLogging(
+ 4|     String label, Function<T, R> fn) {
+ 5|   return input -> {
+ 6|     System.out.println("[" + label + "] input: " + input);
+ 7|     R result = fn.apply(input);
+ 8|     System.out.println("[" + label + "] output: " + result);
+ 9|     return result;
+10|   };
+11| }
 ```
 
 ### 틀리기/놓치기 쉬운 부분
@@ -310,6 +329,7 @@ map-filter-reduce는 함수형 프로그래밍의 "삼신기"이다. 이 세 고
 
   Effectively final 제약은 FP 원칙(불변성, 참조 투명성)을 컴파일 타임에 강제하는 Java의 안전장치이다.
 
+**[그림 08.3]** 클로저 (Closures)
 ```
 +-------------------------------------------------------------------+
 |                  클로저 = 환경을 캡처한 함수                          |
@@ -336,27 +356,30 @@ map-filter-reduce는 함수형 프로그래밍의 "삼신기"이다. 이 세 고
 - **this 참조**: 인스턴스 메서드에서 this를 사용하는 것은 클로저 개념과 다르다. 클로저는 자유 변수(free variable)의 바인딩이다.
 
 ### Before: Traditional OOP
+
+**[코드 08.6]** Traditional OOP: 설정값마다 별도 클래스를 만들어야 함
 ```java
-// [X] 설정값마다 별도 클래스를 만들어야 함
-interface DiscountCalculator {
-    BigDecimal calculate(BigDecimal price);
-}
-
-class TenPercentDiscount implements DiscountCalculator {
-    @Override
-    public BigDecimal calculate(BigDecimal price) {
-        return price.multiply(new BigDecimal("0.90"));
-    }
-}
-
-class TwentyPercentDiscount implements DiscountCalculator {
-    @Override
-    public BigDecimal calculate(BigDecimal price) {
-        return price.multiply(new BigDecimal("0.80"));
-    }
-}
-
-// 할인율 10가지면 클래스 10개 필요!
+ 1| // package: com.ecommerce.coupon
+ 2| // [X] 설정값마다 별도 클래스를 만들어야 함
+ 3| interface DiscountCalculator {
+ 4|   BigDecimal calculate(BigDecimal price);
+ 5| }
+ 6| 
+ 7| class TenPercentDiscount implements DiscountCalculator {
+ 8|   @Override
+ 9|   public BigDecimal calculate(BigDecimal price) {
+10|     return price.multiply(new BigDecimal("0.90"));
+11|   }
+12| }
+13| 
+14| class TwentyPercentDiscount implements DiscountCalculator {
+15|   @Override
+16|   public BigDecimal calculate(BigDecimal price) {
+17|     return price.multiply(new BigDecimal("0.80"));
+18|   }
+19| }
+20| 
+21| // 할인율 10가지면 클래스 10개 필요!
 ```
 - **의도 및 코드 설명**: 할인율별 계산기를 만들기 위해 각각 클래스로 구현한다.
 - **뭐가 문제인가**:
@@ -365,37 +388,40 @@ class TwentyPercentDiscount implements DiscountCalculator {
   - 로직은 동일한데 설정값만 다름 -- 중복의 극치
 
 ### After: Modern Approach
+
+**[코드 08.7]** Modern: 클로저로 설정값을 캡처한 함수 생성
 ```java
-// [O] 클로저로 설정값을 캡처한 함수 생성
-import java.math.BigDecimal;
-import java.util.function.Function;
-
-public class DiscountFactory {
-
-    // 클로저: discountRate를 캡처하여 "설정된 함수"를 반환
-    public static Function<BigDecimal, BigDecimal> createDiscounter(BigDecimal discountRate) {
-        // discountRate는 effectively final -- 클로저에 캡처됨
-        BigDecimal multiplier = BigDecimal.ONE.subtract(discountRate);
-        return price -> price.multiply(multiplier);
-    }
-
-    // 이벤트 핸들러 팩토리: userId를 캡처
-    public static Runnable createGreeter(String userId, String message) {
-        // userId와 message가 캡처됨
-        return () -> System.out.println("To " + userId + ": " + message);
-    }
-
-    public static void main(String[] args) {
-        // 할인율 N개도 클래스 생성 없이 해결
-        var tenOff = createDiscounter(new BigDecimal("0.10"));
-        var twentyOff = createDiscounter(new BigDecimal("0.20"));
-        var vipDiscount = createDiscounter(new BigDecimal("0.30"));
-
-        System.out.println(tenOff.apply(new BigDecimal("10000")));    // 9000
-        System.out.println(twentyOff.apply(new BigDecimal("10000"))); // 8000
-        System.out.println(vipDiscount.apply(new BigDecimal("10000"))); // 7000
-    }
-}
+ 1| // package: com.ecommerce.coupon
+ 2| // [O] 클로저로 설정값을 캡처한 함수 생성
+ 3| import java.math.BigDecimal;
+ 4| import java.util.function.Function;
+ 5| 
+ 6| public class DiscountFactory {
+ 7| 
+ 8|   // 클로저: discountRate를 캡처하여 "설정된 함수"를 반환
+ 9|   public static Function<BigDecimal, BigDecimal> createDiscounter(BigDecimal discountRate) {
+10|     // discountRate는 effectively final -- 클로저에 캡처됨
+11|     BigDecimal multiplier = BigDecimal.ONE.subtract(discountRate);
+12|     return price -> price.multiply(multiplier);
+13|   }
+14| 
+15|   // 이벤트 핸들러 팩토리: userId를 캡처
+16|   public static Runnable createGreeter(String userId, String message) {
+17|     // userId와 message가 캡처됨
+18|     return () -> System.out.println("To " + userId + ": " + message);
+19|   }
+20| 
+21|   public static void main(String[] args) {
+22|     // 할인율 N개도 클래스 생성 없이 해결
+23|     var tenOff = createDiscounter(new BigDecimal("0.10"));
+24|     var twentyOff = createDiscounter(new BigDecimal("0.20"));
+25|     var vipDiscount = createDiscounter(new BigDecimal("0.30"));
+26| 
+27|     System.out.println(tenOff.apply(new BigDecimal("10000")));    // 9000
+28|     System.out.println(twentyOff.apply(new BigDecimal("10000"))); // 8000
+29|     System.out.println(vipDiscount.apply(new BigDecimal("10000"))); // 7000
+30|   }
+31| }
 ```
 - **의도 및 코드 설명**: `createDiscounter`가 discountRate를 클로저로 캡처하여 할인 계산 함수를 반환한다. 설정값을 바꾸고 싶으면 인자만 변경하면 된다.
 - **무엇이 좋아지나**:
@@ -406,17 +432,20 @@ public class DiscountFactory {
 
 ### 이해를 위한 부가 상세
 Java의 effectively final 제약과 해결책:
-```java
-// 컴파일 에러: i는 변경되므로 effectively final이 아님
-for (int i = 0; i < 10; i++) {
-    executor.submit(() -> System.out.println(i)); // 에러!
-}
 
-// 해결: 루프 변수를 로컬 final로 복사
-for (int i = 0; i < 10; i++) {
-    final int captured = i;
-    executor.submit(() -> System.out.println(captured)); // OK
-}
+**[코드 08.8]** 컴파일 에러: i는 변경되므로 effectively final이 아님
+```java
+ 1| // package: com.ecommerce.shared
+ 2| // 컴파일 에러: i는 변경되므로 effectively final이 아님
+ 3| for (int i = 0; i < 10; i++) {
+ 4|   executor.submit(() -> System.out.println(i)); // 에러!
+ 5| }
+ 6| 
+ 7| // 해결: 루프 변수를 로컬 final로 복사
+ 8| for (int i = 0; i < 10; i++) {
+ 9|   final int captured = i;
+10|   executor.submit(() -> System.out.println(captured)); // OK
+11| }
 ```
 
 ### 틀리기/놓치기 쉬운 부분
@@ -443,6 +472,7 @@ for (int i = 0; i < 10; i++) {
 
   Java에서 커링된 함수의 타입은 `Function<A, Function<B, Function<C, D>>>`로 중첩되어 다소 장황하지만, 실제 사용은 직관적이다.
 
+**[그림 08.4]** 커링과 부분 적용 (Currying and Partial Application)
 ```
 +-------------------------------------------------------------------+
 |                  커링 = 한 칸씩 채우기                                |
@@ -468,21 +498,24 @@ for (int i = 0; i < 10; i++) {
 - **기본값 매개변수**: 기본값은 컴파일 타임에 고정되지만, 부분 적용은 런타임에 동적으로 특수화한다.
 
 ### Before: Traditional OOP
-```java
-// [X] 설정 조합마다 메서드를 오버로딩하거나 빌더를 만듦
-public class Logger {
-    public void log(String level, String module, String message) {
-        System.out.printf("[%s][%s] %s%n", level, module, message);
-    }
 
-    // 편의 메서드를 계속 추가...
-    public void info(String module, String message) { log("INFO", module, message); }
-    public void error(String module, String message) { log("ERROR", module, message); }
-    public void infoAuth(String message) { log("INFO", "AUTH", message); }
-    public void errorAuth(String message) { log("ERROR", "AUTH", message); }
-    public void infoPayment(String message) { log("INFO", "PAYMENT", message); }
-    // ... 조합 폭발!
-}
+**[코드 08.9]** Traditional OOP: 설정 조합마다 메서드를 오버로딩하거나 빌더를 만듦
+```java
+ 1| // package: com.ecommerce.shared
+ 2| // [X] 설정 조합마다 메서드를 오버로딩하거나 빌더를 만듦
+ 3| public class Logger {
+ 4|   public void log(String level, String module, String message) {
+ 5|     System.out.printf("[%s][%s] %s%n", level, module, message);
+ 6|   }
+ 7| 
+ 8|   // 편의 메서드를 계속 추가...
+ 9|   public void info(String module, String message) { log("INFO", module, message); }
+10|   public void error(String module, String message) { log("ERROR", module, message); }
+11|   public void infoAuth(String message) { log("INFO", "AUTH", message); }
+12|   public void errorAuth(String message) { log("ERROR", "AUTH", message); }
+13|   public void infoPayment(String message) { log("INFO", "PAYMENT", message); }
+14|   // ... 조합 폭발!
+15| }
 ```
 - **의도 및 코드 설명**: 로깅 시 레벨, 모듈, 메시지를 조합하기 위해 편의 메서드를 다수 생성한다.
 - **뭐가 문제인가**:
@@ -491,39 +524,42 @@ public class Logger {
   - 조합의 유연성이 제한됨
 
 ### After: Modern Approach
+
+**[코드 08.10]** Modern: 커링으로 범용 함수에서 특수화된 함수를 동적으로 파생
 ```java
-// [O] 커링으로 범용 함수에서 특수화된 함수를 동적으로 파생
-import java.util.function.Function;
-
-public class CurriedLogger {
-
-    // 커링된 로거: level -> module -> message -> void
-    public static Function<String, Function<String, java.util.function.Consumer<String>>>
-            log() {
-        return level -> module -> message ->
-            System.out.printf("[%s][%s] %s%n", level, module, message);
-    }
-
-    public static void main(String[] args) {
-        var curriedLog = log();
-
-        // 부분 적용: 레벨 고정
-        var infoLog = curriedLog.apply("INFO");
-        var errorLog = curriedLog.apply("ERROR");
-
-        // 부분 적용: 레벨 + 모듈 고정
-        var infoAuth = infoLog.apply("AUTH");
-        var errorPayment = errorLog.apply("PAYMENT");
-
-        // 최종 사용: 메시지만 전달
-        infoAuth.accept("사용자 로그인 성공");       // [INFO][AUTH] 사용자 로그인 성공
-        errorPayment.accept("결제 시간 초과");       // [ERROR][PAYMENT] 결제 시간 초과
-
-        // 새 모듈? 부분 적용 한 줄이면 됨
-        var infoOrder = infoLog.apply("ORDER");
-        infoOrder.accept("주문 생성됨");             // [INFO][ORDER] 주문 생성됨
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [O] 커링으로 범용 함수에서 특수화된 함수를 동적으로 파생
+ 3| import java.util.function.Function;
+ 4| 
+ 5| public class CurriedLogger {
+ 6| 
+ 7|   // 커링된 로거: level -> module -> message -> void
+ 8|   public static Function<String, Function<String, java.util.function.Consumer<String>>>
+ 9|       log() {
+10|     return level -> module -> message ->
+11|       System.out.printf("[%s][%s] %s%n", level, module, message);
+12|   }
+13| 
+14|   public static void main(String[] args) {
+15|     var curriedLog = log();
+16| 
+17|     // 부분 적용: 레벨 고정
+18|     var infoLog = curriedLog.apply("INFO");
+19|     var errorLog = curriedLog.apply("ERROR");
+20| 
+21|     // 부분 적용: 레벨 + 모듈 고정
+22|     var infoAuth = infoLog.apply("AUTH");
+23|     var errorPayment = errorLog.apply("PAYMENT");
+24| 
+25|     // 최종 사용: 메시지만 전달
+26|     infoAuth.accept("사용자 로그인 성공");       // [INFO][AUTH] 사용자 로그인 성공
+27|     errorPayment.accept("결제 시간 초과");       // [ERROR][PAYMENT] 결제 시간 초과
+28| 
+29|     // 새 모듈? 부분 적용 한 줄이면 됨
+30|     var infoOrder = infoLog.apply("ORDER");
+31|     infoOrder.accept("주문 생성됨");             // [INFO][ORDER] 주문 생성됨
+32|   }
+33| }
 ```
 - **의도 및 코드 설명**: 커링된 `log()` 함수에서 레벨, 모듈을 순차적으로 부분 적용하여 특수화된 로거를 동적으로 생성한다.
 - **무엇이 좋아지나**:
@@ -534,12 +570,15 @@ public class CurriedLogger {
 
 ### 이해를 위한 부가 상세
 커링된 함수 타입 해석법:
-```java
-Function<String, Function<String, Function<String, BigDecimal>>>
-//       1번 인자    2번 인자    3번 인자    최종 반환
 
-// 화살표 표기: String -> String -> String -> BigDecimal
-// 각 apply()마다 인자가 하나씩 소비되고, 나머지를 받는 함수가 반환됨
+**[코드 08.11]** 커링과 부분 적용 (Currying and Partial Application)
+```java
+1| // package: com.ecommerce.shared
+2| Function<String, Function<String, Function<String, BigDecimal>>>
+3| //       1번 인자    2번 인자    3번 인자    최종 반환
+4| 
+5| // 화살표 표기: String -> String -> String -> BigDecimal
+6| // 각 apply()마다 인자가 하나씩 소비되고, 나머지를 받는 함수가 반환됨
 ```
 
 ### 틀리기/놓치기 쉬운 부분
@@ -566,6 +605,7 @@ Function<String, Function<String, Function<String, BigDecimal>>>
 
   합성은 디버깅도 용이하다. 파이프라인 중간에 로깅 함수를 삽입(`f.andThen(log).andThen(g)`)하면 중간 결과를 확인할 수 있다.
 
+**[그림 08.5]** 함수 합성 (Function Composition)
 ```
 +-------------------------------------------------------------------+
 |                  함수 합성 = 파이프라인                               |
@@ -590,26 +630,29 @@ Function<String, Function<String, Function<String, BigDecimal>>>
 - **상속을 통한 확장**: OOP에서 상속으로 기능을 추가하는 것과 달리, 합성은 독립적 함수를 자유롭게 조합한다.
 
 ### Before: Traditional OOP
+
+**[코드 08.12]** Traditional OOP: 하나의 거대한 메서드에 모든 변환 로직을 넣음
 ```java
-// [X] 하나의 거대한 메서드에 모든 변환 로직을 넣음
-public class SlugGenerator {
-    public String generateSlug(String title) {
-        // 1단계: 공백 제거
-        String trimmed = title.trim();
-        // 2단계: 소문자 변환
-        String lowered = trimmed.toLowerCase();
-        // 3단계: 특수문자 제거
-        String cleaned = lowered.replaceAll("[^a-z0-9\\s-]", "");
-        // 4단계: 공백을 하이픈으로
-        String slugified = cleaned.replaceAll("\\s+", "-");
-        // 5단계: 연속 하이픈 제거
-        String result = slugified.replaceAll("-+", "-");
-        return result;
-    }
-    // 테스트: 전체 메서드를 한 번에 테스트해야 함
-    // 재사용: 일부 단계만 재사용 불가
-    // 확장: 새 단계 추가 시 메서드 내부를 수정해야 함
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [X] 하나의 거대한 메서드에 모든 변환 로직을 넣음
+ 3| public class SlugGenerator {
+ 4|   public String generateSlug(String title) {
+ 5|     // 1단계: 공백 제거
+ 6|     String trimmed = title.trim();
+ 7|     // 2단계: 소문자 변환
+ 8|     String lowered = trimmed.toLowerCase();
+ 9|     // 3단계: 특수문자 제거
+10|     String cleaned = lowered.replaceAll("[^a-z0-9\\s-]", "");
+11|     // 4단계: 공백을 하이픈으로
+12|     String slugified = cleaned.replaceAll("\\s+", "-");
+13|     // 5단계: 연속 하이픈 제거
+14|     String result = slugified.replaceAll("-+", "-");
+15|     return result;
+16|   }
+17|   // 테스트: 전체 메서드를 한 번에 테스트해야 함
+18|   // 재사용: 일부 단계만 재사용 불가
+19|   // 확장: 새 단계 추가 시 메서드 내부를 수정해야 함
+20| }
 ```
 - **의도 및 코드 설명**: URL slug를 생성하기 위해 5단계 변환을 하나의 메서드에 모두 작성한다.
 - **뭐가 문제인가**:
@@ -619,53 +662,56 @@ public class SlugGenerator {
   - 중간 결과 확인을 위해 디버거가 필수
 
 ### After: Modern Approach
+
+**[코드 08.13]** Modern: 작은 순수 함수를 합성하여 파이프라인 구성
 ```java
-// [O] 작은 순수 함수를 합성하여 파이프라인 구성
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
-
-public class SlugGenerator {
-
-    // 각 변환 단계를 독립적인 함수로 정의
-    static UnaryOperator<String> trim = String::trim;
-    static UnaryOperator<String> lowercase = String::toLowerCase;
-    static UnaryOperator<String> removeSpecialChars =
-        s -> s.replaceAll("[^a-z0-9\\s-]", "");
-    static UnaryOperator<String> spacesToHyphens =
-        s -> s.replaceAll("\\s+", "-");
-    static UnaryOperator<String> collapseHyphens =
-        s -> s.replaceAll("-+", "-");
-
-    // 합성: 파이프라인으로 조립
-    static Function<String, String> generateSlug =
-        ((Function<String, String>) trim)
-            .andThen(lowercase)
-            .andThen(removeSpecialChars)
-            .andThen(spacesToHyphens)
-            .andThen(collapseHyphens);
-
-    // 디버깅: 중간에 로그 삽입 가능
-    static <T> Function<T, T> peek(String label) {
-        return value -> {
-            System.out.println("[" + label + "] " + value);
-            return value;
-        };
-    }
-
-    static Function<String, String> debugSlug =
-        ((Function<String, String>) trim)
-            .andThen(peek("after trim"))
-            .andThen(lowercase)
-            .andThen(peek("after lowercase"))
-            .andThen(removeSpecialChars)
-            .andThen(spacesToHyphens)
-            .andThen(collapseHyphens);
-
-    public static void main(String[] args) {
-        System.out.println(generateSlug.apply("  Hello World! Example  "));
-        // 출력: "hello-world-example"
-    }
-}
+ 1| // package: com.example.pattern
+ 2| // [O] 작은 순수 함수를 합성하여 파이프라인 구성
+ 3| import java.util.function.Function;
+ 4| import java.util.function.UnaryOperator;
+ 5| 
+ 6| public class SlugGenerator {
+ 7| 
+ 8|   // 각 변환 단계를 독립적인 함수로 정의
+ 9|   static UnaryOperator<String> trim = String::trim;
+10|   static UnaryOperator<String> lowercase = String::toLowerCase;
+11|   static UnaryOperator<String> removeSpecialChars =
+12|     s -> s.replaceAll("[^a-z0-9\\s-]", "");
+13|   static UnaryOperator<String> spacesToHyphens =
+14|     s -> s.replaceAll("\\s+", "-");
+15|   static UnaryOperator<String> collapseHyphens =
+16|     s -> s.replaceAll("-+", "-");
+17| 
+18|   // 합성: 파이프라인으로 조립
+19|   static Function<String, String> generateSlug =
+20|     ((Function<String, String>) trim)
+21|       .andThen(lowercase)
+22|       .andThen(removeSpecialChars)
+23|       .andThen(spacesToHyphens)
+24|       .andThen(collapseHyphens);
+25| 
+26|   // 디버깅: 중간에 로그 삽입 가능
+27|   static <T> Function<T, T> peek(String label) {
+28|     return value -> {
+29|       System.out.println("[" + label + "] " + value);
+30|       return value;
+31|     };
+32|   }
+33| 
+34|   static Function<String, String> debugSlug =
+35|     ((Function<String, String>) trim)
+36|       .andThen(peek("after trim"))
+37|       .andThen(lowercase)
+38|       .andThen(peek("after lowercase"))
+39|       .andThen(removeSpecialChars)
+40|       .andThen(spacesToHyphens)
+41|       .andThen(collapseHyphens);
+42| 
+43|   public static void main(String[] args) {
+44|     System.out.println(generateSlug.apply("  Hello World! Example  "));
+45|     // 출력: "hello-world-example"
+46|   }
+47| }
 ```
 - **의도 및 코드 설명**: 각 변환 단계를 독립 함수로 정의하고, `andThen`으로 파이프라인을 조립한다. `peek` 함수로 디버깅도 용이하다.
 - **무엇이 좋아지나**:
@@ -677,16 +723,19 @@ public class SlugGenerator {
 
 ### 이해를 위한 부가 상세
 `andThen` vs `compose` 동작 원리:
-```java
-// andThen: 입력 -> f -> g -> 출력 (왼쪽에서 오른쪽)
-Function<Integer, Integer> addThenMultiply =
-    ((Function<Integer, Integer>) x -> x + 1).andThen(x -> x * 2);
-addThenMultiply.apply(5); // (5+1)*2 = 12
 
-// compose: 입력 -> g -> f -> 출력 (오른쪽에서 왼쪽)
-Function<Integer, Integer> multiplyThenAdd =
-    ((Function<Integer, Integer>) x -> x + 1).compose(x -> x * 2);
-multiplyThenAdd.apply(5); // (5*2)+1 = 11
+**[코드 08.14]** andThen: 입력 -> f -> g -> 출력 (왼쪽에서 오른쪽)
+```java
+ 1| // package: com.ecommerce.shared
+ 2| // andThen: 입력 -> f -> g -> 출력 (왼쪽에서 오른쪽)
+ 3| Function<Integer, Integer> addThenMultiply =
+ 4|   ((Function<Integer, Integer>) x -> x + 1).andThen(x -> x * 2);
+ 5| addThenMultiply.apply(5); // (5+1)*2 = 12
+ 6| 
+ 7| // compose: 입력 -> g -> f -> 출력 (오른쪽에서 왼쪽)
+ 8| Function<Integer, Integer> multiplyThenAdd =
+ 9|   ((Function<Integer, Integer>) x -> x + 1).compose(x -> x * 2);
+10| multiplyThenAdd.apply(5); // (5*2)+1 = 11
 ```
 
 ### 틀리기/놓치기 쉬운 부분

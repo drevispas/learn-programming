@@ -4,6 +4,7 @@
 
 ---
 
+**[표 A.1]** Appendix A: Terms Glossary (용어 사전)
 | English Term | Korean Translation | Brief Definition | Topic |
 |---|---|---|---|
 | Abstract Data Type | 추상 데이터 타입 | 데이터와 그 연산을 함께 정의하는 타입 (ADT와 구분 필요) | 03 |

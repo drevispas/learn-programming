@@ -13,6 +13,7 @@
 
   이 두 가지 결합을 올바르게 활용하면 도메인의 "가능한 상태"를 정확히 표현할 수 있고, 불가능한 상태는 타입 시스템이 차단합니다.
 
+**[그림 03.1]** Product Type과 Sum Type (곱 타입과 합 타입)
 ```
 ALGEBRAIC DATA TYPES (ADT)
 ===========================
@@ -38,23 +39,26 @@ State space:                   State space:
 - **"Sum Type = 상속"**: 상속은 개방적(Open)이지만, Sum Type(sealed)은 폐쇄적(Closed)이고 망라적
 
 ### Before: Traditional OOP
-```java
-// [X] String/enum으로 상태 표현: 상태별 데이터를 담을 수 없음
-public class Order {
-    private String paymentMethod;  // "CARD", "TRANSFER", "POINTS"
-    // 카드일 때만 필요한 데이터
-    private String cardNumber;
-    private YearMonth cardExpiry;
-    // 계좌이체일 때만 필요한 데이터
-    private String bankAccount;
-    private String bankCode;
-    // 포인트일 때만 필요한 데이터
-    private int pointsUsed;
 
-    // 문제: 카드 결제인데 bankAccount에 값이 있으면?
-    // 문제: 포인트 결제인데 cardNumber에 값이 있으면?
-    // → 불가능한 상태가 표현 가능!
-}
+**[코드 03.1]** Traditional OOP: String/enum으로 상태 표현: 상태별 데이터를 담을 수 없음
+```java
+ 1| // package: com.ecommerce.order
+ 2| // [X] String/enum으로 상태 표현: 상태별 데이터를 담을 수 없음
+ 3| public class Order {
+ 4|   private String paymentMethod;  // "CARD", "TRANSFER", "POINTS"
+ 5|   // 카드일 때만 필요한 데이터
+ 6|   private String cardNumber;
+ 7|   private YearMonth cardExpiry;
+ 8|   // 계좌이체일 때만 필요한 데이터
+ 9|   private String bankAccount;
+10|   private String bankCode;
+11|   // 포인트일 때만 필요한 데이터
+12|   private int pointsUsed;
+13| 
+14|   // 문제: 카드 결제인데 bankAccount에 값이 있으면?
+15|   // 문제: 포인트 결제인데 cardNumber에 값이 있으면?
+16|   // → 불가능한 상태가 표현 가능!
+17| }
 ```
 - **의도 및 코드 설명**: 결제 수단에 따라 필요한 데이터가 다르지만, 모든 필드가 하나의 클래스에
 - **뭐가 문제인가**:
@@ -64,37 +68,40 @@ public class Order {
   - 상태별 로직에 if/else 분기 필연적
 
 ### After: Modern Approach
+
+**[코드 03.2]** Modern: Sum Type: 각 상태가 필요한 데이터만 보유
 ```java
-// [O] Sum Type: 각 상태가 필요한 데이터만 보유
-public sealed interface PaymentMethod {
-    record CreditCard(String cardNumber, YearMonth expiry, String cvc) implements PaymentMethod {}
-    record BankTransfer(String accountNumber, String bankCode) implements PaymentMethod {}
-    record Points(int amount) implements PaymentMethod {}
-}
-
-// Product Type: Order는 모든 필드를 AND로 결합
-public record Order(
-    OrderId id,
-    Customer customer,
-    List<OrderLine> lines,
-    PaymentMethod payment  // Sum Type을 필드로 가짐
-) {
-    public Order {
-        lines = List.copyOf(lines);
-    }
-}
-
-// Pattern Matching으로 안전한 분기
-public class PaymentProcessor {
-    public static PaymentReceipt process(PaymentMethod method, Money amount) {
-        return switch (method) {
-            case CreditCard card -> chargeCard(card, amount);
-            case BankTransfer transfer -> initiateTransfer(transfer, amount);
-            case Points points -> deductPoints(points, amount);
-        };
-        // 새 결제수단 추가 시 → 컴파일 에러로 누락 방지
-    }
-}
+ 1| // package: com.ecommerce.payment
+ 2| // [O] Sum Type: 각 상태가 필요한 데이터만 보유
+ 3| public sealed interface PaymentMethod {
+ 4|   record CreditCard(String cardNumber, YearMonth expiry, String cvc) implements PaymentMethod {}
+ 5|   record BankTransfer(String accountNumber, String bankCode) implements PaymentMethod {}
+ 6|   record Points(int amount) implements PaymentMethod {}
+ 7| }
+ 8| 
+ 9| // Product Type: Order는 모든 필드를 AND로 결합
+10| public record Order(
+11|   OrderId id,
+12|   Customer customer,
+13|   List<OrderLine> lines,
+14|   PaymentMethod payment  // Sum Type을 필드로 가짐
+15| ) {
+16|   public Order {
+17|     lines = List.copyOf(lines);
+18|   }
+19| }
+20| 
+21| // Pattern Matching으로 안전한 분기
+22| public class PaymentProcessor {
+23|   public static PaymentReceipt process(PaymentMethod method, Money amount) {
+24|     return switch (method) {
+25|       case CreditCard card -> chargeCard(card, amount);
+26|       case BankTransfer transfer -> initiateTransfer(transfer, amount);
+27|       case Points points -> deductPoints(points, amount);
+28|     };
+29|     // 새 결제수단 추가 시 → 컴파일 에러로 누락 방지
+30|   }
+31| }
 ```
 - **의도 및 코드 설명**: 각 결제수단 variant가 자신에게 필요한 데이터만 보유. Pattern Matching으로 망라적 처리
 - **무엇이 좋아지나**:
@@ -130,6 +137,7 @@ public class PaymentProcessor {
 - **통찰**: 복잡도는 "가능한 상태의 총 개수"와 비례한다. 곱 타입은 상태를 곱하고, 합 타입은 상태를 더한다.
 - **설명**: `boolean` 필드 5개가 있으면 상태 공간은 2^5 = 32입니다. 하지만 유효한 상태가 5개뿐이라면, 27가지의 불가능한 상태가 존재합니다. Sealed Interface로 5가지 variant를 정의하면 상태 공간이 정확히 5로 줄어들어 복잡도가 84% 감소합니다.
 
+**[그림 03.2]** 기수 이론: 상태 공간 계산 (Cardinality Theory: State Space Calculation)
 ```
 BOOLEAN FLAGS (Product Type)       SEALED INTERFACE (Sum Type)
 ============================       ============================
@@ -150,28 +158,31 @@ Invalid: 27 (!)
 - **"상태가 많으면 곱 타입 자체가 나쁘다"**: 곱 타입은 "모든 필드가 독립적으로 의미 있을 때" 적절
 
 ### Before: Traditional OOP
+
+**[코드 03.3]** Traditional OOP: Boolean 필드로 상태 표현: 2^5 = 32가지 상태 (유효한 건 5개)
 ```java
-// [X] Boolean 필드로 상태 표현: 2^5 = 32가지 상태 (유효한 건 5개)
-public class Order {
-    boolean isCreated;
-    boolean isPaid;
-    boolean isShipped;
-    boolean isDelivered;
-    boolean isCanceled;
-
-    public void ship() {
-        // 매번 방어적 검증 필요
-        if (!isPaid) throw new IllegalStateException("결제 안 됨");
-        if (isCanceled) throw new IllegalStateException("취소됨");
-        if (isShipped) throw new IllegalStateException("이미 배송됨");
-        this.isShipped = true;
-    }
-}
-
-// 모순 상태 가능:
-Order broken = new Order();
-broken.isPaid = true;
-broken.isCanceled = true;  // 결제됐는데 취소? 컴파일 OK!
+ 1| // package: com.ecommerce.order
+ 2| // [X] Boolean 필드로 상태 표현: 2^5 = 32가지 상태 (유효한 건 5개)
+ 3| public class Order {
+ 4|   boolean isCreated;
+ 5|   boolean isPaid;
+ 6|   boolean isShipped;
+ 7|   boolean isDelivered;
+ 8|   boolean isCanceled;
+ 9| 
+10|   public void ship() {
+11|     // 매번 방어적 검증 필요
+12|     if (!isPaid) throw new IllegalStateException("결제 안 됨");
+13|     if (isCanceled) throw new IllegalStateException("취소됨");
+14|     if (isShipped) throw new IllegalStateException("이미 배송됨");
+15|     this.isShipped = true;
+16|   }
+17| }
+18| 
+19| // 모순 상태 가능:
+20| Order broken = new Order();
+21| broken.isPaid = true;
+22| broken.isCanceled = true;  // 결제됐는데 취소? 컴파일 OK!
 ```
 - **의도 및 코드 설명**: boolean 플래그로 주문 상태를 표현
 - **뭐가 문제인가**:
@@ -181,25 +192,28 @@ broken.isCanceled = true;  // 결제됐는데 취소? 컴파일 OK!
   - 모든 비즈니스 로직에 방어 코드 필요
 
 ### After: Modern Approach
+
+**[코드 03.4]** Modern: Sealed Interface: 정확히 5가지 유효한 상태만 표현
 ```java
-// [O] Sealed Interface: 정확히 5가지 유효한 상태만 표현
-public sealed interface OrderStatus {
-    record Created(LocalDateTime at) implements OrderStatus {}
-    record Paid(LocalDateTime at, PaymentId paymentId) implements OrderStatus {}
-    record Shipped(LocalDateTime at, TrackingNumber tracking) implements OrderStatus {}
-    record Delivered(LocalDateTime at, ReceiverName receiver) implements OrderStatus {}
-    record Canceled(LocalDateTime at, CancelReason reason) implements OrderStatus {}
-}
-
-public record Order(OrderId id, List<OrderItem> items, OrderStatus status) {
-    public Order { items = List.copyOf(items); }
-}
-
-// 상태별 데이터가 정확히 맞음:
-// - Shipped는 TrackingNumber를 가짐
-// - Canceled는 CancelReason을 가짐
-// - Created는 둘 다 없음
-// 모순 상태는 타입으로 표현 불가능!
+ 1| // package: com.ecommerce.order
+ 2| // [O] Sealed Interface: 정확히 5가지 유효한 상태만 표현
+ 3| public sealed interface OrderStatus {
+ 4|   record Created(LocalDateTime at) implements OrderStatus {}
+ 5|   record Paid(LocalDateTime at, PaymentId paymentId) implements OrderStatus {}
+ 6|   record Shipped(LocalDateTime at, TrackingNumber tracking) implements OrderStatus {}
+ 7|   record Delivered(LocalDateTime at, ReceiverName receiver) implements OrderStatus {}
+ 8|   record Canceled(LocalDateTime at, CancelReason reason) implements OrderStatus {}
+ 9| }
+10| 
+11| public record Order(OrderId id, List<OrderItem> items, OrderStatus status) {
+12|   public Order { items = List.copyOf(items); }
+13| }
+14| 
+15| // 상태별 데이터가 정확히 맞음:
+16| // - Shipped는 TrackingNumber를 가짐
+17| // - Canceled는 CancelReason을 가짐
+18| // - Created는 둘 다 없음
+19| // 모순 상태는 타입으로 표현 불가능!
 ```
 - **의도 및 코드 설명**: 각 상태가 자신에게 필요한 데이터만 보유하는 Sum Type
 - **무엇이 좋아지나**:
@@ -244,19 +258,22 @@ public record Order(OrderId id, List<OrderItem> items, OrderStatus status) {
 - **"default를 넣으면 안전"**: default는 새 variant 추가 시 컴파일 경고를 숨김 → 위험
 
 ### Before: Traditional OOP
+
+**[코드 03.5]** Traditional OOP: if/else 체인 + instanceof 캐스팅
 ```java
-// [X] if/else 체인 + instanceof 캐스팅
-public String describePayment(Object payment) {
-    if (payment instanceof CreditCard) {
-        CreditCard card = (CreditCard) payment;
-        return "Card: " + card.getNumber();
-    } else if (payment instanceof BankTransfer) {
-        BankTransfer transfer = (BankTransfer) payment;
-        return "Bank: " + transfer.getAccount();
-    } else {
-        return "Unknown";  // 새 타입 추가 시 여기로 빠짐 → 런타임 버그
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [X] if/else 체인 + instanceof 캐스팅
+ 3| public String describePayment(Object payment) {
+ 4|   if (payment instanceof CreditCard) {
+ 5|     CreditCard card = (CreditCard) payment;
+ 6|     return "Card: " + card.getNumber();
+ 7|   } else if (payment instanceof BankTransfer) {
+ 8|     BankTransfer transfer = (BankTransfer) payment;
+ 9|     return "Bank: " + transfer.getAccount();
+10|   } else {
+11|     return "Unknown";  // 새 타입 추가 시 여기로 빠짐 → 런타임 버그
+12|   }
+13| }
 ```
 - **의도 및 코드 설명**: instanceof + 캐스팅으로 타입 분기
 - **뭐가 문제인가**:
@@ -265,25 +282,28 @@ public String describePayment(Object payment) {
   - 새 결제수단 추가 시 컴파일러가 경고하지 않음
 
 ### After: Modern Approach
-```java
-// [O] Sealed Interface + Pattern Matching = 망라적 분기
-public String describePayment(PaymentMethod method) {
-    return switch (method) {
-        case CreditCard card -> "Card: " + card.cardNumber();
-        case BankTransfer transfer -> "Bank: " + transfer.accountNumber();
-        case Points points -> "Points: " + points.amount();
-        // 새 variant 추가 시 → 컴파일 에러! (switch not exhaustive)
-    };
-}
 
-// Record Patterns로 필드 직접 분해
-public Money calculateFee(PaymentMethod method, Money amount) {
-    return switch (method) {
-        case CreditCard(var num, var exp, var cvc) -> amount.multiply(0.03);
-        case BankTransfer(var acc, var bank) -> Money.krw(500);
-        case Points(var pts) -> Money.zero();
-    };
-}
+**[코드 03.6]** Modern: Sealed Interface + Pattern Matching = 망라적 분기
+```java
+ 1| // package: com.ecommerce.shared
+ 2| // [O] Sealed Interface + Pattern Matching = 망라적 분기
+ 3| public String describePayment(PaymentMethod method) {
+ 4|   return switch (method) {
+ 5|     case CreditCard card -> "Card: " + card.cardNumber();
+ 6|     case BankTransfer transfer -> "Bank: " + transfer.accountNumber();
+ 7|     case Points points -> "Points: " + points.amount();
+ 8|     // 새 variant 추가 시 → 컴파일 에러! (switch not exhaustive)
+ 9|   };
+10| }
+11| 
+12| // Record Patterns로 필드 직접 분해
+13| public Money calculateFee(PaymentMethod method, Money amount) {
+14|   return switch (method) {
+15|     case CreditCard(var num, var exp, var cvc) -> amount.multiply(0.03);
+16|     case BankTransfer(var acc, var bank) -> Money.krw(500);
+17|     case Points(var pts) -> Money.zero();
+18|   };
+19| }
 ```
 - **의도 및 코드 설명**: switch expression이 모든 variant를 처리하도록 강제
 - **무엇이 좋아지나**:

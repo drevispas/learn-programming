@@ -15,6 +15,7 @@
 
   핵심 원리: "규칙은 데이터다. 데이터는 직렬화 가능하다. 직렬화 가능하면 외부에서 관리할 수 있다."
 
+**[그림 12.1]** Rule as Data (비즈니스 규칙의 데이터화)
 ```
 RULE AS DATA vs HARDCODED LOGIC
 =================================
@@ -44,27 +45,30 @@ Hardcoded (if-else):           Rule as Data (ADT):
 - **"모든 로직을 데이터화"**: 핵심 알고리즘은 코드로, 자주 변경되는 비즈니스 규칙만 데이터화 대상
 
 ### Before: Traditional OOP
+
+**[코드 12.1]** Traditional OOP: 하드코딩된 비즈니스 규칙 - 변경마다 배포 필요
 ```java
-// [X] 하드코딩된 비즈니스 규칙 - 변경마다 배포 필요
-public class DiscountService {
-    public boolean isEligibleForDiscount(Customer customer) {
-        // 규칙 1: 한국 VIP
-        if ("KR".equals(customer.getCountry())
-            && "VIP".equals(customer.getType())) {
-            return true;
-        }
-        // 규칙 2: 구매액 100만원 이상
-        if (customer.getTotalSpend() >= 1_000_000) {
-            return true;
-        }
-        // 규칙 3: 신규 추가! -> 코드 수정 + 배포 필요
-        if ("US".equals(customer.getCountry())
-            && customer.getTotalSpend() >= 500) {
-            return true;
-        }
-        return false;
-    }
-}
+ 1| // package: com.ecommerce.member
+ 2| // [X] 하드코딩된 비즈니스 규칙 - 변경마다 배포 필요
+ 3| public class DiscountService {
+ 4|   public boolean isEligibleForDiscount(Customer customer) {
+ 5|     // 규칙 1: 한국 VIP
+ 6|     if ("KR".equals(customer.getCountry())
+ 7|       && "VIP".equals(customer.getType())) {
+ 8|       return true;
+ 9|     }
+10|     // 규칙 2: 구매액 100만원 이상
+11|     if (customer.getTotalSpend() >= 1_000_000) {
+12|       return true;
+13|     }
+14|     // 규칙 3: 신규 추가! -> 코드 수정 + 배포 필요
+15|     if ("US".equals(customer.getCountry())
+16|       && customer.getTotalSpend() >= 500) {
+17|       return true;
+18|     }
+19|     return false;
+20|   }
+21| }
 ```
 - **의도 및 코드 설명**: 할인 자격 조건을 if-else로 직접 코딩. 새 규칙 추가 시 코드 수정 필수
 - **뭐가 문제인가**:
@@ -75,38 +79,41 @@ public class DiscountService {
   - 규칙 조합 로직이 복잡해지면 이해/유지보수 곤란
 
 ### After: Modern Approach
+
+**[코드 12.2]** Modern: 규칙을 ADT(sealed interface)로 표현 - 데이터화
 ```java
-// [O] 규칙을 ADT(sealed interface)로 표현 - 데이터화
-public sealed interface Rule {
-    record Equals(String attribute, String value) implements Rule {}
-    record GTE(String attribute, int threshold) implements Rule {}
-    record And(Rule left, Rule right) implements Rule {}
-    record Or(Rule left, Rule right) implements Rule {}
-    record Not(Rule rule) implements Rule {}
-}
-
-// 해석기: 규칙을 평가하는 순수 함수
-public class RuleEngine {
-    public static boolean evaluate(Rule rule, Customer customer) {
-        return switch (rule) {
-            case Rule.Equals(var attr, var val) -> getStringAttr(customer, attr).equals(val);
-            case Rule.GTE(var attr, var threshold) -> getIntAttr(customer, attr) >= threshold;
-            case Rule.And(var left, var right) -> evaluate(left, customer) && evaluate(right, customer);
-            case Rule.Or(var left, var right) -> evaluate(left, customer) || evaluate(right, customer);
-            case Rule.Not(var inner) -> !evaluate(inner, customer);
-        };
-    }
-}
-
-// 사용: 규칙을 데이터로 조합
-Rule vipInKorea = new Rule.And(
-    new Rule.Equals("country", "KR"),
-    new Rule.Equals("type", "VIP")
-);
-
-// 규칙 추가는 데이터 추가만! 코드 배포 불필요
-List<Rule> rules = ruleRepository.loadAll();
-boolean eligible = rules.stream().anyMatch(r -> RuleEngine.evaluate(r, customer));
+ 1| // package: com.ecommerce.rule
+ 2| // [O] 규칙을 ADT(sealed interface)로 표현 - 데이터화
+ 3| public sealed interface Rule {
+ 4|   record Equals(String attribute, String value) implements Rule {}
+ 5|   record GTE(String attribute, int threshold) implements Rule {}
+ 6|   record And(Rule left, Rule right) implements Rule {}
+ 7|   record Or(Rule left, Rule right) implements Rule {}
+ 8|   record Not(Rule rule) implements Rule {}
+ 9| }
+10| 
+11| // 해석기: 규칙을 평가하는 순수 함수
+12| public class RuleEngine {
+13|   public static boolean evaluate(Rule rule, Customer customer) {
+14|     return switch (rule) {
+15|       case Rule.Equals(var attr, var val) -> getStringAttr(customer, attr).equals(val);
+16|       case Rule.GTE(var attr, var threshold) -> getIntAttr(customer, attr) >= threshold;
+17|       case Rule.And(var left, var right) -> evaluate(left, customer) && evaluate(right, customer);
+18|       case Rule.Or(var left, var right) -> evaluate(left, customer) || evaluate(right, customer);
+19|       case Rule.Not(var inner) -> !evaluate(inner, customer);
+20|     };
+21|   }
+22| }
+23| 
+24| // 사용: 규칙을 데이터로 조합
+25| Rule vipInKorea = new Rule.And(
+26|   new Rule.Equals("country", "KR"),
+27|   new Rule.Equals("type", "VIP")
+28| );
+29| 
+30| // 규칙 추가는 데이터 추가만! 코드 배포 불필요
+31| List<Rule> rules = ruleRepository.loadAll();
+32| boolean eligible = rules.stream().anyMatch(r -> RuleEngine.evaluate(r, customer));
 ```
 - **의도 및 코드 설명**: 규칙을 sealed interface의 record로 정의하고, evaluate 함수가 패턴 매칭으로 해석. 규칙 추가는 DB에 데이터를 넣는 것으로 완료
 - **무엇이 좋아지나**:
@@ -142,6 +149,7 @@ boolean eligible = rules.stream().anyMatch(r -> RuleEngine.evaluate(r, customer)
 
   핵심: Record의 중첩 조합 = 구문 트리(AST) = DSL의 프로그램
 
+**[그림 12.2]** DSL (Domain-Specific Language) with Records
 ```
 RULE DSL AS SYNTAX TREE (AST)
 ================================
@@ -167,28 +175,31 @@ Syntax Tree:
 - **"DSL은 항상 복잡"**: sealed interface + record 몇 개로 간단하게 시작 가능
 
 ### Before: Traditional OOP
+
+**[코드 12.3]** Traditional OOP: Specification 패턴 - 클래스 폭발, 읽기 어려움
 ```java
-// [X] Specification 패턴 - 클래스 폭발, 읽기 어려움
-public interface Specification<T> {
-    boolean isSatisfied(T target);
-}
-
-public class CountrySpec implements Specification<Customer> {
-    private final String country;
-    public CountrySpec(String country) { this.country = country; }
-    public boolean isSatisfied(Customer c) { return c.getCountry().equals(country); }
-}
-
-public class AndSpec<T> implements Specification<T> {
-    private final Specification<T> left, right;
-    public AndSpec(Specification<T> left, Specification<T> right) {
-        this.left = left; this.right = right;
-    }
-    public boolean isSatisfied(T target) {
-        return left.isSatisfied(target) && right.isSatisfied(target);
-    }
-}
-// ... OrSpec, NotSpec, TypeSpec, TotalSpendSpec 등 클래스가 계속 증가
+ 1| // package: com.ecommerce.rule
+ 2| // [X] Specification 패턴 - 클래스 폭발, 읽기 어려움
+ 3| public interface Specification<T> {
+ 4|   boolean isSatisfied(T target);
+ 5| }
+ 6| 
+ 7| public class CountrySpec implements Specification<Customer> {
+ 8|   private final String country;
+ 9|   public CountrySpec(String country) { this.country = country; }
+10|   public boolean isSatisfied(Customer c) { return c.getCountry().equals(country); }
+11| }
+12| 
+13| public class AndSpec<T> implements Specification<T> {
+14|   private final Specification<T> left, right;
+15|   public AndSpec(Specification<T> left, Specification<T> right) {
+16|     this.left = left; this.right = right;
+17|   }
+18|   public boolean isSatisfied(T target) {
+19|     return left.isSatisfied(target) && right.isSatisfied(target);
+20|   }
+21| }
+22| // ... OrSpec, NotSpec, TypeSpec, TotalSpendSpec 등 클래스가 계속 증가
 ```
 - **의도 및 코드 설명**: 전통적인 Specification 패턴으로 규칙을 조합. 각 조건마다 별도 클래스 필요
 - **뭐가 문제인가**:
@@ -198,33 +209,36 @@ public class AndSpec<T> implements Specification<T> {
   - sealed 되지 않아 망라성 검증 불가
 
 ### After: Modern Approach
+
+**[코드 12.4]** Modern: Record DSL - 간결하고 타입 안전한 규칙 표현
 ```java
-// [O] Record DSL - 간결하고 타입 안전한 규칙 표현
-public sealed interface Rule {
-    record Equals(String attribute, String value) implements Rule {}
-    record GTE(String attribute, int threshold) implements Rule {}
-    record And(Rule left, Rule right) implements Rule {}
-    record Or(Rule left, Rule right) implements Rule {}
-    record Not(Rule rule) implements Rule {}
-
-    // Fluent API (정적 팩토리 메서드)
-    static Rule equals(String attr, String value) { return new Equals(attr, value); }
-    static Rule gte(String attr, int threshold) { return new GTE(attr, threshold); }
-    static Rule and(Rule left, Rule right) { return new And(left, right); }
-    static Rule or(Rule left, Rule right) { return new Or(left, right); }
-    static Rule not(Rule rule) { return new Not(rule); }
-}
-
-// 도메인 전용 DSL로 읽기 좋은 규칙 정의
-Rule krVipOrHighSpender = Rule.and(
-    Rule.equals("country", "KR"),
-    Rule.or(
-        Rule.equals("type", "VIP"),
-        Rule.gte("totalSpend", 1_000_000)
-    )
-);
-
-// 의미: "한국 고객 중 VIP이거나 100만원 이상 구매"
+ 1| // package: com.ecommerce.rule
+ 2| // [O] Record DSL - 간결하고 타입 안전한 규칙 표현
+ 3| public sealed interface Rule {
+ 4|   record Equals(String attribute, String value) implements Rule {}
+ 5|   record GTE(String attribute, int threshold) implements Rule {}
+ 6|   record And(Rule left, Rule right) implements Rule {}
+ 7|   record Or(Rule left, Rule right) implements Rule {}
+ 8|   record Not(Rule rule) implements Rule {}
+ 9| 
+10|   // Fluent API (정적 팩토리 메서드)
+11|   static Rule equals(String attr, String value) { return new Equals(attr, value); }
+12|   static Rule gte(String attr, int threshold) { return new GTE(attr, threshold); }
+13|   static Rule and(Rule left, Rule right) { return new And(left, right); }
+14|   static Rule or(Rule left, Rule right) { return new Or(left, right); }
+15|   static Rule not(Rule rule) { return new Not(rule); }
+16| }
+17| 
+18| // 도메인 전용 DSL로 읽기 좋은 규칙 정의
+19| Rule krVipOrHighSpender = Rule.and(
+20|   Rule.equals("country", "KR"),
+21|   Rule.or(
+22|     Rule.equals("type", "VIP"),
+23|     Rule.gte("totalSpend", 1_000_000)
+24|   )
+25| );
+26| 
+27| // 의미: "한국 고객 중 VIP이거나 100만원 이상 구매"
 ```
 - **의도 및 코드 설명**: sealed interface에 정적 팩토리 메서드를 추가하여 fluent API를 구성. 규칙이 도메인 용어로 읽힘
 - **무엇이 좋아지나**:
@@ -256,6 +270,7 @@ Rule krVipOrHighSpender = Rule.and(
 
   sealed interface의 망라성 덕분에, 새로운 Rule record를 추가하면 evaluate에서 컴파일 에러가 발생하여 처리 누락을 방지한다.
 
+**[그림 12.3]** Rule Engine Pattern
 ```
 RULE ENGINE EVALUATION FLOW
 ==============================
@@ -281,29 +296,32 @@ Recursive Evaluation:
 - **"Rule Engine은 성능이 나쁘다"**: 재귀 깊이가 보통 5-10 수준이므로 성능 문제 없음
 
 ### Before: Traditional OOP
+
+**[코드 12.5]** Traditional OOP: 전략 패턴 기반 - 실행과 정의가 혼재
 ```java
-// [X] 전략 패턴 기반 - 실행과 정의가 혼재
-public interface DiscountRule {
-    boolean matches(Customer customer);
-    Money calculateDiscount(Money total);
-}
-
-public class VipDiscountRule implements DiscountRule {
-    public boolean matches(Customer c) { return "VIP".equals(c.getType()); }
-    public Money calculateDiscount(Money total) { return total.multiply(0.1); }
-}
-
-public class DiscountEngine {
-    private final List<DiscountRule> rules;
-    public Money applyBestDiscount(Customer c, Money total) {
-        return rules.stream()
-            .filter(r -> r.matches(c))
-            .map(r -> r.calculateDiscount(total))
-            .max(Comparator.naturalOrder())
-            .orElse(Money.ZERO);
-    }
-}
-// 새 규칙 = 새 클래스 + 배포
+ 1| // package: com.ecommerce.shared
+ 2| // [X] 전략 패턴 기반 - 실행과 정의가 혼재
+ 3| public interface DiscountRule {
+ 4|   boolean matches(Customer customer);
+ 5|   Money calculateDiscount(Money total);
+ 6| }
+ 7| 
+ 8| public class VipDiscountRule implements DiscountRule {
+ 9|   public boolean matches(Customer c) { return "VIP".equals(c.getType()); }
+10|   public Money calculateDiscount(Money total) { return total.multiply(0.1); }
+11| }
+12| 
+13| public class DiscountEngine {
+14|   private final List<DiscountRule> rules;
+15|   public Money applyBestDiscount(Customer c, Money total) {
+16|     return rules.stream()
+17|       .filter(r -> r.matches(c))
+18|       .map(r -> r.calculateDiscount(total))
+19|       .max(Comparator.naturalOrder())
+20|       .orElse(Money.ZERO);
+21|   }
+22| }
+23| // 새 규칙 = 새 클래스 + 배포
 ```
 - **의도 및 코드 설명**: 전략 패턴으로 규칙을 인터페이스 구현체로 정의. 규칙 추가 시 새 클래스 필요
 - **뭐가 문제인가**:
@@ -313,41 +331,44 @@ public class DiscountEngine {
   - 규칙을 외부에서 동적으로 로딩 불가
 
 ### After: Modern Approach
+
+**[코드 12.6]** Modern: 순수 함수 기반 Rule Engine - 재귀적 평가
 ```java
-// [O] 순수 함수 기반 Rule Engine - 재귀적 평가
-public record Customer(String country, String type, int totalSpend) {}
-
-public class RuleEngine {
-    // 순수 함수: 규칙 + 컨텍스트 -> 결과
-    public static boolean evaluate(Rule rule, Customer customer) {
-        return switch (rule) {
-            case Rule.Equals(var attr, var value) -> switch (attr) {
-                case "country" -> customer.country().equals(value);
-                case "type" -> customer.type().equals(value);
-                default -> false;
-            };
-            case Rule.GTE(var attr, var threshold) -> switch (attr) {
-                case "totalSpend" -> customer.totalSpend() >= threshold;
-                default -> false;
-            };
-            // 재귀적 평가
-            case Rule.And(var left, var right) ->
-                evaluate(left, customer) && evaluate(right, customer);
-            case Rule.Or(var left, var right) ->
-                evaluate(left, customer) || evaluate(right, customer);
-            case Rule.Not(var inner) ->
-                !evaluate(inner, customer);
-        };
-    }
-}
-
-// 테스트: 순수 함수이므로 Mock 불필요
-@Test
-void koreanVipGetsDiscount() {
-    Rule rule = Rule.and(Rule.equals("country", "KR"), Rule.equals("type", "VIP"));
-    Customer customer = new Customer("KR", "VIP", 500_000);
-    assertTrue(RuleEngine.evaluate(rule, customer));
-}
+ 1| // package: com.ecommerce.rule
+ 2| // [O] 순수 함수 기반 Rule Engine - 재귀적 평가
+ 3| public record Customer(String country, String type, int totalSpend) {}
+ 4| 
+ 5| public class RuleEngine {
+ 6|   // 순수 함수: 규칙 + 컨텍스트 -> 결과
+ 7|   public static boolean evaluate(Rule rule, Customer customer) {
+ 8|     return switch (rule) {
+ 9|       case Rule.Equals(var attr, var value) -> switch (attr) {
+10|         case "country" -> customer.country().equals(value);
+11|         case "type" -> customer.type().equals(value);
+12|         default -> false;
+13|       };
+14|       case Rule.GTE(var attr, var threshold) -> switch (attr) {
+15|         case "totalSpend" -> customer.totalSpend() >= threshold;
+16|         default -> false;
+17|       };
+18|       // 재귀적 평가
+19|       case Rule.And(var left, var right) ->
+20|         evaluate(left, customer) && evaluate(right, customer);
+21|       case Rule.Or(var left, var right) ->
+22|         evaluate(left, customer) || evaluate(right, customer);
+23|       case Rule.Not(var inner) ->
+24|         !evaluate(inner, customer);
+25|     };
+26|   }
+27| }
+28| 
+29| // 테스트: 순수 함수이므로 Mock 불필요
+30| @Test
+31| void koreanVipGetsDiscount() {
+32|   Rule rule = Rule.and(Rule.equals("country", "KR"), Rule.equals("type", "VIP"));
+33|   Customer customer = new Customer("KR", "VIP", 500_000);
+34|   assertTrue(RuleEngine.evaluate(rule, customer));
+35| }
 ```
 - **의도 및 코드 설명**: evaluate는 Rule의 각 case를 패턴 매칭으로 처리하며, 복합 규칙은 재귀 호출. 순수 함수이므로 입력만으로 결과 결정
 - **무엇이 좋아지나**:
@@ -381,6 +402,7 @@ void koreanVipGetsDiscount() {
 
   JSON으로 표현된 규칙은 Jackson 등의 라이브러리로 역직렬화하여 Rule ADT로 변환한다. 이 과정에서 타입 검증을 거치므로, 잘못된 형식의 규칙은 로딩 시점에 거부된다.
 
+**[그림 12.4]** Dynamic Rule Evaluation (동적 규칙 평가)
 ```
 DYNAMIC RULE LOADING ARCHITECTURE
 ====================================
@@ -416,20 +438,23 @@ DYNAMIC RULE LOADING ARCHITECTURE
 - **"모든 규칙을 DB에"**: 시스템 핵심 규칙(결제 검증 등)은 코드에 유지하고, 마케팅/프로모션 규칙만 외부화 권장
 
 ### Before: Traditional OOP
+
+**[코드 12.7]** Traditional OOP: 하드코딩 + 배포 의존 - 변경마다 개발팀 투입
 ```java
-// [X] 하드코딩 + 배포 의존 - 변경마다 개발팀 투입
-public class PromotionService {
-    // 프로모션 규칙 변경 = 코드 수정 + PR + 코드리뷰 + 빌드 + 배포
-    public boolean isPromotionTarget(Customer customer) {
-        // 2024 여름 프로모션
-        if (customer.getJoinDate().isAfter(LocalDate.of(2024, 6, 1))
-            && customer.getTotalSpend() >= 50000) {
-            return true;
-        }
-        // 2024 겨울 프로모션 추가! -> 또 배포...
-        return false;
-    }
-}
+ 1| // package: com.ecommerce.member
+ 2| // [X] 하드코딩 + 배포 의존 - 변경마다 개발팀 투입
+ 3| public class PromotionService {
+ 4|   // 프로모션 규칙 변경 = 코드 수정 + PR + 코드리뷰 + 빌드 + 배포
+ 5|   public boolean isPromotionTarget(Customer customer) {
+ 6|     // 2024 여름 프로모션
+ 7|     if (customer.getJoinDate().isAfter(LocalDate.of(2024, 6, 1))
+ 8|       && customer.getTotalSpend() >= 50000) {
+ 9|       return true;
+10|     }
+11|     // 2024 겨울 프로모션 추가! -> 또 배포...
+12|     return false;
+13|   }
+14| }
 ```
 - **의도 및 코드 설명**: 프로모션 규칙이 코드에 하드코딩되어 변경 시 전체 개발 프로세스 필요
 - **뭐가 문제인가**:
@@ -439,55 +464,58 @@ public class PromotionService {
   - 과거 프로모션 코드가 데드코드로 남음
 
 ### After: Modern Approach
+
+**[코드 12.8]** Modern: 규칙을 JSON/DB에서 동적 로딩
 ```java
-// [O] 규칙을 JSON/DB에서 동적 로딩
-// 1. JSON 형태의 규칙 저장
-// {
-//   "type": "and",
-//   "left": {"type": "equals", "attribute": "country", "value": "KR"},
-//   "right": {"type": "gte", "attribute": "totalSpend", "threshold": 500000}
-// }
-
-// 2. JSON -> Rule ADT 변환
-public class RuleLoader {
-    public static Rule fromJson(JsonNode node) {
-        return switch (node.get("type").asText()) {
-            case "equals" -> new Rule.Equals(
-                node.get("attribute").asText(),
-                node.get("value").asText()
-            );
-            case "gte" -> new Rule.GTE(
-                node.get("attribute").asText(),
-                node.get("threshold").asInt()
-            );
-            case "and" -> new Rule.And(
-                fromJson(node.get("left")),
-                fromJson(node.get("right"))
-            );
-            case "or" -> new Rule.Or(
-                fromJson(node.get("left")),
-                fromJson(node.get("right"))
-            );
-            case "not" -> new Rule.Not(
-                fromJson(node.get("rule"))
-            );
-            default -> throw new IllegalArgumentException(
-                "Unknown rule type: " + node.get("type"));
-        };
-    }
-}
-
-// 3. 동적 규칙 평가
-public class PromotionService {
-    private final RuleRepository ruleRepository;
-
-    public boolean isPromotionTarget(Customer customer) {
-        List<Rule> rules = ruleRepository.findActiveRules("promotion");
-        return rules.stream()
-            .anyMatch(rule -> RuleEngine.evaluate(rule, customer));
-    }
-}
-// 마케팅 팀이 Admin UI에서 규칙 수정 -> 즉시 적용!
+ 1| // package: com.ecommerce.rule
+ 2| // [O] 규칙을 JSON/DB에서 동적 로딩
+ 3| // 1. JSON 형태의 규칙 저장
+ 4| // {
+ 5| //   "type": "and",
+ 6| //   "left": {"type": "equals", "attribute": "country", "value": "KR"},
+ 7| //   "right": {"type": "gte", "attribute": "totalSpend", "threshold": 500000}
+ 8| // }
+ 9| 
+10| // 2. JSON -> Rule ADT 변환
+11| public class RuleLoader {
+12|   public static Rule fromJson(JsonNode node) {
+13|     return switch (node.get("type").asText()) {
+14|       case "equals" -> new Rule.Equals(
+15|         node.get("attribute").asText(),
+16|         node.get("value").asText()
+17|       );
+18|       case "gte" -> new Rule.GTE(
+19|         node.get("attribute").asText(),
+20|         node.get("threshold").asInt()
+21|       );
+22|       case "and" -> new Rule.And(
+23|         fromJson(node.get("left")),
+24|         fromJson(node.get("right"))
+25|       );
+26|       case "or" -> new Rule.Or(
+27|         fromJson(node.get("left")),
+28|         fromJson(node.get("right"))
+29|       );
+30|       case "not" -> new Rule.Not(
+31|         fromJson(node.get("rule"))
+32|       );
+33|       default -> throw new IllegalArgumentException(
+34|         "Unknown rule type: " + node.get("type"));
+35|     };
+36|   }
+37| }
+38| 
+39| // 3. 동적 규칙 평가
+40| public class PromotionService {
+41|   private final RuleRepository ruleRepository;
+42| 
+43|   public boolean isPromotionTarget(Customer customer) {
+44|     List<Rule> rules = ruleRepository.findActiveRules("promotion");
+45|     return rules.stream()
+46|       .anyMatch(rule -> RuleEngine.evaluate(rule, customer));
+47|   }
+48| }
+49| // 마케팅 팀이 Admin UI에서 규칙 수정 -> 즉시 적용!
 ```
 - **의도 및 코드 설명**: JSON을 Rule ADT로 역직렬화하는 RuleLoader와, DB에서 규칙을 로딩하여 평가하는 서비스. 규칙 변경은 DB 업데이트만으로 완료
 - **무엇이 좋아지나**:
@@ -524,6 +552,7 @@ public class PromotionService {
   - Rule을 직접 평가하는 대신, 설명 문자열로 변환하거나, SQL WHERE절로 변환하는 등 다양한 Interpreter 구현 가능
   - Rule의 테스트와 Interpreter의 테스트를 독립적으로 수행 가능
 
+**[그림 12.5]** Separation of Rule Definition from Execution (규칙 정의와 실행의 분리)
 ```
 MULTIPLE INTERPRETERS FOR SAME RULE
 ======================================
@@ -552,27 +581,30 @@ MULTIPLE INTERPRETERS FOR SAME RULE
 - **"항상 여러 Interpreter가 필요"**: 하나만 있어도 규칙 재사용성과 테스트 용이성이 향상됨
 
 ### Before: Traditional OOP
+
+**[코드 12.9]** Traditional OOP: 규칙 정의와 실행이 결합된 전략 패턴
 ```java
-// [X] 규칙 정의와 실행이 결합된 전략 패턴
-public class KoreanVipRule {
-    // 규칙 정의 + 실행이 한 클래스에 결합
-    public boolean check(Customer customer) {
-        return "KR".equals(customer.getCountry())
-            && "VIP".equals(customer.getType());
-    }
-
-    // 규칙을 설명하려면 또 다른 메서드 필요
-    public String describe() {
-        return "한국 VIP 고객";
-    }
-
-    // SQL로 변환하려면 또 다른 메서드 필요
-    public String toSql() {
-        return "country = 'KR' AND type = 'VIP'";
-    }
-}
-// 규칙마다 check, describe, toSql을 모두 구현해야 함
-// 새 해석 방식 추가 시 모든 규칙 클래스 수정 필요!
+ 1| // package: com.ecommerce.member
+ 2| // [X] 규칙 정의와 실행이 결합된 전략 패턴
+ 3| public class KoreanVipRule {
+ 4|   // 규칙 정의 + 실행이 한 클래스에 결합
+ 5|   public boolean check(Customer customer) {
+ 6|     return "KR".equals(customer.getCountry())
+ 7|       && "VIP".equals(customer.getType());
+ 8|   }
+ 9| 
+10|   // 규칙을 설명하려면 또 다른 메서드 필요
+11|   public String describe() {
+12|     return "한국 VIP 고객";
+13|   }
+14| 
+15|   // SQL로 변환하려면 또 다른 메서드 필요
+16|   public String toSql() {
+17|     return "country = 'KR' AND type = 'VIP'";
+18|   }
+19| }
+20| // 규칙마다 check, describe, toSql을 모두 구현해야 함
+21| // 새 해석 방식 추가 시 모든 규칙 클래스 수정 필요!
 ```
 - **의도 및 코드 설명**: 규칙 클래스가 평가, 설명, SQL 변환 등 모든 책임을 가짐
 - **뭐가 문제인가**:
@@ -582,62 +614,65 @@ public class KoreanVipRule {
   - 규칙 재사용 불가 (다른 도메인에 적용하려면 새 클래스 필요)
 
 ### After: Modern Approach
+
+**[코드 12.10]** Modern: 규칙 정의와 실행 완전 분리
 ```java
-// [O] 규칙 정의와 실행 완전 분리
-// 1. 규칙 정의 (WHAT) - 순수 데이터
-public sealed interface Rule {
-    record Equals(String attribute, String value) implements Rule {}
-    record GTE(String attribute, int threshold) implements Rule {}
-    record And(Rule left, Rule right) implements Rule {}
-    record Or(Rule left, Rule right) implements Rule {}
-    record Not(Rule rule) implements Rule {}
-}
-
-// 2. 해석기 1: 평가 (boolean 결과)
-public class RuleEvaluator {
-    public static boolean evaluate(Rule rule, Customer customer) {
-        return switch (rule) {
-            case Rule.Equals(var a, var v) -> getAttr(customer, a).equals(v);
-            case Rule.GTE(var a, var t) -> getIntAttr(customer, a) >= t;
-            case Rule.And(var l, var r) -> evaluate(l, customer) && evaluate(r, customer);
-            case Rule.Or(var l, var r) -> evaluate(l, customer) || evaluate(r, customer);
-            case Rule.Not(var inner) -> !evaluate(inner, customer);
-        };
-    }
-}
-
-// 3. 해석기 2: 사람이 읽을 수 있는 설명
-public class RuleExplainer {
-    public static String explain(Rule rule) {
-        return switch (rule) {
-            case Rule.Equals(var a, var v) -> a + " = '" + v + "'";
-            case Rule.GTE(var a, var t) -> a + " >= " + t;
-            case Rule.And(var l, var r) -> "(" + explain(l) + " AND " + explain(r) + ")";
-            case Rule.Or(var l, var r) -> "(" + explain(l) + " OR " + explain(r) + ")";
-            case Rule.Not(var inner) -> "NOT(" + explain(inner) + ")";
-        };
-    }
-}
-
-// 4. 해석기 3: SQL WHERE절 생성
-public class RuleToSql {
-    public static String toWhere(Rule rule) {
-        return switch (rule) {
-            case Rule.Equals(var a, var v) -> a + " = '" + v + "'";
-            case Rule.GTE(var a, var t) -> a + " >= " + t;
-            case Rule.And(var l, var r) -> toWhere(l) + " AND " + toWhere(r);
-            case Rule.Or(var l, var r) -> "(" + toWhere(l) + " OR " + toWhere(r) + ")";
-            case Rule.Not(var inner) -> "NOT(" + toWhere(inner) + ")";
-        };
-    }
-}
-
-// 하나의 Rule을 다양한 방식으로 해석
-Rule rule = Rule.and(Rule.equals("country", "KR"), Rule.gte("totalSpend", 1_000_000));
-
-boolean result = RuleEvaluator.evaluate(rule, customer);    // true/false
-String desc = RuleExplainer.explain(rule);                  // "(country = 'KR' AND totalSpend >= 1000000)"
-String sql = RuleToSql.toWhere(rule);                       // "country = 'KR' AND totalSpend >= 1000000"
+ 1| // package: com.ecommerce.rule
+ 2| // [O] 규칙 정의와 실행 완전 분리
+ 3| // 1. 규칙 정의 (WHAT) - 순수 데이터
+ 4| public sealed interface Rule {
+ 5|   record Equals(String attribute, String value) implements Rule {}
+ 6|   record GTE(String attribute, int threshold) implements Rule {}
+ 7|   record And(Rule left, Rule right) implements Rule {}
+ 8|   record Or(Rule left, Rule right) implements Rule {}
+ 9|   record Not(Rule rule) implements Rule {}
+10| }
+11| 
+12| // 2. 해석기 1: 평가 (boolean 결과)
+13| public class RuleEvaluator {
+14|   public static boolean evaluate(Rule rule, Customer customer) {
+15|     return switch (rule) {
+16|       case Rule.Equals(var a, var v) -> getAttr(customer, a).equals(v);
+17|       case Rule.GTE(var a, var t) -> getIntAttr(customer, a) >= t;
+18|       case Rule.And(var l, var r) -> evaluate(l, customer) && evaluate(r, customer);
+19|       case Rule.Or(var l, var r) -> evaluate(l, customer) || evaluate(r, customer);
+20|       case Rule.Not(var inner) -> !evaluate(inner, customer);
+21|     };
+22|   }
+23| }
+24| 
+25| // 3. 해석기 2: 사람이 읽을 수 있는 설명
+26| public class RuleExplainer {
+27|   public static String explain(Rule rule) {
+28|     return switch (rule) {
+29|       case Rule.Equals(var a, var v) -> a + " = '" + v + "'";
+30|       case Rule.GTE(var a, var t) -> a + " >= " + t;
+31|       case Rule.And(var l, var r) -> "(" + explain(l) + " AND " + explain(r) + ")";
+32|       case Rule.Or(var l, var r) -> "(" + explain(l) + " OR " + explain(r) + ")";
+33|       case Rule.Not(var inner) -> "NOT(" + explain(inner) + ")";
+34|     };
+35|   }
+36| }
+37| 
+38| // 4. 해석기 3: SQL WHERE절 생성
+39| public class RuleToSql {
+40|   public static String toWhere(Rule rule) {
+41|     return switch (rule) {
+42|       case Rule.Equals(var a, var v) -> a + " = '" + v + "'";
+43|       case Rule.GTE(var a, var t) -> a + " >= " + t;
+44|       case Rule.And(var l, var r) -> toWhere(l) + " AND " + toWhere(r);
+45|       case Rule.Or(var l, var r) -> "(" + toWhere(l) + " OR " + toWhere(r) + ")";
+46|       case Rule.Not(var inner) -> "NOT(" + toWhere(inner) + ")";
+47|     };
+48|   }
+49| }
+50| 
+51| // 하나의 Rule을 다양한 방식으로 해석
+52| Rule rule = Rule.and(Rule.equals("country", "KR"), Rule.gte("totalSpend", 1_000_000));
+53| 
+54| boolean result = RuleEvaluator.evaluate(rule, customer);    // true/false
+55| String desc = RuleExplainer.explain(rule);                  // "(country = 'KR' AND totalSpend >= 1000000)"
+56| String sql = RuleToSql.toWhere(rule);                       // "country = 'KR' AND totalSpend >= 1000000"
 ```
 - **의도 및 코드 설명**: Rule은 순수 데이터, 각 해석기는 독립적인 순수 함수. 새 해석 방식은 새 클래스 추가만으로 가능
 - **무엇이 좋아지나**:

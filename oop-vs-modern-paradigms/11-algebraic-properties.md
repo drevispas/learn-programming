@@ -15,6 +15,7 @@
 
   실전에서 결합법칙을 만족하는 대표적인 연산은 덧셈, 문자열 연결, 리스트 병합, 최대/최소값 등이다. 반면 뺄셈, 나눗셈, 평균 계산 등은 결합법칙을 만족하지 않는다.
 
+**[그림 11.1]** Associativity (결합법칙) - 병렬 처리 안전성
 ```
 SEQUENTIAL vs PARALLEL PROCESSING (Associativity)
 ==================================================
@@ -43,25 +44,28 @@ Sequential: O(n)                 Parallel: O(n/p)
 - **"모든 연산이 병렬화 가능"**: 뺄셈, 나눗셈, 평균 계산 등 결합법칙을 만족하지 않는 연산은 병렬 처리 시 결과가 달라질 수 있음.
 
 ### Before: Traditional OOP
+
+**[코드 11.1]** Traditional OOP: 순차 처리만 가능한 가변 누적기
 ```java
-// [X] 순차 처리만 가능한 가변 누적기
-public class OrderTotalCalculator {
-    private BigDecimal total = BigDecimal.ZERO; // 가변 상태
-
-    public void addOrderTotal(Order order) {
-        this.total = this.total.add(order.getTotal()); // 상태 변경
-    }
-
-    public BigDecimal getTotal() {
-        return this.total;
-    }
-}
-
-// 사용: 반드시 순차 처리
-OrderTotalCalculator calc = new OrderTotalCalculator();
-for (Order order : millionOrders) {
-    calc.addOrderTotal(order); // 순서대로만 가능
-}
+ 1| // package: com.ecommerce.order
+ 2| // [X] 순차 처리만 가능한 가변 누적기
+ 3| public class OrderTotalCalculator {
+ 4|   private BigDecimal total = BigDecimal.ZERO; // 가변 상태
+ 5| 
+ 6|   public void addOrderTotal(Order order) {
+ 7|     this.total = this.total.add(order.getTotal()); // 상태 변경
+ 8|   }
+ 9| 
+10|   public BigDecimal getTotal() {
+11|     return this.total;
+12|   }
+13| }
+14| 
+15| // 사용: 반드시 순차 처리
+16| OrderTotalCalculator calc = new OrderTotalCalculator();
+17| for (Order order : millionOrders) {
+18|   calc.addOrderTotal(order); // 순서대로만 가능
+19| }
 ```
 - **의도 및 코드 설명**: 가변 누적 변수를 사용하여 주문 합계를 계산하는 전통적 방식
 - **뭐가 문제인가**:
@@ -71,32 +75,35 @@ for (Order order : millionOrders) {
   - 분산 환경에서 분할 처리 불가
 
 ### After: Modern Approach
+
+**[코드 11.2]** Modern: 결합법칙을 만족하는 불변 Money 타입
 ```java
-// [O] 결합법칙을 만족하는 불변 Money 타입
-public record Money(BigDecimal amount, Currency currency) {
-    public Money {
-        if (amount == null) throw new IllegalArgumentException("금액 필수");
-        if (currency == null) throw new IllegalArgumentException("통화 필수");
-    }
-
-    public static Money zero(Currency currency) {
-        return new Money(BigDecimal.ZERO, currency);
-    }
-
-    // 결합법칙 만족: (a.add(b)).add(c) == a.add(b.add(c))
-    public Money add(Money other) {
-        if (this.currency != other.currency) {
-            throw new IllegalArgumentException("통화 불일치");
-        }
-        return new Money(this.amount.add(other.amount), this.currency);
-    }
-}
-
-// 결합법칙 덕분에 parallelStream 안전하게 사용
-List<Money> orderTotals = getOrderTotals(); // 100만 건
-
-Money total = orderTotals.parallelStream()
-    .reduce(Money.zero(Currency.KRW), Money::add); // O(n/p)
+ 1| // package: com.ecommerce.shared
+ 2| // [O] 결합법칙을 만족하는 불변 Money 타입
+ 3| public record Money(BigDecimal amount, Currency currency) {
+ 4|   public Money {
+ 5|     if (amount == null) throw new IllegalArgumentException("금액 필수");
+ 6|     if (currency == null) throw new IllegalArgumentException("통화 필수");
+ 7|   }
+ 8| 
+ 9|   public static Money zero(Currency currency) {
+10|     return new Money(BigDecimal.ZERO, currency);
+11|   }
+12| 
+13|   // 결합법칙 만족: (a.add(b)).add(c) == a.add(b.add(c))
+14|   public Money add(Money other) {
+15|     if (this.currency != other.currency) {
+16|       throw new IllegalArgumentException("통화 불일치");
+17|     }
+18|     return new Money(this.amount.add(other.amount), this.currency);
+19|   }
+20| }
+21| 
+22| // 결합법칙 덕분에 parallelStream 안전하게 사용
+23| List<Money> orderTotals = getOrderTotals(); // 100만 건
+24| 
+25| Money total = orderTotals.parallelStream()
+26|   .reduce(Money.zero(Currency.KRW), Money::add); // O(n/p)
 ```
 - **의도 및 코드 설명**: 불변 record의 add 연산이 결합법칙을 만족하므로, parallelStream의 분할-합산이 안전
 - **무엇이 좋아지나**:
@@ -131,6 +138,7 @@ Money total = orderTotals.parallelStream()
 
   멱등성은 "토글 스위치(ON/OFF)"가 아닌 "ON 버튼"과 같다. ON 버튼은 이미 켜져 있으면 아무 변화가 없고, 꺼져 있으면 켠다. 두 번 눌러도 결과는 같다.
 
+**[그림 11.2]** Idempotency (멱등성) - 재시도 안전성
 ```
 IDEMPOTENT vs NON-IDEMPOTENT
 ==============================
@@ -158,19 +166,22 @@ Payment Example:
 - **"멱등 = 순수 함수"**: 순수 함수는 부수효과가 없지만, 멱등한 연산은 부수효과가 있을 수 있음 (첫 실행에서만)
 
 ### Before: Traditional OOP
-```java
-// [X] 멱등하지 않은 결제 - 중복 호출 시 이중 출금
-public class PaymentService {
-    public void processPayment(PaymentRequest request) {
-        account.withdraw(request.getAmount());  // 호출할 때마다 출금!
-        merchant.deposit(request.getAmount());
-        log.info("결제 완료: {}", request.getAmount());
-    }
-}
 
-// 네트워크 오류로 재시도 시:
-// 1차 호출: 10,000원 출금 (성공, 하지만 응답 타임아웃)
-// 2차 호출: 10,000원 또 출금! (이중 결제!)
+**[코드 11.3]** Traditional OOP: 멱등하지 않은 결제 - 중복 호출 시 이중 출금
+```java
+ 1| // package: com.ecommerce.payment
+ 2| // [X] 멱등하지 않은 결제 - 중복 호출 시 이중 출금
+ 3| public class PaymentService {
+ 4|   public void processPayment(PaymentRequest request) {
+ 5|     account.withdraw(request.getAmount());  // 호출할 때마다 출금!
+ 6|     merchant.deposit(request.getAmount());
+ 7|     log.info("결제 완료: {}", request.getAmount());
+ 8|   }
+ 9| }
+10| 
+11| // 네트워크 오류로 재시도 시:
+12| // 1차 호출: 10,000원 출금 (성공, 하지만 응답 타임아웃)
+13| // 2차 호출: 10,000원 또 출금! (이중 결제!)
 ```
 - **의도 및 코드 설명**: 결제 요청을 받을 때마다 무조건 출금하는 단순한 구현
 - **뭐가 문제인가**:
@@ -180,35 +191,38 @@ public class PaymentService {
   - 결제 취소/환불 로직이 복잡해짐
 
 ### After: Modern Approach
+
+**[코드 11.4]** Modern: 멱등한 결제 - 재시도 안전
 ```java
-// [O] 멱등한 결제 - 재시도 안전
-public record PaymentId(String value) {}
-
-public class PaymentService {
-    private final PaymentRepository paymentRepository;
-
-    public Result<Payment, PaymentError> processPayment(
-            PaymentId id, PaymentRequest request) {
-        // 이미 처리된 결제인지 확인
-        if (paymentRepository.exists(id)) {
-            return Result.success(paymentRepository.findById(id).get());
-        }
-
-        // 첫 실행에서만 실제 처리
-        Result<TransactionId, PaymentError> txResult =
-            account.withdraw(request.amount());
-
-        return txResult.map(txId -> {
-            Payment payment = new Payment(id, request, txId, LocalDateTime.now());
-            paymentRepository.save(payment);
-            return payment;
-        });
-    }
-}
-
-// 네트워크 오류로 재시도 시:
-// 1차 호출: 10,000원 출금 + 결과 저장 (성공)
-// 2차 호출: 이미 존재하므로 저장된 결과 반환 (안전!)
+ 1| // package: com.ecommerce.payment
+ 2| // [O] 멱등한 결제 - 재시도 안전
+ 3| public record PaymentId(String value) {}
+ 4| 
+ 5| public class PaymentService {
+ 6|   private final PaymentRepository paymentRepository;
+ 7| 
+ 8|   public Result<Payment, PaymentError> processPayment(
+ 9|       PaymentId id, PaymentRequest request) {
+10|     // 이미 처리된 결제인지 확인
+11|     if (paymentRepository.exists(id)) {
+12|       return Result.success(paymentRepository.findById(id).get());
+13|     }
+14| 
+15|     // 첫 실행에서만 실제 처리
+16|     Result<TransactionId, PaymentError> txResult =
+17|       account.withdraw(request.amount());
+18| 
+19|     return txResult.map(txId -> {
+20|       Payment payment = new Payment(id, request, txId, LocalDateTime.now());
+21|       paymentRepository.save(payment);
+22|       return payment;
+23|     });
+24|   }
+25| }
+26| 
+27| // 네트워크 오류로 재시도 시:
+28| // 1차 호출: 10,000원 출금 + 결과 저장 (성공)
+29| // 2차 호출: 이미 존재하므로 저장된 결과 반환 (안전!)
 ```
 - **의도 및 코드 설명**: PaymentId로 중복 여부를 확인하여, 이미 처리된 요청은 기존 결과를 반환
 - **무엇이 좋아지나**:
@@ -248,6 +262,7 @@ public class PaymentService {
 
   도메인에서 "아무 할인 없음", "무료 배송", "빈 장바구니" 등은 모두 해당 연산의 항등원으로 모델링할 수 있다.
 
+**[그림 11.3]** Identity Element (항등원) - 초기값과 빈 컬렉션 처리
 ```
 IDENTITY ELEMENT IN reduce()
 ==============================
@@ -277,28 +292,31 @@ Domain Identity Elements:
 - **"항등원 = 기본값"**: 기본값은 임의의 초기값이지만, 항등원은 연산과의 관계에서 수학적으로 정의됨
 
 ### Before: Traditional OOP
-```java
-// [X] 빈 컬렉션에서 예외 발생 가능한 누적 계산
-public class OrderSummary {
-    public BigDecimal calculateTotal(List<Order> orders) {
-        if (orders == null || orders.isEmpty()) {
-            return BigDecimal.ZERO; // 매번 null/empty 체크 필수
-        }
-        BigDecimal total = BigDecimal.ZERO;
-        for (Order order : orders) {
-            total = total.add(order.getTotal());
-        }
-        return total;
-    }
 
-    public BigDecimal calculateAverage(List<Order> orders) {
-        if (orders == null || orders.isEmpty()) {
-            return BigDecimal.ZERO; // 또 null/empty 체크
-        }
-        return calculateTotal(orders)
-            .divide(BigDecimal.valueOf(orders.size()));
-    }
-}
+**[코드 11.5]** Traditional OOP: 빈 컬렉션에서 예외 발생 가능한 누적 계산
+```java
+ 1| // package: com.ecommerce.order
+ 2| // [X] 빈 컬렉션에서 예외 발생 가능한 누적 계산
+ 3| public class OrderSummary {
+ 4|   public BigDecimal calculateTotal(List<Order> orders) {
+ 5|     if (orders == null || orders.isEmpty()) {
+ 6|       return BigDecimal.ZERO; // 매번 null/empty 체크 필수
+ 7|     }
+ 8|     BigDecimal total = BigDecimal.ZERO;
+ 9|     for (Order order : orders) {
+10|       total = total.add(order.getTotal());
+11|     }
+12|     return total;
+13|   }
+14| 
+15|   public BigDecimal calculateAverage(List<Order> orders) {
+16|     if (orders == null || orders.isEmpty()) {
+17|       return BigDecimal.ZERO; // 또 null/empty 체크
+18|     }
+19|     return calculateTotal(orders)
+20|       .divide(BigDecimal.valueOf(orders.size()));
+21|   }
+22| }
 ```
 - **의도 및 코드 설명**: 매번 null/empty 방어 코드를 작성하여 빈 컬렉션을 처리
 - **뭐가 문제인가**:
@@ -308,40 +326,43 @@ public class OrderSummary {
   - 도메인 의미 없이 기술적 방어만 존재
 
 ### After: Modern Approach
+
+**[코드 11.6]** Modern: 항등원을 활용한 안전한 reduce
 ```java
-// [O] 항등원을 활용한 안전한 reduce
-public record Money(BigDecimal amount, Currency currency) {
-    public static Money zero(Currency currency) {
-        return new Money(BigDecimal.ZERO, currency);
-    }
-
-    public Money add(Money other) {
-        return new Money(this.amount.add(other.amount), this.currency);
-    }
-}
-
-// 할인 타입에도 항등원 적용
-public sealed interface Discount {
-    record NoDiscount() implements Discount {}    // 항등원!
-    record Percentage(int rate) implements Discount {}
-    record FixedAmount(Money amount) implements Discount {}
-}
-
-// 항등원 덕분에 빈 컬렉션에도 안전
-public static Money totalPaid(Order order) {
-    return order.payments().stream()
-        .map(Payment::amount)
-        .reduce(Money.zero(order.currency()), Money::add);
-    // 결제 내역이 없어도 0원 반환 (예외 없음)
-}
-
-// 여러 할인을 순차 적용 (NoDiscount = 항등원)
-public static Money applyAll(Money original, List<Discount> discounts) {
-    return discounts.stream()
-        .reduce(original,
-            (money, discount) -> DiscountCalculator.apply(money, discount),
-            (m1, m2) -> m1);
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [O] 항등원을 활용한 안전한 reduce
+ 3| public record Money(BigDecimal amount, Currency currency) {
+ 4|   public static Money zero(Currency currency) {
+ 5|     return new Money(BigDecimal.ZERO, currency);
+ 6|   }
+ 7| 
+ 8|   public Money add(Money other) {
+ 9|     return new Money(this.amount.add(other.amount), this.currency);
+10|   }
+11| }
+12| 
+13| // 할인 타입에도 항등원 적용
+14| public sealed interface Discount {
+15|   record NoDiscount() implements Discount {}    // 항등원!
+16|   record Percentage(int rate) implements Discount {}
+17|   record FixedAmount(Money amount) implements Discount {}
+18| }
+19| 
+20| // 항등원 덕분에 빈 컬렉션에도 안전
+21| public static Money totalPaid(Order order) {
+22|   return order.payments().stream()
+23|     .map(Payment::amount)
+24|     .reduce(Money.zero(order.currency()), Money::add);
+25|   // 결제 내역이 없어도 0원 반환 (예외 없음)
+26| }
+27| 
+28| // 여러 할인을 순차 적용 (NoDiscount = 항등원)
+29| public static Money applyAll(Money original, List<Discount> discounts) {
+30|   return discounts.stream()
+31|     .reduce(original,
+32|       (money, discount) -> DiscountCalculator.apply(money, discount),
+33|       (m1, m2) -> m1);
+34| }
 ```
 - **의도 및 코드 설명**: Money.zero()와 NoDiscount()를 항등원으로 정의하여, 빈 컬렉션에서도 예외 없이 자연스러운 결과 반환
 - **무엇이 좋아지나**:
@@ -376,6 +397,7 @@ public static Money applyAll(Money original, List<Discount> discounts) {
 
   주의: 교환법칙과 결합법칙은 독립적인 속성이다. 문자열 연결은 결합법칙은 만족하지만 교환법칙은 만족하지 않는다 ("AB" != "BA"). 반면 max(a, b)는 둘 다 만족한다.
 
+**[그림 11.4]** Commutativity (교환법칙) - 순서 무관 연산
 ```
 COMMUTATIVITY IN DISTRIBUTED SYSTEMS
 ======================================
@@ -403,28 +425,31 @@ Messages arrive in different order:
 - **"교환법칙이 필수"**: 순서가 보장되는 단일 노드 환경에서는 결합법칙만으로 충분
 
 ### Before: Traditional OOP
+
+**[코드 11.7]** Traditional OOP: 순서 의존적인 할인 적용 - 순서에 따라 결과 다름
 ```java
-// [X] 순서 의존적인 할인 적용 - 순서에 따라 결과 다름
-public class DiscountService {
-    private BigDecimal price;
-
-    public DiscountService(BigDecimal price) {
-        this.price = price;
-    }
-
-    public void applyPercentageDiscount(int rate) {
-        this.price = this.price.multiply(
-            BigDecimal.valueOf(100 - rate).divide(BigDecimal.valueOf(100)));
-    }
-
-    public void applyFixedDiscount(BigDecimal amount) {
-        this.price = this.price.subtract(amount);
-    }
-}
-
-// 순서에 따라 결과가 다름!
-// 10000원, 10% 할인 후 1000원 할인: 10000 * 0.9 - 1000 = 8000
-// 10000원, 1000원 할인 후 10% 할인: (10000 - 1000) * 0.9 = 8100
+ 1| // package: com.ecommerce.coupon
+ 2| // [X] 순서 의존적인 할인 적용 - 순서에 따라 결과 다름
+ 3| public class DiscountService {
+ 4|   private BigDecimal price;
+ 5| 
+ 6|   public DiscountService(BigDecimal price) {
+ 7|     this.price = price;
+ 8|   }
+ 9| 
+10|   public void applyPercentageDiscount(int rate) {
+11|     this.price = this.price.multiply(
+12|       BigDecimal.valueOf(100 - rate).divide(BigDecimal.valueOf(100)));
+13|   }
+14| 
+15|   public void applyFixedDiscount(BigDecimal amount) {
+16|     this.price = this.price.subtract(amount);
+17|   }
+18| }
+19| 
+20| // 순서에 따라 결과가 다름!
+21| // 10000원, 10% 할인 후 1000원 할인: 10000 * 0.9 - 1000 = 8000
+22| // 10000원, 1000원 할인 후 10% 할인: (10000 - 1000) * 0.9 = 8100
 ```
 - **의도 및 코드 설명**: 가변 상태에 할인을 순차적으로 적용하여, 호출 순서에 따라 결과가 달라짐
 - **뭐가 문제인가**:
@@ -433,39 +458,42 @@ public class DiscountService {
   - 분산 환경에서 이벤트 순서가 다르면 결과 불일치
 
 ### After: Modern Approach
+
+**[코드 11.8]** Modern: 교환법칙을 만족하도록 설계: 할인을 독립적으로 계산 후 합산
 ```java
-// [O] 교환법칙을 만족하도록 설계: 할인을 독립적으로 계산 후 합산
-public sealed interface Discount {
-    record NoDiscount() implements Discount {}
-    record Percentage(int rate) implements Discount {}
-    record FixedAmount(Money amount) implements Discount {}
-}
-
-public class DiscountCalculator {
-    // 각 할인의 할인액을 독립적으로 계산
-    public static Money discountAmount(Money original, Discount discount) {
-        return switch (discount) {
-            case NoDiscount() -> Money.zero(original.currency());
-            case Percentage(int rate) ->
-                new Money(original.amount()
-                    .multiply(BigDecimal.valueOf(rate))
-                    .divide(BigDecimal.valueOf(100)), original.currency());
-            case FixedAmount(Money amt) -> amt;
-        };
-    }
-
-    // 할인액을 합산하여 적용 (합산은 교환법칙 만족)
-    public static Money applyAll(Money original, List<Discount> discounts) {
-        Money totalDiscount = discounts.stream()
-            .map(d -> discountAmount(original, d))
-            .reduce(Money.zero(original.currency()), Money::add); // 합산은 교환법칙!
-        return original.subtract(totalDiscount);
-    }
-}
-
-// 순서와 무관하게 동일한 결과
-// 10000원, [10%할인, 1000원할인] = 10000 - (1000 + 1000) = 8000
-// 10000원, [1000원할인, 10%할인] = 10000 - (1000 + 1000) = 8000
+ 1| // package: com.ecommerce.shared
+ 2| // [O] 교환법칙을 만족하도록 설계: 할인을 독립적으로 계산 후 합산
+ 3| public sealed interface Discount {
+ 4|   record NoDiscount() implements Discount {}
+ 5|   record Percentage(int rate) implements Discount {}
+ 6|   record FixedAmount(Money amount) implements Discount {}
+ 7| }
+ 8| 
+ 9| public class DiscountCalculator {
+10|   // 각 할인의 할인액을 독립적으로 계산
+11|   public static Money discountAmount(Money original, Discount discount) {
+12|     return switch (discount) {
+13|       case NoDiscount() -> Money.zero(original.currency());
+14|       case Percentage(int rate) ->
+15|         new Money(original.amount()
+16|           .multiply(BigDecimal.valueOf(rate))
+17|           .divide(BigDecimal.valueOf(100)), original.currency());
+18|       case FixedAmount(Money amt) -> amt;
+19|     };
+20|   }
+21| 
+22|   // 할인액을 합산하여 적용 (합산은 교환법칙 만족)
+23|   public static Money applyAll(Money original, List<Discount> discounts) {
+24|     Money totalDiscount = discounts.stream()
+25|       .map(d -> discountAmount(original, d))
+26|       .reduce(Money.zero(original.currency()), Money::add); // 합산은 교환법칙!
+27|     return original.subtract(totalDiscount);
+28|   }
+29| }
+30| 
+31| // 순서와 무관하게 동일한 결과
+32| // 10000원, [10%할인, 1000원할인] = 10000 - (1000 + 1000) = 8000
+33| // 10000원, [1000원할인, 10%할인] = 10000 - (1000 + 1000) = 8000
 ```
 - **의도 및 코드 설명**: 각 할인의 할인액을 원래 가격 기준으로 독립 계산한 후 합산. 합산(덧셈)은 교환법칙을 만족하므로 순서 무관
 - **무엇이 좋아지나**:
@@ -499,6 +527,7 @@ public class DiscountCalculator {
 
   이 속성들은 개별로도 유용하지만, 결합하면 더 강력해진다. 결합법칙 + 항등원 = Monoid로 안전한 병렬 reduce를, 멱등성 + 재시도 = 안전한 분산 처리를 보장한다.
 
+**[그림 11.5]** Practical Applications (실전 적용) - reduce, fold, retry
 ```
 ALGEBRAIC PROPERTIES IN PRACTICE
 ==================================
@@ -524,31 +553,34 @@ Combined: Monoid (Assoc + Id) -> parallelStream().reduce(id, op)
 - **"모든 연산에 적용 가능"**: 뺄셈, 나눗셈, 평균 등은 이러한 속성을 만족하지 않으므로 별도 설계 필요
 
 ### Before: Traditional OOP
+
+**[코드 11.9]** Traditional OOP: 대수적 속성을 고려하지 않은 설계
 ```java
-// [X] 대수적 속성을 고려하지 않은 설계
-public class CartService {
-    private Cart cart = new Cart();
-
-    // 결합법칙 미고려: 병렬 처리 불가
-    public void addItem(CartItem item) {
-        cart.getItems().add(item); // 가변 조작
-    }
-
-    // 멱등성 미고려: 중복 호출 시 아이템 중복
-    public void mergeCart(Cart other) {
-        for (CartItem item : other.getItems()) {
-            cart.getItems().add(item); // 중복 체크 없음
-        }
-    }
-
-    // 항등원 미고려: 빈 장바구니에서 예외 가능
-    public BigDecimal getTotal() {
-        return cart.getItems().stream()
-            .map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getQty())))
-            .reduce(BigDecimal::add)
-            .orElseThrow(); // 빈 카트에서 예외!
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [X] 대수적 속성을 고려하지 않은 설계
+ 3| public class CartService {
+ 4|   private Cart cart = new Cart();
+ 5| 
+ 6|   // 결합법칙 미고려: 병렬 처리 불가
+ 7|   public void addItem(CartItem item) {
+ 8|     cart.getItems().add(item); // 가변 조작
+ 9|   }
+10| 
+11|   // 멱등성 미고려: 중복 호출 시 아이템 중복
+12|   public void mergeCart(Cart other) {
+13|     for (CartItem item : other.getItems()) {
+14|       cart.getItems().add(item); // 중복 체크 없음
+15|     }
+16|   }
+17| 
+18|   // 항등원 미고려: 빈 장바구니에서 예외 가능
+19|   public BigDecimal getTotal() {
+20|     return cart.getItems().stream()
+21|       .map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getQty())))
+22|       .reduce(BigDecimal::add)
+23|       .orElseThrow(); // 빈 카트에서 예외!
+24|   }
+25| }
 ```
 - **의도 및 코드 설명**: 가변 상태, 중복 체크 없음, 빈 컬렉션 미처리로 여러 대수적 속성을 위반
 - **뭐가 문제인가**:
@@ -558,49 +590,52 @@ public class CartService {
   - 장바구니 병합 순서에 따라 결과 다를 수 있음
 
 ### After: Modern Approach
+
+**[코드 11.10]** Modern: 대수적 속성을 종합 적용한 Cart 설계
 ```java
-// [O] 대수적 속성을 종합 적용한 Cart 설계
-public record CartItem(ProductId productId, Quantity quantity, Money price) {
-    public CartItem addQuantity(Quantity additional) {
-        return new CartItem(productId, quantity.add(additional), price);
-    }
-}
-
-public record Cart(List<CartItem> items) {
-    public static Cart empty() { return new Cart(List.of()); } // 항등원
-
-    // 결합법칙 만족: (a.merge(b)).merge(c) == a.merge(b.merge(c))
-    // 교환법칙 만족: a.merge(b) == b.merge(a) (같은 상품은 수량 합산)
-    public Cart merge(Cart other) {
-        Map<ProductId, CartItem> merged = new HashMap<>();
-        for (CartItem item : this.items) {
-            merged.merge(item.productId(), item,
-                (existing, newItem) -> existing.addQuantity(newItem.quantity()));
-        }
-        for (CartItem item : other.items) {
-            merged.merge(item.productId(), item,
-                (existing, newItem) -> existing.addQuantity(newItem.quantity()));
-        }
-        return new Cart(List.copyOf(merged.values()));
-    }
-
-    // 항등원 덕분에 안전한 total 계산
-    public Money total() {
-        return items.stream()
-            .map(item -> item.price().multiply(item.quantity().value()))
-            .reduce(Money.zero(Currency.KRW), Money::add); // 빈 카트도 안전
-    }
-}
-
-// 멱등한 장바구니 동기화
-public Result<Cart, CartError> syncCart(UserId userId, Cart clientCart) {
-    Cart serverCart = cartRepository.findByUserId(userId)
-        .orElse(Cart.empty());   // 항등원 활용
-    Cart merged = serverCart.merge(clientCart); // 결합+교환법칙
-    cartRepository.save(userId, merged);
-    return Result.success(merged);
-}
-// 중복 호출해도 merge는 멱등하게 동작 (같은 아이템 수량만 합산)
+ 1| // package: com.ecommerce.shared
+ 2| // [O] 대수적 속성을 종합 적용한 Cart 설계
+ 3| public record CartItem(ProductId productId, Quantity quantity, Money price) {
+ 4|   public CartItem addQuantity(Quantity additional) {
+ 5|     return new CartItem(productId, quantity.add(additional), price);
+ 6|   }
+ 7| }
+ 8| 
+ 9| public record Cart(List<CartItem> items) {
+10|   public static Cart empty() { return new Cart(List.of()); } // 항등원
+11| 
+12|   // 결합법칙 만족: (a.merge(b)).merge(c) == a.merge(b.merge(c))
+13|   // 교환법칙 만족: a.merge(b) == b.merge(a) (같은 상품은 수량 합산)
+14|   public Cart merge(Cart other) {
+15|     Map<ProductId, CartItem> merged = new HashMap<>();
+16|     for (CartItem item : this.items) {
+17|       merged.merge(item.productId(), item,
+18|         (existing, newItem) -> existing.addQuantity(newItem.quantity()));
+19|     }
+20|     for (CartItem item : other.items) {
+21|       merged.merge(item.productId(), item,
+22|         (existing, newItem) -> existing.addQuantity(newItem.quantity()));
+23|     }
+24|     return new Cart(List.copyOf(merged.values()));
+25|   }
+26| 
+27|   // 항등원 덕분에 안전한 total 계산
+28|   public Money total() {
+29|     return items.stream()
+30|       .map(item -> item.price().multiply(item.quantity().value()))
+31|       .reduce(Money.zero(Currency.KRW), Money::add); // 빈 카트도 안전
+32|   }
+33| }
+34| 
+35| // 멱등한 장바구니 동기화
+36| public Result<Cart, CartError> syncCart(UserId userId, Cart clientCart) {
+37|   Cart serverCart = cartRepository.findByUserId(userId)
+38|     .orElse(Cart.empty());   // 항등원 활용
+39|   Cart merged = serverCart.merge(clientCart); // 결합+교환법칙
+40|   cartRepository.save(userId, merged);
+41|   return Result.success(merged);
+42| }
+43| // 중복 호출해도 merge는 멱등하게 동작 (같은 아이템 수량만 합산)
 ```
 - **의도 및 코드 설명**: Cart 병합이 결합법칙, 교환법칙을 만족하고, empty()가 항등원 역할을 하며, 동기화가 멱등하게 설계됨
 - **무엇이 좋아지나**:

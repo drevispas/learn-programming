@@ -18,6 +18,7 @@
 
   Lens의 본질: "불변 세계에서의 setter" = getter + 새 값으로 구조를 재구성하는 함수.
 
+**[그림 10.1]** Lens 패턴 (불변 객체의 중첩 업데이트)
 ```
 +-------------------------------------------------------------------+
 |                  Lens = 불변 구조의 초점                              |
@@ -46,32 +47,35 @@
 - **Builder 패턴**: Builder는 가변 상태를 축적하지만, Lens는 순수 함수적 업데이트이다.
 
 ### Before: Traditional OOP
+
+**[코드 10.1]** Traditional OOP: 중첩된 불변 객체 수정 시 모든 계층을 수동으로 재생성
 ```java
-// [X] 중첩된 불변 객체 수정 시 모든 계층을 수동으로 재생성
-public record Address(String street, String city, String zipCode) {}
-public record Customer(Long id, String name, Address address) {}
-public record Order(Long id, Customer customer, List<Item> items) {}
-
-public class OrderService {
-    public Order updateCustomerCity(Order order, String newCity) {
-        // 3단계 중첩 재생성 -- 보일러플레이트 지옥
-        Address oldAddress = order.customer().address();
-        Address newAddress = new Address(oldAddress.street(), newCity, oldAddress.zipCode());
-        Customer newCustomer = new Customer(
-            order.customer().id(), order.customer().name(), newAddress);
-        return new Order(order.id(), newCustomer, order.items());
-    }
-
-    // 필드 하나 더 깊어지면?
-    public Order updateCustomerStreet(Order order, String newStreet) {
-        Address oldAddress = order.customer().address();
-        Address newAddress = new Address(newStreet, oldAddress.city(), oldAddress.zipCode());
-        Customer newCustomer = new Customer(
-            order.customer().id(), order.customer().name(), newAddress);
-        return new Order(order.id(), newCustomer, order.items());
-    }
-    // 패턴은 같은데 코드를 계속 복붙...
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [X] 중첩된 불변 객체 수정 시 모든 계층을 수동으로 재생성
+ 3| public record Address(String street, String city, String zipCode) {}
+ 4| public record Customer(Long id, String name, Address address) {}
+ 5| public record Order(Long id, Customer customer, List<Item> items) {}
+ 6| 
+ 7| public class OrderService {
+ 8|   public Order updateCustomerCity(Order order, String newCity) {
+ 9|     // 3단계 중첩 재생성 -- 보일러플레이트 지옥
+10|     Address oldAddress = order.customer().address();
+11|     Address newAddress = new Address(oldAddress.street(), newCity, oldAddress.zipCode());
+12|     Customer newCustomer = new Customer(
+13|       order.customer().id(), order.customer().name(), newAddress);
+14|     return new Order(order.id(), newCustomer, order.items());
+15|   }
+16| 
+17|   // 필드 하나 더 깊어지면?
+18|   public Order updateCustomerStreet(Order order, String newStreet) {
+19|     Address oldAddress = order.customer().address();
+20|     Address newAddress = new Address(newStreet, oldAddress.city(), oldAddress.zipCode());
+21|     Customer newCustomer = new Customer(
+22|       order.customer().id(), order.customer().name(), newAddress);
+23|     return new Order(order.id(), newCustomer, order.items());
+24|   }
+25|   // 패턴은 같은데 코드를 계속 복붙...
+26| }
 ```
 - **의도 및 코드 설명**: 불변 record의 깊이 중첩된 필드를 수정하기 위해 경로상의 모든 객체를 수동으로 재생성한다.
 - **뭐가 문제인가**:
@@ -81,75 +85,78 @@ public class OrderService {
   - 실수로 잘못된 필드를 복사하는 버그 가능성
 
 ### After: Modern Approach
+
+**[코드 10.2]** Modern: Lens 패턴으로 중첩 업데이트를 합성 가능한 단위로 추상화
 ```java
-// [O] Lens 패턴으로 중첩 업데이트를 합성 가능한 단위로 추상화
-import java.util.function.Function;
-import java.util.function.BiFunction;
-
-public class LensPattern {
-
-    // Lens 정의: getter + wither(setter 역할)
-    record Lens<S, A>(
-        Function<S, A> get,
-        BiFunction<S, A, S> set
-    ) {
-        // Lens 합성: 외부 Lens와 내부 Lens를 결합
-        <B> Lens<S, B> andThen(Lens<A, B> inner) {
-            return new Lens<>(
-                s -> inner.get().apply(this.get().apply(s)),
-                (s, b) -> this.set().apply(s,
-                    inner.set().apply(this.get().apply(s), b))
-            );
-        }
-
-        // modify: 현재 값에 함수를 적용하여 업데이트
-        S modify(S source, Function<A, A> f) {
-            return set.apply(source, f.apply(get.apply(source)));
-        }
-    }
-
-    // 각 계층별 Lens 정의
-    record Address(String street, String city, String zipCode) {}
-    record Customer(Long id, String name, Address address) {}
-    record Order(Long id, Customer customer, List<String> items) {}
-
-    // Order -> Customer Lens
-    static final Lens<Order, Customer> orderCustomer = new Lens<>(
-        Order::customer,
-        (order, cust) -> new Order(order.id(), cust, order.items())
-    );
-
-    // Customer -> Address Lens
-    static final Lens<Customer, Address> customerAddress = new Lens<>(
-        Customer::address,
-        (cust, addr) -> new Customer(cust.id(), cust.name(), addr)
-    );
-
-    // Address -> city Lens
-    static final Lens<Address, String> addressCity = new Lens<>(
-        Address::city,
-        (addr, city) -> new Address(addr.street(), city, addr.zipCode())
-    );
-
-    // Lens 합성: Order -> Customer -> Address -> city
-    static final Lens<Order, String> orderCity =
-        orderCustomer.andThen(customerAddress).andThen(addressCity);
-
-    public static void main(String[] args) {
-        var order = new Order(1L,
-            new Customer(100L, "Kim",
-                new Address("Main St", "Seoul", "12345")),
-            List.of("item1"));
-
-        // 한 줄로 깊은 중첩 업데이트!
-        Order updated = orderCity.set().apply(order, "Busan");
-        System.out.println(updated.customer().address().city()); // "Busan"
-
-        // modify: 현재 값을 기반으로 업데이트
-        Order modified = orderCity.modify(order, String::toUpperCase);
-        System.out.println(modified.customer().address().city()); // "SEOUL"
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [O] Lens 패턴으로 중첩 업데이트를 합성 가능한 단위로 추상화
+ 3| import java.util.function.Function;
+ 4| import java.util.function.BiFunction;
+ 5| 
+ 6| public class LensPattern {
+ 7| 
+ 8|   // Lens 정의: getter + wither(setter 역할)
+ 9|   record Lens<S, A>(
+10|     Function<S, A> get,
+11|     BiFunction<S, A, S> set
+12|   ) {
+13|     // Lens 합성: 외부 Lens와 내부 Lens를 결합
+14|     <B> Lens<S, B> andThen(Lens<A, B> inner) {
+15|       return new Lens<>(
+16|         s -> inner.get().apply(this.get().apply(s)),
+17|         (s, b) -> this.set().apply(s,
+18|           inner.set().apply(this.get().apply(s), b))
+19|       );
+20|     }
+21| 
+22|     // modify: 현재 값에 함수를 적용하여 업데이트
+23|     S modify(S source, Function<A, A> f) {
+24|       return set.apply(source, f.apply(get.apply(source)));
+25|     }
+26|   }
+27| 
+28|   // 각 계층별 Lens 정의
+29|   record Address(String street, String city, String zipCode) {}
+30|   record Customer(Long id, String name, Address address) {}
+31|   record Order(Long id, Customer customer, List<String> items) {}
+32| 
+33|   // Order -> Customer Lens
+34|   static final Lens<Order, Customer> orderCustomer = new Lens<>(
+35|     Order::customer,
+36|     (order, cust) -> new Order(order.id(), cust, order.items())
+37|   );
+38| 
+39|   // Customer -> Address Lens
+40|   static final Lens<Customer, Address> customerAddress = new Lens<>(
+41|     Customer::address,
+42|     (cust, addr) -> new Customer(cust.id(), cust.name(), addr)
+43|   );
+44| 
+45|   // Address -> city Lens
+46|   static final Lens<Address, String> addressCity = new Lens<>(
+47|     Address::city,
+48|     (addr, city) -> new Address(addr.street(), city, addr.zipCode())
+49|   );
+50| 
+51|   // Lens 합성: Order -> Customer -> Address -> city
+52|   static final Lens<Order, String> orderCity =
+53|     orderCustomer.andThen(customerAddress).andThen(addressCity);
+54| 
+55|   public static void main(String[] args) {
+56|     var order = new Order(1L,
+57|       new Customer(100L, "Kim",
+58|         new Address("Main St", "Seoul", "12345")),
+59|       List.of("item1"));
+60| 
+61|     // 한 줄로 깊은 중첩 업데이트!
+62|     Order updated = orderCity.set().apply(order, "Busan");
+63|     System.out.println(updated.customer().address().city()); // "Busan"
+64| 
+65|     // modify: 현재 값을 기반으로 업데이트
+66|     Order modified = orderCity.modify(order, String::toUpperCase);
+67|     System.out.println(modified.customer().address().city()); // "SEOUL"
+68|   }
+69| }
 ```
 - **의도 및 코드 설명**: Lens를 정의하여 각 계층의 getter/setter를 캡슐화한다. andThen으로 합성하면 깊은 중첩도 한 줄로 업데이트한다.
 - **무엇이 좋아지나**:
@@ -161,15 +168,18 @@ public class LensPattern {
 
 ### 이해를 위한 부가 상세
 Wither 패턴은 Lens의 간소화 버전으로, record에 직접 적용할 수 있다:
+
+**[코드 10.3]** Address record
 ```java
-public record Address(String street, String city, String zipCode) {
-    public Address withCity(String newCity) {
-        return new Address(street, newCity, zipCode);
-    }
-    public Address withStreet(String newStreet) {
-        return new Address(newStreet, city, zipCode);
-    }
-}
+1| // package: com.ecommerce.shared
+2| public record Address(String street, String city, String zipCode) {
+3|   public Address withCity(String newCity) {
+4|     return new Address(street, newCity, zipCode);
+5|   }
+6|   public Address withStreet(String newStreet) {
+7|     return new Address(newStreet, city, zipCode);
+8|   }
+9| }
 ```
 
 ### 틀리기/놓치기 쉬운 부분
@@ -196,6 +206,7 @@ Lens의 핵심은 "불변 세계에서 합성 가능한 업데이트"이다. 중
 
   참조 투명성 관점에서 메모이제이션된 함수는 내부에 캐시(가변 상태)를 갖지만, 외부에서 관찰 가능한 동작은 순수하다. 이를 "관찰 가능한 순수성(observational purity)"이라 한다.
 
+**[그림 10.2]** Memoization (순수 함수 캐싱)
 ```
 +-------------------------------------------------------------------+
 |                  Memoization = 순수 함수 + 캐시                      |
@@ -223,20 +234,23 @@ Lens의 핵심은 "불변 세계에서 합성 가능한 업데이트"이다. 중
 - **항상 사용해야 하는 최적화**: 캐시 메모리 비용 vs 재계산 비용을 고려해야 한다. 계산이 가볍거나 입력 공간이 무한하면 비효율적.
 
 ### Before: Traditional OOP
-```java
-// [X] 비싼 계산을 매번 반복 수행
-public class PricingService {
-    // 복잡한 가격 계산 (매번 재계산!)
-    public BigDecimal calculateDiscountedPrice(String productId, String couponCode) {
-        // DB 조회 + 복잡한 규칙 적용 + 외부 API 호출...
-        Product product = productRepository.findById(productId); // 매번 DB!
-        Coupon coupon = couponService.validate(couponCode);      // 매번 API!
-        return applyComplexRules(product, coupon);               // 매번 계산!
-    }
-}
 
-// 순수하지 않아서 캐싱이 위험한 구조
-// DB 데이터가 변하면 캐시가 stale 해짐
+**[코드 10.4]** Traditional OOP: 비싼 계산을 매번 반복 수행
+```java
+ 1| // package: com.ecommerce.product
+ 2| // [X] 비싼 계산을 매번 반복 수행
+ 3| public class PricingService {
+ 4|   // 복잡한 가격 계산 (매번 재계산!)
+ 5|   public BigDecimal calculateDiscountedPrice(String productId, String couponCode) {
+ 6|     // DB 조회 + 복잡한 규칙 적용 + 외부 API 호출...
+ 7|     Product product = productRepository.findById(productId); // 매번 DB!
+ 8|     Coupon coupon = couponService.validate(couponCode);      // 매번 API!
+ 9|     return applyComplexRules(product, coupon);               // 매번 계산!
+10|   }
+11| }
+12| 
+13| // 순수하지 않아서 캐싱이 위험한 구조
+14| // DB 데이터가 변하면 캐시가 stale 해짐
 ```
 - **의도 및 코드 설명**: 상품 가격을 계산할 때마다 DB와 외부 API를 호출하고 복잡한 규칙을 적용한다.
 - **뭐가 문제인가**:
@@ -246,50 +260,53 @@ public class PricingService {
   - 테스트 시 외부 의존성을 모킹해야 함
 
 ### After: Modern Approach
+
+**[코드 10.5]** Modern: 순수 함수 분리 + 메모이제이션으로 안전한 캐싱
 ```java
-// [O] 순수 함수 분리 + 메모이제이션으로 안전한 캐싱
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-
-public class PricingService {
-
-    // 메모이제이션 고차 함수: 어떤 순수 함수든 캐싱 가능
-    public static <T, R> Function<T, R> memoize(Function<T, R> fn) {
-        ConcurrentHashMap<T, R> cache = new ConcurrentHashMap<>();
-        return input -> cache.computeIfAbsent(input, fn);
-    }
-
-    // 순수 함수: 가격 규칙 적용 (외부 의존성 없음!)
-    public static BigDecimal applyDiscountRules(DiscountInput input) {
-        BigDecimal base = input.basePrice();
-        BigDecimal rate = input.discountRate();
-        int quantity = input.quantity();
-
-        // 복잡한 규칙이지만 순수! (입력만으로 결과 결정)
-        BigDecimal discounted = base.multiply(BigDecimal.ONE.subtract(rate));
-        if (quantity >= 10) {
-            discounted = discounted.multiply(new BigDecimal("0.95")); // 대량 할인
-        }
-        return discounted.setScale(0, java.math.RoundingMode.HALF_UP);
-    }
-
-    // 메모이제이션 적용
-    private static final Function<DiscountInput, BigDecimal> memoizedDiscount =
-        memoize(PricingService::applyDiscountRules);
-
-    // 불순한 부분은 바깥에서 처리 (Functional Core / Imperative Shell)
-    public BigDecimal calculatePrice(String productId, String couponCode) {
-        // Imperative Shell: 외부 데이터 조회 (불순)
-        Product product = productRepository.findById(productId);
-        Coupon coupon = couponService.validate(couponCode);
-
-        // Functional Core: 순수 계산 (메모이제이션 가능!)
-        var input = new DiscountInput(product.basePrice(), coupon.rate(), 1);
-        return memoizedDiscount.apply(input);
-    }
-
-    record DiscountInput(BigDecimal basePrice, BigDecimal discountRate, int quantity) {}
-}
+ 1| // package: com.ecommerce.coupon
+ 2| // [O] 순수 함수 분리 + 메모이제이션으로 안전한 캐싱
+ 3| import java.util.concurrent.ConcurrentHashMap;
+ 4| import java.util.function.Function;
+ 5| 
+ 6| public class PricingService {
+ 7| 
+ 8|   // 메모이제이션 고차 함수: 어떤 순수 함수든 캐싱 가능
+ 9|   public static <T, R> Function<T, R> memoize(Function<T, R> fn) {
+10|     ConcurrentHashMap<T, R> cache = new ConcurrentHashMap<>();
+11|     return input -> cache.computeIfAbsent(input, fn);
+12|   }
+13| 
+14|   // 순수 함수: 가격 규칙 적용 (외부 의존성 없음!)
+15|   public static BigDecimal applyDiscountRules(DiscountInput input) {
+16|     BigDecimal base = input.basePrice();
+17|     BigDecimal rate = input.discountRate();
+18|     int quantity = input.quantity();
+19| 
+20|     // 복잡한 규칙이지만 순수! (입력만으로 결과 결정)
+21|     BigDecimal discounted = base.multiply(BigDecimal.ONE.subtract(rate));
+22|     if (quantity >= 10) {
+23|       discounted = discounted.multiply(new BigDecimal("0.95")); // 대량 할인
+24|     }
+25|     return discounted.setScale(0, java.math.RoundingMode.HALF_UP);
+26|   }
+27| 
+28|   // 메모이제이션 적용
+29|   private static final Function<DiscountInput, BigDecimal> memoizedDiscount =
+30|     memoize(PricingService::applyDiscountRules);
+31| 
+32|   // 불순한 부분은 바깥에서 처리 (Functional Core / Imperative Shell)
+33|   public BigDecimal calculatePrice(String productId, String couponCode) {
+34|     // Imperative Shell: 외부 데이터 조회 (불순)
+35|     Product product = productRepository.findById(productId);
+36|     Coupon coupon = couponService.validate(couponCode);
+37| 
+38|     // Functional Core: 순수 계산 (메모이제이션 가능!)
+39|     var input = new DiscountInput(product.basePrice(), coupon.rate(), 1);
+40|     return memoizedDiscount.apply(input);
+41|   }
+42| 
+43|   record DiscountInput(BigDecimal basePrice, BigDecimal discountRate, int quantity) {}
+44| }
 ```
 - **의도 및 코드 설명**: 순수한 계산 로직을 분리하고 메모이제이션을 적용한다. 불순한 부분(DB, API)은 바깥 shell에서 처리한다.
 - **무엇이 좋아지나**:
@@ -301,19 +318,22 @@ public class PricingService {
 
 ### 이해를 위한 부가 상세
 메모이제이션의 다인자 함수 처리:
-```java
-// 다인자 함수는 record로 묶어서 단일 인자로 변환
-record FibKey(int n) {} // 또는 그냥 Integer 사용
 
-// 피보나치 메모이제이션
-Function<Integer, Long> fib = memoize(new Function<>() {
-    Function<Integer, Long> self = this;
-    @Override
-    public Long apply(Integer n) {
-        if (n <= 1) return (long) n;
-        return memoize(self).apply(n - 1) + memoize(self).apply(n - 2);
-    }
-});
+**[코드 10.6]** 다인자 함수는 record로 묶어서 단일 인자로 변환
+```java
+ 1| // package: com.ecommerce.shared
+ 2| // 다인자 함수는 record로 묶어서 단일 인자로 변환
+ 3| record FibKey(int n) {} // 또는 그냥 Integer 사용
+ 4| 
+ 5| // 피보나치 메모이제이션
+ 6| Function<Integer, Long> fib = memoize(new Function<>() {
+ 7|   Function<Integer, Long> self = this;
+ 8|   @Override
+ 9|   public Long apply(Integer n) {
+10|     if (n <= 1) return (long) n;
+11|     return memoize(self).apply(n - 1) + memoize(self).apply(n - 2);
+12|   }
+13| });
 ```
 
 ### 틀리기/놓치기 쉬운 부분
@@ -340,6 +360,7 @@ Function<Integer, Long> fib = memoize(new Function<>() {
 
   무한 Stream도 가능한 이유: `Stream.iterate(1, n -> n+1)`은 "1부터 시작해서 1씩 더하는 레시피"만 정의한다. `limit(10)`과 결합하면 필요한 10개만 계산하고 멈춘다.
 
+**[그림 10.3]** Lazy Evaluation (지연 평가)
 ```
 +-------------------------------------------------------------------+
 |                  지연 평가 = 필요할 때만 계산                         |
@@ -370,29 +391,32 @@ Function<Integer, Long> fib = memoize(new Function<>() {
 - **Collection의 stream()만 지연**: `Supplier<T>`, `Stream.iterate()`, `Stream.generate()` 등 다양한 지연 구조가 있다.
 
 ### Before: Traditional OOP
+
+**[코드 10.7]** Traditional OOP: 모든 요소를 즉시 계산하여 메모리 낭비와 불필요한 작업 발생
 ```java
-// [X] 모든 요소를 즉시 계산하여 메모리 낭비와 불필요한 작업 발생
-public class LogAnalyzer {
-    public String findFirstError(List<String> allLines) {
-        // 모든 라인을 먼저 파싱 (10만 줄!)
-        List<LogEntry> parsed = new ArrayList<>();
-        for (String line : allLines) {
-            parsed.add(parseLogEntry(line)); // 10만 개 전부 파싱!
-        }
-
-        // 모든 에러를 필터링
-        List<LogEntry> errors = new ArrayList<>();
-        for (LogEntry entry : parsed) {
-            if (entry.level().equals("ERROR")) {
-                errors.add(entry); // 전부 필터링!
-            }
-        }
-
-        // 첫 번째만 필요한데...
-        return errors.isEmpty() ? null : errors.getFirst().message();
-    }
-    // 첫 번째 에러가 10번째 줄에 있어도 10만 줄 전부 처리!
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [X] 모든 요소를 즉시 계산하여 메모리 낭비와 불필요한 작업 발생
+ 3| public class LogAnalyzer {
+ 4|   public String findFirstError(List<String> allLines) {
+ 5|     // 모든 라인을 먼저 파싱 (10만 줄!)
+ 6|     List<LogEntry> parsed = new ArrayList<>();
+ 7|     for (String line : allLines) {
+ 8|       parsed.add(parseLogEntry(line)); // 10만 개 전부 파싱!
+ 9|     }
+10| 
+11|     // 모든 에러를 필터링
+12|     List<LogEntry> errors = new ArrayList<>();
+13|     for (LogEntry entry : parsed) {
+14|       if (entry.level().equals("ERROR")) {
+15|         errors.add(entry); // 전부 필터링!
+16|       }
+17|     }
+18| 
+19|     // 첫 번째만 필요한데...
+20|     return errors.isEmpty() ? null : errors.getFirst().message();
+21|   }
+22|   // 첫 번째 에러가 10번째 줄에 있어도 10만 줄 전부 처리!
+23| }
 ```
 - **의도 및 코드 설명**: 로그에서 첫 번째 에러 메시지를 찾는다. 모든 줄을 파싱하고 모든 에러를 필터링한 후 첫 번째를 선택한다.
 - **뭐가 문제인가**:
@@ -402,62 +426,65 @@ public class LogAnalyzer {
   - 무한 데이터 소스(실시간 로그 스트림)에는 적용 불가
 
 ### After: Modern Approach
+
+**[코드 10.8]** Modern: Stream의 지연 평가로 필요한 만큼만 계산
 ```java
-// [O] Stream의 지연 평가로 필요한 만큼만 계산
-import java.util.stream.Stream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.function.Supplier;
-
-public class LogAnalyzer {
-
-    public Optional<String> findFirstError(Path logFile) {
-        try (Stream<String> lines = Files.lines(logFile)) { // 지연 읽기!
-            return lines                          // 한 줄씩만 메모리에
-                .map(this::parseLogEntry)         // 지연: 아직 안 파싱
-                .filter(entry -> "ERROR".equals(entry.level()))  // 지연: 아직 안 필터링
-                .map(LogEntry::message)           // 지연: 아직 안 매핑
-                .findFirst();                     // 터미널: 여기서 실행 시작!
-            // 첫 에러 찾는 순간 나머지 줄은 읽지도 않음!
-        }
-    }
-
-    // 무한 스트림에서도 안전하게 동작
-    public List<Integer> firstNPrimes(int n) {
-        return Stream.iterate(2, x -> x + 1)     // 무한!
-            .filter(this::isPrime)                // 지연: 필요할 때만 판별
-            .limit(n)                             // n개 찾으면 종료
-            .toList();                            // 여기서 실행 시작
-    }
-
-    // Supplier를 활용한 지연 초기화
-    private final Supplier<ExpensiveResource> lazyResource =
-        new Supplier<>() {
-            private ExpensiveResource cached;
-            @Override
-            public synchronized ExpensiveResource get() {
-                if (cached == null) {
-                    cached = new ExpensiveResource(); // 처음 접근할 때만 생성
-                }
-                return cached;
-            }
-        };
-
-    record LogEntry(String level, String message, String timestamp) {}
-    record ExpensiveResource() {}
-
-    private LogEntry parseLogEntry(String line) {
-        // 파싱 로직
-        return new LogEntry("INFO", line, "");
-    }
-
-    private boolean isPrime(int n) {
-        if (n < 2) return false;
-        return java.util.stream.IntStream.rangeClosed(2, (int) Math.sqrt(n))
-            .noneMatch(i -> n % i == 0);
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [O] Stream의 지연 평가로 필요한 만큼만 계산
+ 3| import java.util.stream.Stream;
+ 4| import java.nio.file.Files;
+ 5| import java.nio.file.Path;
+ 6| import java.util.Optional;
+ 7| import java.util.function.Supplier;
+ 8| 
+ 9| public class LogAnalyzer {
+10| 
+11|   public Optional<String> findFirstError(Path logFile) {
+12|     try (Stream<String> lines = Files.lines(logFile)) { // 지연 읽기!
+13|       return lines                          // 한 줄씩만 메모리에
+14|         .map(this::parseLogEntry)         // 지연: 아직 안 파싱
+15|         .filter(entry -> "ERROR".equals(entry.level()))  // 지연: 아직 안 필터링
+16|         .map(LogEntry::message)           // 지연: 아직 안 매핑
+17|         .findFirst();                     // 터미널: 여기서 실행 시작!
+18|       // 첫 에러 찾는 순간 나머지 줄은 읽지도 않음!
+19|     }
+20|   }
+21| 
+22|   // 무한 스트림에서도 안전하게 동작
+23|   public List<Integer> firstNPrimes(int n) {
+24|     return Stream.iterate(2, x -> x + 1)     // 무한!
+25|       .filter(this::isPrime)                // 지연: 필요할 때만 판별
+26|       .limit(n)                             // n개 찾으면 종료
+27|       .toList();                            // 여기서 실행 시작
+28|   }
+29| 
+30|   // Supplier를 활용한 지연 초기화
+31|   private final Supplier<ExpensiveResource> lazyResource =
+32|     new Supplier<>() {
+33|       private ExpensiveResource cached;
+34|       @Override
+35|       public synchronized ExpensiveResource get() {
+36|         if (cached == null) {
+37|           cached = new ExpensiveResource(); // 처음 접근할 때만 생성
+38|         }
+39|         return cached;
+40|       }
+41|     };
+42| 
+43|   record LogEntry(String level, String message, String timestamp) {}
+44|   record ExpensiveResource() {}
+45| 
+46|   private LogEntry parseLogEntry(String line) {
+47|     // 파싱 로직
+48|     return new LogEntry("INFO", line, "");
+49|   }
+50| 
+51|   private boolean isPrime(int n) {
+52|     if (n < 2) return false;
+53|     return java.util.stream.IntStream.rangeClosed(2, (int) Math.sqrt(n))
+54|       .noneMatch(i -> n % i == 0);
+55|   }
+56| }
 ```
 - **의도 및 코드 설명**: Stream의 지연 평가로 첫 에러를 찾는 즉시 중단한다. 무한 스트림에서 소수 N개를 안전하게 추출한다.
 - **무엇이 좋아지나**:
@@ -469,15 +496,18 @@ public class LogAnalyzer {
 
 ### 이해를 위한 부가 상세
 Stream의 실행 순서 (요소별 개별 처리):
+
+**[코드 10.9]** Lazy Evaluation (지연 평가)
 ```java
-Stream.of(1, 2, 3, 4, 5)
-    .filter(n -> { System.out.print("F"+n+" "); return n%2==0; })
-    .map(n -> { System.out.print("M"+n+" "); return n*10; })
-    .limit(1)
-    .toList();
-// 출력: F1 F2 M2
-// 1은 filter 통과 못함, 2는 통과해서 map 실행, limit(1) 도달 -> 종료!
-// 3, 4, 5는 아예 처리하지 않음
+1| // package: com.ecommerce.shared
+2| Stream.of(1, 2, 3, 4, 5)
+3|   .filter(n -> { System.out.print("F"+n+" "); return n%2==0; })
+4|   .map(n -> { System.out.print("M"+n+" "); return n*10; })
+5|   .limit(1)
+6|   .toList();
+7| // 출력: F1 F2 M2
+8| // 1은 filter 통과 못함, 2는 통과해서 map 실행, limit(1) 도달 -> 종료!
+9| // 3, 4, 5는 아예 처리하지 않음
 ```
 
 ### 틀리기/놓치기 쉬운 부분
@@ -505,6 +535,7 @@ Stream.of(1, 2, 3, 4, 5)
 
   핵심 가치: (1) 변환 로직의 재사용, (2) 데이터 소스와 변환의 분리, (3) 합성을 통한 새 변환 파생.
 
+**[그림 10.4]** Transducer 패턴 (효율적 스트림 합성)
 ```
 +-------------------------------------------------------------------+
 |                  Transducer = 합성 가능한 변환기                      |
@@ -532,37 +563,40 @@ Stream.of(1, 2, 3, 4, 5)
 - **병렬 처리**: Transducer는 합성에 관한 패턴이지, 병렬화와 직접적 관련은 없다.
 
 ### Before: Traditional OOP
+
+**[코드 10.10]** Traditional OOP: 변환 로직을 매번 인라인으로 작성하여 재사용 불가
 ```java
-// [X] 변환 로직을 매번 인라인으로 작성하여 재사용 불가
-public class ReportService {
-    // 보고서 A: 활성 사용자의 이메일 목록
-    public List<String> getActiveUserEmails(List<User> users) {
-        return users.stream()
-            .filter(User::isActive)
-            .filter(u -> u.age() >= 18)
-            .map(User::email)
-            .map(String::toLowerCase)
-            .toList();
-    }
-
-    // 보고서 B: 같은 필터링 + 다른 결과 형태
-    public long countActiveUsers(List<User> users) {
-        return users.stream()
-            .filter(User::isActive)        // 동일한 필터!
-            .filter(u -> u.age() >= 18)    // 동일한 필터!
-            .count();
-    }
-
-    // 보고서 C: 같은 필터링 + 또 다른 결과
-    public List<String> getActiveUserNames(List<User> users) {
-        return users.stream()
-            .filter(User::isActive)        // 또 동일한 필터!
-            .filter(u -> u.age() >= 18)    // 또 동일한 필터!
-            .map(User::name)
-            .toList();
-    }
-    // 필터 조건이 바뀌면 3곳 모두 수정해야 함!
-}
+ 1| // package: com.ecommerce.auth
+ 2| // [X] 변환 로직을 매번 인라인으로 작성하여 재사용 불가
+ 3| public class ReportService {
+ 4|   // 보고서 A: 활성 사용자의 이메일 목록
+ 5|   public List<String> getActiveUserEmails(List<User> users) {
+ 6|     return users.stream()
+ 7|       .filter(User::isActive)
+ 8|       .filter(u -> u.age() >= 18)
+ 9|       .map(User::email)
+10|       .map(String::toLowerCase)
+11|       .toList();
+12|   }
+13| 
+14|   // 보고서 B: 같은 필터링 + 다른 결과 형태
+15|   public long countActiveUsers(List<User> users) {
+16|     return users.stream()
+17|       .filter(User::isActive)        // 동일한 필터!
+18|       .filter(u -> u.age() >= 18)    // 동일한 필터!
+19|       .count();
+20|   }
+21| 
+22|   // 보고서 C: 같은 필터링 + 또 다른 결과
+23|   public List<String> getActiveUserNames(List<User> users) {
+24|     return users.stream()
+25|       .filter(User::isActive)        // 또 동일한 필터!
+26|       .filter(u -> u.age() >= 18)    // 또 동일한 필터!
+27|       .map(User::name)
+28|       .toList();
+29|   }
+30|   // 필터 조건이 바뀌면 3곳 모두 수정해야 함!
+31| }
 ```
 - **의도 및 코드 설명**: 동일한 필터링 로직을 여러 보고서에 반복 사용한다. 필터 조건 변경 시 모든 곳을 수정해야 한다.
 - **뭐가 문제인가**:
@@ -572,69 +606,72 @@ public class ReportService {
   - 변환 파이프라인 자체를 테스트할 수 없음
 
 ### After: Modern Approach
+
+**[코드 10.11]** Modern: 변환 파이프라인을 값으로 추상화하여 재사용/합성
 ```java
-// [O] 변환 파이프라인을 값으로 추상화하여 재사용/합성
-import java.util.function.Function;
-import java.util.stream.Stream;
-import java.util.function.Predicate;
-
-public class ReportService {
-    record User(String name, String email, int age, boolean active) {
-        public boolean isActive() { return active; }
-    }
-
-    // Transducer: Stream 변환을 값으로 추상화
-    @FunctionalInterface
-    interface StreamTransformer<T, R> extends Function<Stream<T>, Stream<R>> {
-        default <V> StreamTransformer<T, V> andThen(StreamTransformer<R, V> after) {
-            return stream -> after.apply(this.apply(stream));
-        }
-    }
-
-    // 기본 변환기 팩토리
-    static <T> StreamTransformer<T, T> filtering(Predicate<T> pred) {
-        return stream -> stream.filter(pred);
-    }
-
-    static <T, R> StreamTransformer<T, R> mapping(Function<T, R> fn) {
-        return stream -> stream.map(fn);
-    }
-
-    static <T> StreamTransformer<T, T> limiting(long n) {
-        return stream -> stream.limit(n);
-    }
-
-    // 재사용 가능한 변환 파이프라인 합성
-    static final StreamTransformer<User, User> activeAdults =
-        filtering(User::isActive)
-            .andThen(filtering(u -> u.age() >= 18));
-
-    static final StreamTransformer<User, String> activeAdultEmails =
-        activeAdults
-            .andThen(mapping(User::email))
-            .andThen(mapping(String::toLowerCase));
-
-    static final StreamTransformer<User, String> activeAdultNames =
-        activeAdults
-            .andThen(mapping(User::name));
-
-    // 모든 보고서에서 재사용
-    public List<String> getActiveUserEmails(List<User> users) {
-        return activeAdultEmails.apply(users.stream()).toList();
-    }
-
-    public long countActiveUsers(List<User> users) {
-        return activeAdults.apply(users.stream()).count();
-    }
-
-    public List<String> getActiveUserNames(List<User> users) {
-        return activeAdultNames.apply(users.stream()).toList();
-    }
-
-    // 새 변환이 필요하면? 기존 변환을 합성!
-    static final StreamTransformer<User, String> topActiveAdultEmails =
-        activeAdultEmails.andThen(limiting(10));
-}
+ 1| // package: com.ecommerce.auth
+ 2| // [O] 변환 파이프라인을 값으로 추상화하여 재사용/합성
+ 3| import java.util.function.Function;
+ 4| import java.util.stream.Stream;
+ 5| import java.util.function.Predicate;
+ 6| 
+ 7| public class ReportService {
+ 8|   record User(String name, String email, int age, boolean active) {
+ 9|     public boolean isActive() { return active; }
+10|   }
+11| 
+12|   // Transducer: Stream 변환을 값으로 추상화
+13|   @FunctionalInterface
+14|   interface StreamTransformer<T, R> extends Function<Stream<T>, Stream<R>> {
+15|     default <V> StreamTransformer<T, V> andThen(StreamTransformer<R, V> after) {
+16|       return stream -> after.apply(this.apply(stream));
+17|     }
+18|   }
+19| 
+20|   // 기본 변환기 팩토리
+21|   static <T> StreamTransformer<T, T> filtering(Predicate<T> pred) {
+22|     return stream -> stream.filter(pred);
+23|   }
+24| 
+25|   static <T, R> StreamTransformer<T, R> mapping(Function<T, R> fn) {
+26|     return stream -> stream.map(fn);
+27|   }
+28| 
+29|   static <T> StreamTransformer<T, T> limiting(long n) {
+30|     return stream -> stream.limit(n);
+31|   }
+32| 
+33|   // 재사용 가능한 변환 파이프라인 합성
+34|   static final StreamTransformer<User, User> activeAdults =
+35|     filtering(User::isActive)
+36|       .andThen(filtering(u -> u.age() >= 18));
+37| 
+38|   static final StreamTransformer<User, String> activeAdultEmails =
+39|     activeAdults
+40|       .andThen(mapping(User::email))
+41|       .andThen(mapping(String::toLowerCase));
+42| 
+43|   static final StreamTransformer<User, String> activeAdultNames =
+44|     activeAdults
+45|       .andThen(mapping(User::name));
+46| 
+47|   // 모든 보고서에서 재사용
+48|   public List<String> getActiveUserEmails(List<User> users) {
+49|     return activeAdultEmails.apply(users.stream()).toList();
+50|   }
+51| 
+52|   public long countActiveUsers(List<User> users) {
+53|     return activeAdults.apply(users.stream()).count();
+54|   }
+55| 
+56|   public List<String> getActiveUserNames(List<User> users) {
+57|     return activeAdultNames.apply(users.stream()).toList();
+58|   }
+59| 
+60|   // 새 변환이 필요하면? 기존 변환을 합성!
+61|   static final StreamTransformer<User, String> topActiveAdultEmails =
+62|     activeAdultEmails.andThen(limiting(10));
+63| }
 ```
 - **의도 및 코드 설명**: Stream 변환을 `StreamTransformer`로 추상화하고, andThen으로 합성한다. 공통 변환은 한 번 정의하고 여러 곳에서 재사용한다.
 - **무엇이 좋아지나**:
@@ -645,14 +682,17 @@ public class ReportService {
 
 ### 이해를 위한 부가 상세
 Transducer의 Collector 통합:
-```java
-// 변환 파이프라인 + 다양한 수집 전략 결합
-var transformer = activeAdults.andThen(mapping(User::email));
 
-// 같은 변환, 다른 수집 전략
-List<String> list = transformer.apply(users.stream()).toList();
-Set<String> set = transformer.apply(users.stream()).collect(Collectors.toSet());
-String joined = transformer.apply(users.stream()).collect(Collectors.joining(", "));
+**[코드 10.12]** 변환 파이프라인 + 다양한 수집 전략 결합
+```java
+1| // package: com.ecommerce.auth
+2| // 변환 파이프라인 + 다양한 수집 전략 결합
+3| var transformer = activeAdults.andThen(mapping(User::email));
+4| 
+5| // 같은 변환, 다른 수집 전략
+6| List<String> list = transformer.apply(users.stream()).toList();
+7| Set<String> set = transformer.apply(users.stream()).collect(Collectors.toSet());
+8| String joined = transformer.apply(users.stream()).collect(Collectors.joining(", "));
 ```
 
 ### 틀리기/놓치기 쉬운 부분
@@ -679,6 +719,7 @@ Transducer 패턴의 핵심: "변환 로직을 데이터 소스에서 분리하�
 
   관찰 가능한 순수성: 메모이제이션된 함수는 내부에 캐시(가변 상태)를 갖지만, 외부 관찰자에게는 순수하게 동작한다. 이를 "관찰 가능한 순수성"이라 하며, 실용적으로 참조 투명하다고 인정한다.
 
+**[그림 10.5]** Referential Transparency in Practice (실전 참조 투명성)
 ```
 +-------------------------------------------------------------------+
 |                  참조 투명성 = 대입 가능한 표현식                     |
@@ -711,44 +752,47 @@ Transducer 패턴의 핵심: "변환 로직을 데이터 소스에서 분리하�
 - **테스트만을 위한 설계**: 테스트 용이성은 결과이지 목적이 아니다. 본질은 "예측 가능하고 합성 가능한 코드"이다.
 
 ### Before: Traditional OOP
+
+**[코드 10.13]** Traditional OOP: 비즈니스 로직과 부수효과가 혼합되어 참조 투명성 없음
 ```java
-// [X] 비즈니스 로직과 부수효과가 혼합되어 참조 투명성 없음
-public class OrderService {
-    private final OrderRepository repository;
-    private final PaymentGateway gateway;
-    private final EmailService emailService;
-
-    public void processOrder(OrderRequest request) {
-        // 검증 + DB 조회 + 결제 + 이메일이 한 메서드에 뒤섞임
-        if (request.items().isEmpty()) {
-            throw new ValidationException("항목이 비어있습니다");
-        }
-
-        // 부수효과: DB에서 재고 확인
-        for (var item : request.items()) {
-            int stock = repository.getStock(item.productId()); // DB!
-            if (stock < item.quantity()) {
-                throw new InsufficientStockException(item.productId());
-            }
-        }
-
-        // 비즈니스 로직: 가격 계산
-        BigDecimal total = calculateTotal(request); // 이건 순수한데...
-
-        // 부수효과: 결제
-        gateway.charge(request.customerId(), total); // API!
-
-        // 부수효과: 재고 감소
-        for (var item : request.items()) {
-            repository.decreaseStock(item.productId(), item.quantity()); // DB!
-        }
-
-        // 부수효과: 이메일 발송
-        emailService.sendConfirmation(request.customerId(), total); // I/O!
-    }
-    // 테스트하려면 repository, gateway, emailService 전부 모킹해야 함
-    // 비즈니스 로직만 단독 테스트 불가
-}
+ 1| // package: com.ecommerce.order
+ 2| // [X] 비즈니스 로직과 부수효과가 혼합되어 참조 투명성 없음
+ 3| public class OrderService {
+ 4|   private final OrderRepository repository;
+ 5|   private final PaymentGateway gateway;
+ 6|   private final EmailService emailService;
+ 7| 
+ 8|   public void processOrder(OrderRequest request) {
+ 9|     // 검증 + DB 조회 + 결제 + 이메일이 한 메서드에 뒤섞임
+10|     if (request.items().isEmpty()) {
+11|       throw new ValidationException("항목이 비어있습니다");
+12|     }
+13| 
+14|     // 부수효과: DB에서 재고 확인
+15|     for (var item : request.items()) {
+16|       int stock = repository.getStock(item.productId()); // DB!
+17|       if (stock < item.quantity()) {
+18|         throw new InsufficientStockException(item.productId());
+19|       }
+20|     }
+21| 
+22|     // 비즈니스 로직: 가격 계산
+23|     BigDecimal total = calculateTotal(request); // 이건 순수한데...
+24| 
+25|     // 부수효과: 결제
+26|     gateway.charge(request.customerId(), total); // API!
+27| 
+28|     // 부수효과: 재고 감소
+29|     for (var item : request.items()) {
+30|       repository.decreaseStock(item.productId(), item.quantity()); // DB!
+31|     }
+32| 
+33|     // 부수효과: 이메일 발송
+34|     emailService.sendConfirmation(request.customerId(), total); // I/O!
+35|   }
+36|   // 테스트하려면 repository, gateway, emailService 전부 모킹해야 함
+37|   // 비즈니스 로직만 단독 테스트 불가
+38| }
 ```
 - **의도 및 코드 설명**: 주문 처리를 하나의 메서드에서 수행한다. 검증, DB, 결제, 이메일이 모두 섞여있다.
 - **뭐가 문제인가**:
@@ -759,142 +803,145 @@ public class OrderService {
   - 메모이제이션, 병렬화 등 최적화 불가능
 
 ### After: Modern Approach
+
+**[코드 10.14]** Modern: Functional Core / Imperative Shell로 참조 투명성 확보
 ```java
-// [O] Functional Core / Imperative Shell로 참조 투명성 확보
-import java.util.function.Function;
-
-public class OrderProcessing {
-
-    // === Functional Core: 순수 함수, 참조 투명 ===
-
-    // 검증 (순수: 입력만으로 결과 결정)
-    static Result<ValidatedOrder, OrderError> validate(OrderRequest request) {
-        if (request.items().isEmpty())
-            return Result.failure(new OrderError.ValidationFailed("항목이 비어있습니다"));
-        return Result.success(new ValidatedOrder(request));
-    }
-
-    // 재고 확인 (순수: 재고 정보를 "인자로" 받음)
-    static Result<CheckedOrder, OrderError> checkStock(
-            ValidatedOrder order, Map<String, Integer> stockLevels) {
-        for (var item : order.items()) {
-            int available = stockLevels.getOrDefault(item.productId(), 0);
-            if (available < item.quantity())
-                return Result.failure(new OrderError.InsufficientStock(item.productId()));
-        }
-        return Result.success(new CheckedOrder(order));
-    }
-
-    // 가격 계산 (순수: 동일 입력 = 동일 출력, 메모이제이션 가능!)
-    static OrderTotal calculateTotal(CheckedOrder order) {
-        BigDecimal subtotal = order.items().stream()
-            .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal tax = subtotal.multiply(new BigDecimal("0.1"));
-        return new OrderTotal(subtotal, tax, subtotal.add(tax));
-    }
-
-    // 영수증 생성 (순수)
-    static Receipt createReceipt(CheckedOrder order, OrderTotal total, String txId) {
-        return new Receipt(order.orderId(), total.grandTotal(), txId);
-    }
-
-    // === Imperative Shell: 부수효과 처리 ===
-
-    public class OrderService {
-        private final OrderRepository repository;
-        private final PaymentGateway gateway;
-        private final EmailService emailService;
-
-        public Result<Receipt, OrderError> processOrder(OrderRequest request) {
-            // 1. Functional Core: 순수 검증
-            return validate(request)
-                .flatMap(validated -> {
-                    // 2. Shell: DB에서 재고 조회 (부수효과)
-                    Map<String, Integer> stocks = repository.getStockLevels(
-                        validated.productIds());
-
-                    // 3. Core: 순수 재고 확인
-                    return checkStock(validated, stocks);
-                })
-                .map(checked -> {
-                    // 4. Core: 순수 가격 계산
-                    OrderTotal total = calculateTotal(checked);
-                    return new Pair<>(checked, total);
-                })
-                .flatMap(pair -> {
-                    // 5. Shell: 결제 (부수효과)
-                    var payResult = gateway.charge(
-                        pair.first().customerId(), pair.second().grandTotal());
-                    if (!payResult.isSuccess())
-                        return Result.failure(new OrderError.PaymentFailed(payResult.reason()));
-
-                    // 6. Shell: 재고 감소 (부수효과)
-                    repository.decreaseStocks(pair.first().items());
-
-                    // 7. Core: 순수 영수증 생성
-                    Receipt receipt = createReceipt(
-                        pair.first(), pair.second(), payResult.transactionId());
-
-                    // 8. Shell: 이메일 발송 (부수효과)
-                    emailService.sendConfirmation(pair.first().customerId(), receipt);
-
-                    return Result.success(receipt);
-                });
-        }
-    }
-
-    // 순수 함수 테스트: 모킹 불필요!
-    // @Test
-    // void calculateTotal_정상_계산() {
-    //     var order = new CheckedOrder(...);
-    //     var total = calculateTotal(order);  // 순수! 입력만 주면 됨
-    //     assertEquals(expected, total.grandTotal());
-    // }
-
-    // sealed interface + records (생략)
-    sealed interface Result<S, F> permits Result.Success, Result.Failure {
-        record Success<S, F>(S value) implements Result<S, F> {}
-        record Failure<S, F>(F error) implements Result<S, F> {}
-
-        default <R> Result<R, F> map(Function<S, R> fn) {
-            return switch (this) {
-                case Success<S, F> s -> new Success<>(fn.apply(s.value()));
-                case Failure<S, F> f -> new Failure<>(f.error());
-            };
-        }
-        default <R> Result<R, F> flatMap(Function<S, Result<R, F>> fn) {
-            return switch (this) {
-                case Success<S, F> s -> fn.apply(s.value());
-                case Failure<S, F> f -> new Failure<>(f.error());
-            };
-        }
-        static <S, F> Result<S, F> success(S value) { return new Success<>(value); }
-        static <S, F> Result<S, F> failure(F error) { return new Failure<>(error); }
-    }
-
-    sealed interface OrderError permits OrderError.ValidationFailed,
-            OrderError.InsufficientStock, OrderError.PaymentFailed {
-        record ValidationFailed(String message) implements OrderError {}
-        record InsufficientStock(String productId) implements OrderError {}
-        record PaymentFailed(String reason) implements OrderError {}
-    }
-
-    record ValidatedOrder(OrderRequest request) {
-        List<Item> items() { return request.items(); }
-        List<String> productIds() { return items().stream().map(Item::productId).toList(); }
-    }
-    record CheckedOrder(ValidatedOrder validated) {
-        String orderId() { return "ORD-" + System.nanoTime(); }
-        String customerId() { return "CUST-1"; }
-        List<Item> items() { return validated.items(); }
-    }
-    record OrderTotal(BigDecimal subtotal, BigDecimal tax, BigDecimal grandTotal) {}
-    record Receipt(String orderId, BigDecimal total, String transactionId) {}
-    record OrderRequest(List<Item> items) {}
-    record Item(String productId, BigDecimal price, int quantity) {}
-    record Pair<A, B>(A first, B second) {}
-}
+  1| // package: com.ecommerce.shared
+  2| // [O] Functional Core / Imperative Shell로 참조 투명성 확보
+  3| import java.util.function.Function;
+  4| 
+  5| public class OrderProcessing {
+  6| 
+  7|   // === Functional Core: 순수 함수, 참조 투명 ===
+  8| 
+  9|   // 검증 (순수: 입력만으로 결과 결정)
+ 10|   static Result<ValidatedOrder, OrderError> validate(OrderRequest request) {
+ 11|     if (request.items().isEmpty())
+ 12|       return Result.failure(new OrderError.ValidationFailed("항목이 비어있습니다"));
+ 13|     return Result.success(new ValidatedOrder(request));
+ 14|   }
+ 15| 
+ 16|   // 재고 확인 (순수: 재고 정보를 "인자로" 받음)
+ 17|   static Result<CheckedOrder, OrderError> checkStock(
+ 18|       ValidatedOrder order, Map<String, Integer> stockLevels) {
+ 19|     for (var item : order.items()) {
+ 20|       int available = stockLevels.getOrDefault(item.productId(), 0);
+ 21|       if (available < item.quantity())
+ 22|         return Result.failure(new OrderError.InsufficientStock(item.productId()));
+ 23|     }
+ 24|     return Result.success(new CheckedOrder(order));
+ 25|   }
+ 26| 
+ 27|   // 가격 계산 (순수: 동일 입력 = 동일 출력, 메모이제이션 가능!)
+ 28|   static OrderTotal calculateTotal(CheckedOrder order) {
+ 29|     BigDecimal subtotal = order.items().stream()
+ 30|       .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
+ 31|       .reduce(BigDecimal.ZERO, BigDecimal::add);
+ 32|     BigDecimal tax = subtotal.multiply(new BigDecimal("0.1"));
+ 33|     return new OrderTotal(subtotal, tax, subtotal.add(tax));
+ 34|   }
+ 35| 
+ 36|   // 영수증 생성 (순수)
+ 37|   static Receipt createReceipt(CheckedOrder order, OrderTotal total, String txId) {
+ 38|     return new Receipt(order.orderId(), total.grandTotal(), txId);
+ 39|   }
+ 40| 
+ 41|   // === Imperative Shell: 부수효과 처리 ===
+ 42| 
+ 43|   public class OrderService {
+ 44|     private final OrderRepository repository;
+ 45|     private final PaymentGateway gateway;
+ 46|     private final EmailService emailService;
+ 47| 
+ 48|     public Result<Receipt, OrderError> processOrder(OrderRequest request) {
+ 49|       // 1. Functional Core: 순수 검증
+ 50|       return validate(request)
+ 51|         .flatMap(validated -> {
+ 52|           // 2. Shell: DB에서 재고 조회 (부수효과)
+ 53|           Map<String, Integer> stocks = repository.getStockLevels(
+ 54|             validated.productIds());
+ 55| 
+ 56|           // 3. Core: 순수 재고 확인
+ 57|           return checkStock(validated, stocks);
+ 58|         })
+ 59|         .map(checked -> {
+ 60|           // 4. Core: 순수 가격 계산
+ 61|           OrderTotal total = calculateTotal(checked);
+ 62|           return new Pair<>(checked, total);
+ 63|         })
+ 64|         .flatMap(pair -> {
+ 65|           // 5. Shell: 결제 (부수효과)
+ 66|           var payResult = gateway.charge(
+ 67|             pair.first().customerId(), pair.second().grandTotal());
+ 68|           if (!payResult.isSuccess())
+ 69|             return Result.failure(new OrderError.PaymentFailed(payResult.reason()));
+ 70| 
+ 71|           // 6. Shell: 재고 감소 (부수효과)
+ 72|           repository.decreaseStocks(pair.first().items());
+ 73| 
+ 74|           // 7. Core: 순수 영수증 생성
+ 75|           Receipt receipt = createReceipt(
+ 76|             pair.first(), pair.second(), payResult.transactionId());
+ 77| 
+ 78|           // 8. Shell: 이메일 발송 (부수효과)
+ 79|           emailService.sendConfirmation(pair.first().customerId(), receipt);
+ 80| 
+ 81|           return Result.success(receipt);
+ 82|         });
+ 83|     }
+ 84|   }
+ 85| 
+ 86|   // 순수 함수 테스트: 모킹 불필요!
+ 87|   // @Test
+ 88|   // void calculateTotal_정상_계산() {
+ 89|   //     var order = new CheckedOrder(...);
+ 90|   //     var total = calculateTotal(order);  // 순수! 입력만 주면 됨
+ 91|   //     assertEquals(expected, total.grandTotal());
+ 92|   // }
+ 93| 
+ 94|   // sealed interface + records (생략)
+ 95|   sealed interface Result<S, F> permits Result.Success, Result.Failure {
+ 96|     record Success<S, F>(S value) implements Result<S, F> {}
+ 97|     record Failure<S, F>(F error) implements Result<S, F> {}
+ 98| 
+ 99|     default <R> Result<R, F> map(Function<S, R> fn) {
+100|       return switch (this) {
+101|         case Success<S, F> s -> new Success<>(fn.apply(s.value()));
+102|         case Failure<S, F> f -> new Failure<>(f.error());
+103|       };
+104|     }
+105|     default <R> Result<R, F> flatMap(Function<S, Result<R, F>> fn) {
+106|       return switch (this) {
+107|         case Success<S, F> s -> fn.apply(s.value());
+108|         case Failure<S, F> f -> new Failure<>(f.error());
+109|       };
+110|     }
+111|     static <S, F> Result<S, F> success(S value) { return new Success<>(value); }
+112|     static <S, F> Result<S, F> failure(F error) { return new Failure<>(error); }
+113|   }
+114| 
+115|   sealed interface OrderError permits OrderError.ValidationFailed,
+116|       OrderError.InsufficientStock, OrderError.PaymentFailed {
+117|     record ValidationFailed(String message) implements OrderError {}
+118|     record InsufficientStock(String productId) implements OrderError {}
+119|     record PaymentFailed(String reason) implements OrderError {}
+120|   }
+121| 
+122|   record ValidatedOrder(OrderRequest request) {
+123|     List<Item> items() { return request.items(); }
+124|     List<String> productIds() { return items().stream().map(Item::productId).toList(); }
+125|   }
+126|   record CheckedOrder(ValidatedOrder validated) {
+127|     String orderId() { return "ORD-" + System.nanoTime(); }
+128|     String customerId() { return "CUST-1"; }
+129|     List<Item> items() { return validated.items(); }
+130|   }
+131|   record OrderTotal(BigDecimal subtotal, BigDecimal tax, BigDecimal grandTotal) {}
+132|   record Receipt(String orderId, BigDecimal total, String transactionId) {}
+133|   record OrderRequest(List<Item> items) {}
+134|   record Item(String productId, BigDecimal price, int quantity) {}
+135|   record Pair<A, B>(A first, B second) {}
+136| }
 ```
 - **의도 및 코드 설명**: 비즈니스 로직(validate, checkStock, calculateTotal, createReceipt)을 순수 함수로 분리하고, 부수효과(DB, 결제, 이메일)는 Shell에서 처리한다.
 - **무엇이 좋아지나**:
@@ -906,6 +953,8 @@ public class OrderProcessing {
 
 ### 이해를 위한 부가 상세
 참조 투명성 판별 체크리스트:
+
+**[그림 10.6]** Referential Transparency in Practice (실전 참조 투명성)
 ```
 Q1: 이 함수가 외부 상태를 읽거나 변경하는가?
     YES --> 참조 불투명

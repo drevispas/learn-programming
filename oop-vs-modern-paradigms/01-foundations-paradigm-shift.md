@@ -13,6 +13,7 @@
 
   God Class의 판별 기준은 명확합니다: 500줄 이상의 LOC, 10개 이상의 의존성 주입, 여러 도메인 관심사 처리, 혼합된 추상화 수준. 이 중 2개 이상 해당되면 God Class를 의심해야 합니다.
 
+**[그림 01.1]** God Class와 캡슐화의 한계 (God Class and the Limits of Encapsulation)
 ```
 +---------------------------------------------+
 |              GOD CLASS (Order)               |
@@ -45,41 +46,44 @@
 - **"God Class = 모든 OOP"**: OOP도 SRP를 강조하지만, 실무에서 캡슐화가 God Class로 퇴화하는 경향이 문제
 
 ### Before: Traditional OOP
+
+**[코드 01.1]** Traditional OOP: God Class: 모든 것을 담은 OrderService
 ```java
-// [X] God Class: 모든 것을 담은 OrderService
-public class OrderService {
-    @Autowired private UserRepository userRepo;
-    @Autowired private ProductRepository productRepo;
-    @Autowired private PaymentGateway paymentGateway;
-    @Autowired private ShippingService shippingService;
-    @Autowired private EmailService emailService;
-    @Autowired private InventoryService inventoryService;
-    @Autowired private CouponService couponService;
-    @Autowired private TaxCalculator taxCalculator;
-
-    public Order createOrder(CreateOrderRequest request) {
-        // 200줄의 혼합된 로직: 검증 + 계산 + 저장 + 알림
-        Coupon coupon = couponService.validate(request.getCouponCode());
-        for (OrderItem item : request.getItems()) {
-            if (!inventoryService.hasStock(item.getProductId(), item.getQuantity()))
-                throw new OutOfStockException();
-        }
-        BigDecimal total = calculateTotal(request.getItems());
-        BigDecimal discounted = coupon.apply(total);
-        Order order = new Order();
-        order.setItems(request.getItems());
-        order.setTotalAmount(discounted);
-        order.setStatus("CREATED");
-        orderRepository.save(order);
-        inventoryService.decreaseStock(/*...*/);
-        emailService.sendOrderCreatedNotification(order);
-        return order;
-    }
-
-    public void processPayment(Order order, PaymentInfo info) { /* 150줄 */ }
-    public void arrangeShipping(Order order) { /* 100줄 */ }
-    // ... 메서드가 계속 증가
-}
+ 1| // package: com.ecommerce.order
+ 2| // [X] God Class: 모든 것을 담은 OrderService
+ 3| public class OrderService {
+ 4|   @Autowired private UserRepository userRepo;
+ 5|   @Autowired private ProductRepository productRepo;
+ 6|   @Autowired private PaymentGateway paymentGateway;
+ 7|   @Autowired private ShippingService shippingService;
+ 8|   @Autowired private EmailService emailService;
+ 9|   @Autowired private InventoryService inventoryService;
+10|   @Autowired private CouponService couponService;
+11|   @Autowired private TaxCalculator taxCalculator;
+12| 
+13|   public Order createOrder(CreateOrderRequest request) {
+14|     // 200줄의 혼합된 로직: 검증 + 계산 + 저장 + 알림
+15|     Coupon coupon = couponService.validate(request.getCouponCode());
+16|     for (OrderItem item : request.getItems()) {
+17|       if (!inventoryService.hasStock(item.getProductId(), item.getQuantity()))
+18|         throw new OutOfStockException();
+19|     }
+20|     BigDecimal total = calculateTotal(request.getItems());
+21|     BigDecimal discounted = coupon.apply(total);
+22|     Order order = new Order();
+23|     order.setItems(request.getItems());
+24|     order.setTotalAmount(discounted);
+25|     order.setStatus("CREATED");
+26|     orderRepository.save(order);
+27|     inventoryService.decreaseStock(/*...*/);
+28|     emailService.sendOrderCreatedNotification(order);
+29|     return order;
+30|   }
+31| 
+32|   public void processPayment(Order order, PaymentInfo info) { /* 150줄 */ }
+33|   public void arrangeShipping(Order order) { /* 100줄 */ }
+34|   // ... 메서드가 계속 증가
+35| }
 ```
 - **의도 및 코드 설명**: 하나의 서비스 클래스가 주문 생성, 결제, 배송, 알림까지 모두 담당
 - **뭐가 문제인가**:
@@ -89,79 +93,85 @@ public class OrderService {
   - 여러 팀이 같은 파일 수정 시 Git 충돌
 
 ### After: DMMF 관점 (DDD + FP)
+
+**[코드 01.2]** DMMF: Bounded Context별 분리 + 순수 함수 로직
 ```java
-// [O] Bounded Context별 분리 + 순수 함수 로직
-// 각 맥락에 필요한 데이터만 포함하는 별도 타입
-package com.ecommerce.order;
-
-public record Customer(
-    CustomerId id,
-    ShippingAddress address,
-    ContactInfo contact
-) {}
-
-package com.ecommerce.auth;
-
-public record AppUser(
-    long id,
-    String username,
-    String passwordHash,
-    Set<Role> roles
-) {}
-
-// 순수 비즈니스 로직: OrderDomainService
-public class OrderDomainService {
-    public static Money calculateTotal(List<OrderItem> items) {
-        return items.stream()
-            .map(item -> item.unitPrice().multiply(item.quantity().value()))
-            .reduce(Money.zero(), Money::add);
-    }
-
-    public static Money applyDiscount(Money total, DiscountRate rate) {
-        return rate.applyTo(total);
-    }
-}
+ 1| // package: com.ecommerce.order (primary), com.ecommerce.auth
+ 2| // [O] Bounded Context별 분리 + 순수 함수 로직
+ 3| // 각 맥락에 필요한 데이터만 포함하는 별도 타입
+ 4| package com.ecommerce.order;
+ 5| 
+ 6| public record Customer(
+ 7|   CustomerId id,
+ 8|   ShippingAddress address,
+ 9|   ContactInfo contact
+10| ) {}
+11| 
+12| package com.ecommerce.auth;
+13| 
+14| public record AppUser(
+15|   long id,
+16|   String username,
+17|   String passwordHash,
+18|   Set<Role> roles
+19| ) {}
+20| 
+21| // 순수 비즈니스 로직: OrderDomainService
+22| public class OrderDomainService {
+23|   public static Money calculateTotal(List<OrderItem> items) {
+24|     return items.stream()
+25|       .map(item -> item.unitPrice().multiply(item.quantity().value()))
+26|       .reduce(Money.zero(), Money::add);
+27|   }
+28| 
+29|   public static Money applyDiscount(Money total, DiscountRate rate) {
+30|     return rate.applyTo(total);
+31|   }
+32| }
 ```
 
 ### After: DOP 관점
+
+**[코드 01.3]** DOP: 데이터(Record)와 로직(Calculations) 완전 분리
 ```java
-// [O] 데이터(Record)와 로직(Calculations) 완전 분리
-public record Order(
-    OrderId id,
-    CustomerId customerId,
-    List<OrderItem> items,
-    Money totalAmount,
-    OrderStatus status
-) {}
-
-// 순수 계산 함수 모음 (static, stateless)
-public class OrderCalculations {
-    public static Money calculateTotal(List<OrderItem> items) {
-        return items.stream()
-            .map(item -> item.unitPrice().multiply(item.quantity().value()))
-            .reduce(Money.zero(), Money::add);
-    }
-
-    public static Money applyDiscount(Money total, DiscountRate rate) {
-        return rate.applyTo(total);
-    }
-}
-
-// Orchestration (Impure Shell) - I/O만 담당
-public class OrderOrchestrator {
-    public Result<Order, OrderError> createOrder(CreateOrderRequest request) {
-        // Impure: 데이터 수집
-        StockInfo stock = inventoryService.getStockInfo(request.productIds());
-        // Pure: 비즈니스 로직
-        return OrderValidations.validateStock(request.items(), stock)
-            .map(items -> OrderCalculations.calculateTotal(items))
-            .map(total -> new Order(
-                OrderId.generate(), request.customerId(),
-                request.items(), total,
-                new OrderStatus.Created(LocalDateTime.now())
-            ));
-    }
-}
+ 1| // package: com.ecommerce.order
+ 2| // [O] 데이터(Record)와 로직(Calculations) 완전 분리
+ 3| public record Order(
+ 4|   OrderId id,
+ 5|   CustomerId customerId,
+ 6|   List<OrderItem> items,
+ 7|   Money totalAmount,
+ 8|   OrderStatus status
+ 9| ) {}
+10| 
+11| // 순수 계산 함수 모음 (static, stateless)
+12| public class OrderCalculations {
+13|   public static Money calculateTotal(List<OrderItem> items) {
+14|     return items.stream()
+15|       .map(item -> item.unitPrice().multiply(item.quantity().value()))
+16|       .reduce(Money.zero(), Money::add);
+17|   }
+18| 
+19|   public static Money applyDiscount(Money total, DiscountRate rate) {
+20|     return rate.applyTo(total);
+21|   }
+22| }
+23| 
+24| // Orchestration (Impure Shell) - I/O만 담당
+25| public class OrderOrchestrator {
+26|   public Result<Order, OrderError> createOrder(CreateOrderRequest request) {
+27|     // Impure: 데이터 수집
+28|     StockInfo stock = inventoryService.getStockInfo(request.productIds());
+29|     // Pure: 비즈니스 로직
+30|     return OrderValidations.validateStock(request.items(), stock)
+31|       .map(items -> OrderCalculations.calculateTotal(items))
+32|       .map(total -> new Order(
+33|         OrderId.generate(), request.customerId(),
+34|         request.items(), total,
+35|         new OrderStatus.Created(LocalDateTime.now())
+36|       ));
+37|   }
+38| }
 ```
 
 ### 관점 차이 분석
@@ -207,28 +217,31 @@ public class OrderOrchestrator {
 - **"불변 = 성능 저하"**: 현대 JVM의 Eden GC는 단명 객체를 효율적으로 처리합니다
 
 ### Before: Traditional OOP
+
+**[코드 01.4]** Traditional OOP: 가변 객체: 언제 어디서 상태가 바뀌는지 추적 불가
 ```java
-// [X] 가변 객체: 언제 어디서 상태가 바뀌는지 추적 불가
-public class MutableOrder {
-    private String status;
-    private int amount;
-
-    public void setStatus(String status) { this.status = status; }
-    public void setAmount(int amount) { this.amount = amount; }
-}
-
-// 문제 상황
-MutableOrder order = new MutableOrder();
-order.setStatus("PAID");
-order.setAmount(10000);
-// ... 100줄의 코드 ...
-processOrder(order);  // 이 시점에 order의 상태가 뭐지?
-                      // 중간에 누가 바꿨을 수도 있음!
-
-// 멀티스레드 환경에서는 더 심각
-// Thread A: order.setStatus("CANCELLED");
-// Thread B: order.setAmount(20000);
-// 결과: 취소된 주문인데 금액이 변경됨 (일관성 파괴)
+ 1| // package: com.ecommerce.shared
+ 2| // [X] 가변 객체: 언제 어디서 상태가 바뀌는지 추적 불가
+ 3| public class MutableOrder {
+ 4|   private String status;
+ 5|   private int amount;
+ 6| 
+ 7|   public void setStatus(String status) { this.status = status; }
+ 8|   public void setAmount(int amount) { this.amount = amount; }
+ 9| }
+10| 
+11| // 문제 상황
+12| MutableOrder order = new MutableOrder();
+13| order.setStatus("PAID");
+14| order.setAmount(10000);
+15| // ... 100줄의 코드 ...
+16| processOrder(order);  // 이 시점에 order의 상태가 뭐지?
+17|            // 중간에 누가 바꿨을 수도 있음!
+18| 
+19| // 멀티스레드 환경에서는 더 심각
+20| // Thread A: order.setStatus("CANCELLED");
+21| // Thread B: order.setAmount(20000);
+22| // 결과: 취소된 주문인데 금액이 변경됨 (일관성 파괴)
 ```
 - **의도 및 코드 설명**: 전통적 setter 기반 가변 객체
 - **뭐가 문제인가**:
@@ -238,27 +251,30 @@ processOrder(order);  // 이 시점에 order의 상태가 뭐지?
   - 디버깅 시 "누가 이 값을 바꿨지?" 추적 지옥
 
 ### After: Modern Approach
+
+**[코드 01.5]** Modern: Java Record + Wither 패턴: 불변 객체
 ```java
-// [O] Java Record + Wither 패턴: 불변 객체
-public record Order(OrderId id, Money amount, OrderStatus status) {
-
-    // Wither: 하나의 필드만 바꾼 새 객체 반환
-    public Order withStatus(OrderStatus newStatus) {
-        return new Order(id, amount, newStatus);
-    }
-
-    public Order withAmount(Money newAmount) {
-        return new Order(id, newAmount, status);
-    }
-}
-
-// 사용: 원본은 절대 변하지 않음
-Order paidOrder = new Order(id, Money.krw(10000), new Unpaid());
-Order shippedOrder = paidOrder.withStatus(new Paid(LocalDateTime.now(), paymentId));
-
-// paidOrder는 여전히 Unpaid
-// shippedOrder는 Paid
-// 두 객체가 공존 → 히스토리 추적 가능 (Git 커밋처럼)
+ 1| // package: com.ecommerce.order
+ 2| // [O] Java Record + Wither 패턴: 불변 객체
+ 3| public record Order(OrderId id, Money amount, OrderStatus status) {
+ 4| 
+ 5|   // Wither: 하나의 필드만 바꾼 새 객체 반환
+ 6|   public Order withStatus(OrderStatus newStatus) {
+ 7|     return new Order(id, amount, newStatus);
+ 8|   }
+ 9| 
+10|   public Order withAmount(Money newAmount) {
+11|     return new Order(id, newAmount, status);
+12|   }
+13| }
+14| 
+15| // 사용: 원본은 절대 변하지 않음
+16| Order paidOrder = new Order(id, Money.krw(10000), new Unpaid());
+17| Order shippedOrder = paidOrder.withStatus(new Paid(LocalDateTime.now(), paymentId));
+18| 
+19| // paidOrder는 여전히 Unpaid
+20| // shippedOrder는 Paid
+21| // 두 객체가 공존 → 히스토리 추적 가능 (Git 커밋처럼)
 ```
 - **의도 및 코드 설명**: Record는 모든 필드가 `private final`이며 setter가 없음. Wither로 새 객체 생성
 - **무엇이 좋아지나**:
@@ -271,12 +287,14 @@ Order shippedOrder = paidOrder.withStatus(new Paid(LocalDateTime.now(), paymentI
 
 **얕은 불변성 주의**: Record의 필드가 `List`일 때, `List` 참조는 final이지만 내부 원소는 변경 가능합니다. `List.copyOf()`로 깊은 불변성을 확보해야 합니다.
 
+**[코드 01.6]** Order record
 ```java
-public record Order(List<OrderItem> items) {
-    public Order {
-        items = List.copyOf(items);  // 방어적 복사로 깊은 불변성 확보
-    }
-}
+1| // package: com.ecommerce.order
+2| public record Order(List<OrderItem> items) {
+3|   public Order {
+4|     items = List.copyOf(items);  // 방어적 복사로 깊은 불변성 확보
+5|   }
+6| }
 ```
 
 ### 틀리기/놓치기 쉬운 부분
@@ -299,6 +317,7 @@ public record Order(List<OrderItem> items) {
 - **통찰**: 순수 함수는 "입력이 같으면 결과가 항상 같고, 세상에 아무 흔적도 남기지 않는" 함수이다.
 - **설명**: 순수 함수의 핵심은 참조 투명성입니다. `add(2, 3)`을 숫자 `5`로 대체해도 프로그램의 동작이 바뀌지 않습니다. 이는 테스트(Mock 불필요), 동시성(Lock 불필요), 추론(함수 안만 보면 됨)에서 강력한 이점을 제공합니다.
 
+**[그림 01.2]** 순수 함수와 참조 투명성 (Pure Functions and Referential Transparency)
 ```
 +------------------+         +------------------+
 |   Impure Func    |         |   Pure Func      |
@@ -317,21 +336,24 @@ public record Order(List<OrderItem> items) {
 - **"순수 함수 = 유틸 함수"**: 비즈니스 로직도 순수 함수로 작성 가능
 
 ### Before: Traditional OOP
-```java
-// [X] 비순수 함수: 외부 상태에 의존하고, 부수효과 발생
-public class OrderProcessor {
-    private int processedCount = 0;  // 외부 상태
 
-    public BigDecimal calculateTotal(Order order) {
-        processedCount++;  // 부수효과: 외부 상태 변경
-        System.out.println("Processing: " + order.getId());  // 부수효과: I/O
-        BigDecimal total = order.getItems().stream()
-            .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQty())))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        auditLog.write("Calculated: " + total);  // 부수효과: I/O
-        return total;
-    }
-}
+**[코드 01.7]** Traditional OOP: 비순수 함수: 외부 상태에 의존하고, 부수효과 발생
+```java
+ 1| // package: com.ecommerce.order
+ 2| // [X] 비순수 함수: 외부 상태에 의존하고, 부수효과 발생
+ 3| public class OrderProcessor {
+ 4|   private int processedCount = 0;  // 외부 상태
+ 5| 
+ 6|   public BigDecimal calculateTotal(Order order) {
+ 7|     processedCount++;  // 부수효과: 외부 상태 변경
+ 8|     System.out.println("Processing: " + order.getId());  // 부수효과: I/O
+ 9|     BigDecimal total = order.getItems().stream()
+10|       .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQty())))
+11|       .reduce(BigDecimal.ZERO, BigDecimal::add);
+12|     auditLog.write("Calculated: " + total);  // 부수효과: I/O
+13|     return total;
+14|   }
+15| }
 ```
 - **의도 및 코드 설명**: 총액 계산이라는 순수한 목적에 카운팅, 로깅 등 부수효과가 섞여 있음
 - **뭐가 문제인가**:
@@ -340,26 +362,29 @@ public class OrderProcessor {
   - 멀티스레드에서 processedCount 레이스 컨디션
 
 ### After: Modern Approach
-```java
-// [O] 순수 함수: 입력만으로 결과를 만듦, 부수효과 없음
-public class OrderCalculations {
-    public static Money calculateTotal(List<OrderItem> items) {
-        return items.stream()
-            .map(item -> item.unitPrice().multiply(item.quantity().value()))
-            .reduce(Money.zero(), Money::add);
-    }
-}
 
-// 부수효과는 Imperative Shell에서 별도 처리
-public class OrderOrchestrator {
-    public void processOrder(Order order) {
-        // Pure: 계산
-        Money total = OrderCalculations.calculateTotal(order.items());
-        // Impure: 부수효과 (명시적으로 분리)
-        auditLog.write("Calculated: " + total);
-        orderRepository.save(order.withAmount(total));
-    }
-}
+**[코드 01.8]** Modern: 순수 함수: 입력만으로 결과를 만듦, 부수효과 없음
+```java
+ 1| // package: com.ecommerce.order
+ 2| // [O] 순수 함수: 입력만으로 결과를 만듦, 부수효과 없음
+ 3| public class OrderCalculations {
+ 4|   public static Money calculateTotal(List<OrderItem> items) {
+ 5|     return items.stream()
+ 6|       .map(item -> item.unitPrice().multiply(item.quantity().value()))
+ 7|       .reduce(Money.zero(), Money::add);
+ 8|   }
+ 9| }
+10| 
+11| // 부수효과는 Imperative Shell에서 별도 처리
+12| public class OrderOrchestrator {
+13|   public void processOrder(Order order) {
+14|     // Pure: 계산
+15|     Money total = OrderCalculations.calculateTotal(order.items());
+16|     // Impure: 부수효과 (명시적으로 분리)
+17|     auditLog.write("Calculated: " + total);
+18|     orderRepository.save(order.withAmount(total));
+19|   }
+20| }
 ```
 - **의도 및 코드 설명**: 순수 계산과 부수효과를 명시적으로 분리
 - **무엇이 좋아지나**:
@@ -391,19 +416,22 @@ public class OrderOrchestrator {
 - **"주석을 많이 다는 것"**: 주석이 필요한 코드는 이름이 잘못된 코드
 
 ### Before: Traditional OOP
-```java
-// [X] 기획서와 코드의 용어가 다름
-public class Util {
-    public static double calc(double a, String c) {
-        if (c != null && !c.isEmpty()) {
-            return a * 0.9;
-        }
-        return a;
-    }
-}
 
-// 호출: 무엇을 하는지 알 수 없음
-double result = Util.calc(order.getAmt(), req.getCode());
+**[코드 01.9]** Traditional OOP: 기획서와 코드의 용어가 다름
+```java
+ 1| // package: com.ecommerce.shared
+ 2| // [X] 기획서와 코드의 용어가 다름
+ 3| public class Util {
+ 4|   public static double calc(double a, String c) {
+ 5|     if (c != null && !c.isEmpty()) {
+ 6|       return a * 0.9;
+ 7|     }
+ 8|     return a;
+ 9|   }
+10| }
+11| 
+12| // 호출: 무엇을 하는지 알 수 없음
+13| double result = Util.calc(order.getAmt(), req.getCode());
 ```
 - **의도 및 코드 설명**: 할인 적용 로직이지만 이름에서 의도를 파악할 수 없음
 - **뭐가 문제인가**:
@@ -412,17 +440,20 @@ double result = Util.calc(order.getAmt(), req.getCode());
   - 새 개발자가 합류하면 코드를 이해하는 데 시간 소요
 
 ### After: Modern Approach
-```java
-// [O] 기획서의 용어가 그대로 코드에 등장
-public class CouponCalculations {
-    public static DiscountedPrice applyCoupon(OriginalPrice price, Coupon coupon) {
-        Money discounted = coupon.discountRate().applyTo(price.value());
-        return new DiscountedPrice(discounted);
-    }
-}
 
-// 호출: 기획서를 읽은 사람이면 바로 이해 가능
-DiscountedPrice finalPrice = CouponCalculations.applyCoupon(originalPrice, coupon);
+**[코드 01.10]** Modern: 기획서의 용어가 그대로 코드에 등장
+```java
+ 1| // package: com.ecommerce.coupon
+ 2| // [O] 기획서의 용어가 그대로 코드에 등장
+ 3| public class CouponCalculations {
+ 4|   public static DiscountedPrice applyCoupon(OriginalPrice price, Coupon coupon) {
+ 5|     Money discounted = coupon.discountRate().applyTo(price.value());
+ 6|     return new DiscountedPrice(discounted);
+ 7|   }
+ 8| }
+ 9| 
+10| // 호출: 기획서를 읽은 사람이면 바로 이해 가능
+11| DiscountedPrice finalPrice = CouponCalculations.applyCoupon(originalPrice, coupon);
 ```
 - **의도 및 코드 설명**: 도메인 용어(`applyCoupon`, `OriginalPrice`, `DiscountedPrice`)가 코드에 직접 등장
 - **무엇이 좋아지나**:
@@ -449,39 +480,45 @@ DiscountedPrice finalPrice = CouponCalculations.applyCoupon(originalPrice, coupo
 - **설명**: 두 책 모두 OOP의 문제를 지적하지만, 해법의 강도가 다릅니다. DMMF는 OOP의 뼈대(클래스, 인터페이스)를 유지하면서 FP 원칙(불변성, 순수함수)을 주입합니다. DOP는 OOP의 핵심 전제("데이터와 행위를 함께 캡슐화")를 정면으로 부정하고, 데이터와 코드를 완전히 분리합니다.
 
 ### After: DMMF 관점 (DDD + FP)
-```java
-// DMMF: OOP 구조를 유지하면서 FP 원칙 적용
-// Record에 비즈니스 메서드를 포함할 수 있음 (Value Object)
-public record Money(BigDecimal amount, Currency currency) {
-    public Money add(Money other) {
-        if (this.currency != other.currency)
-            throw new IllegalArgumentException("통화 불일치");
-        return new Money(this.amount.add(other.amount), this.currency);
-    }
 
-    public Money multiply(int factor) {
-        return new Money(this.amount.multiply(BigDecimal.valueOf(factor)), this.currency);
-    }
-}
+**[코드 01.11]** DMMF: OOP 구조를 유지하면서 FP 원칙 적용
+```java
+ 1| // package: com.ecommerce.shared
+ 2| // DMMF: OOP 구조를 유지하면서 FP 원칙 적용
+ 3| // Record에 비즈니스 메서드를 포함할 수 있음 (Value Object)
+ 4| public record Money(BigDecimal amount, Currency currency) {
+ 5|   public Money add(Money other) {
+ 6|     if (this.currency != other.currency)
+ 7|       throw new IllegalArgumentException("통화 불일치");
+ 8|     return new Money(this.amount.add(other.amount), this.currency);
+ 9|   }
+10| 
+11|   public Money multiply(int factor) {
+12|     return new Money(this.amount.multiply(BigDecimal.valueOf(factor)), this.currency);
+13|   }
+14| }
 ```
 
 ### After: DOP 관점
+
+**[코드 01.12]** DOP: 데이터와 코드를 완전 분리
 ```java
-// DOP: 데이터와 코드를 완전 분리
-// Record에는 데이터만, 로직은 Calculations 클래스로
-public record Money(BigDecimal amount, Currency currency) {}
-
-public class MoneyCalculations {
-    public static Money add(Money a, Money b) {
-        if (a.currency() != b.currency())
-            throw new IllegalArgumentException("통화 불일치");
-        return new Money(a.amount().add(b.amount()), a.currency());
-    }
-
-    public static Money multiply(Money money, int factor) {
-        return new Money(money.amount().multiply(BigDecimal.valueOf(factor)), money.currency());
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // DOP: 데이터와 코드를 완전 분리
+ 3| // Record에는 데이터만, 로직은 Calculations 클래스로
+ 4| public record Money(BigDecimal amount, Currency currency) {}
+ 5| 
+ 6| public class MoneyCalculations {
+ 7|   public static Money add(Money a, Money b) {
+ 8|     if (a.currency() != b.currency())
+ 9|       throw new IllegalArgumentException("통화 불일치");
+10|     return new Money(a.amount().add(b.amount()), a.currency());
+11|   }
+12| 
+13|   public static Money multiply(Money money, int factor) {
+14|     return new Money(money.amount().multiply(BigDecimal.valueOf(factor)), money.currency());
+15|   }
+16| }
 ```
 
 ### 관점 차이 분석

@@ -17,6 +17,7 @@
   - 모든 실패 가능성을 Result로 명시
   - 워크플로우를 flatMap 파이프라인으로 구성
 
+**[그림 13.1]** Full Domain Model with ADT + Result + Pipeline (ADT + Result + 파이프라인 종합)
 ```
 FULL DOMAIN MODEL ARCHITECTURE
 =================================
@@ -49,44 +50,47 @@ Bounded Contexts:
 - **"Bounded Context = 마이크로서비스"**: 모놀리스 내에서도 패키지로 Context를 분리할 수 있음
 
 ### Before: Traditional OOP
+
+**[코드 13.1]** Traditional OOP: 신(God) 서비스 - 모든 도메인 로직이 한 곳에 결합
 ```java
-// [X] 신(God) 서비스 - 모든 도메인 로직이 한 곳에 결합
-public class OrderService {
-    public OrderResponse createOrder(CreateOrderRequest request) {
-        // 회원 검증
-        User user = userRepository.findById(request.getUserId());
-        if (user == null) throw new RuntimeException("회원 없음");
-        if (!user.isEmailVerified()) throw new RuntimeException("이메일 미인증");
-
-        // 상품 재고 확인
-        for (ItemRequest item : request.getItems()) {
-            Product product = productRepository.findById(item.getProductId());
-            if (product == null) throw new RuntimeException("상품 없음");
-            if (product.getStock() < item.getQuantity())
-                throw new RuntimeException("재고 부족");
-        }
-
-        // 쿠폰 적용
-        BigDecimal total = calculateTotal(request.getItems());
-        if (request.getCouponCode() != null) {
-            Coupon coupon = couponRepository.findByCode(request.getCouponCode());
-            if (coupon == null) throw new RuntimeException("쿠폰 없음");
-            if (coupon.isExpired()) throw new RuntimeException("쿠폰 만료");
-            total = applyCoupon(total, coupon);
-        }
-
-        // 결제
-        PaymentResult payment = paymentGateway.charge(user, total);
-        if (!payment.isSuccess()) throw new RuntimeException("결제 실패");
-
-        // 주문 생성
-        Order order = new Order();
-        order.setUserId(user.getId());
-        order.setTotal(total);
-        order.setStatus("PAID");
-        return orderRepository.save(order);
-    }
-}
+ 1| // package: com.ecommerce.order
+ 2| // [X] 신(God) 서비스 - 모든 도메인 로직이 한 곳에 결합
+ 3| public class OrderService {
+ 4|   public OrderResponse createOrder(CreateOrderRequest request) {
+ 5|     // 회원 검증
+ 6|     User user = userRepository.findById(request.getUserId());
+ 7|     if (user == null) throw new RuntimeException("회원 없음");
+ 8|     if (!user.isEmailVerified()) throw new RuntimeException("이메일 미인증");
+ 9| 
+10|     // 상품 재고 확인
+11|     for (ItemRequest item : request.getItems()) {
+12|       Product product = productRepository.findById(item.getProductId());
+13|       if (product == null) throw new RuntimeException("상품 없음");
+14|       if (product.getStock() < item.getQuantity())
+15|         throw new RuntimeException("재고 부족");
+16|     }
+17| 
+18|     // 쿠폰 적용
+19|     BigDecimal total = calculateTotal(request.getItems());
+20|     if (request.getCouponCode() != null) {
+21|       Coupon coupon = couponRepository.findByCode(request.getCouponCode());
+22|       if (coupon == null) throw new RuntimeException("쿠폰 없음");
+23|       if (coupon.isExpired()) throw new RuntimeException("쿠폰 만료");
+24|       total = applyCoupon(total, coupon);
+25|     }
+26| 
+27|     // 결제
+28|     PaymentResult payment = paymentGateway.charge(user, total);
+29|     if (!payment.isSuccess()) throw new RuntimeException("결제 실패");
+30| 
+31|     // 주문 생성
+32|     Order order = new Order();
+33|     order.setUserId(user.getId());
+34|     order.setTotal(total);
+35|     order.setStatus("PAID");
+36|     return orderRepository.save(order);
+37|   }
+38| }
 ```
 - **의도 및 코드 설명**: 단일 서비스 메서드에서 회원/상품/쿠폰/결제/주문 모든 도메인 처리. 모든 에러는 RuntimeException
 - **뭐가 문제인가**:
@@ -97,73 +101,76 @@ public class OrderService {
   - 테스트 시 전체 의존성 Mock 필요
 
 ### After: Modern Approach
+
+**[코드 13.2]** Modern: 종합 통합: ADT + Result + Pipeline
 ```java
-// [O] 종합 통합: ADT + Result + Pipeline
-// 1. 각 Bounded Context별 독립 모델
-public sealed interface OrderStatus {
-    record Unpaid(LocalDateTime deadline) implements OrderStatus {}
-    record Paid(LocalDateTime paidAt, TransactionId txId) implements OrderStatus {}
-    record Shipping(LocalDateTime shippedAt, TrackingNumber tracking) implements OrderStatus {}
-    record Delivered(LocalDateTime deliveredAt) implements OrderStatus {}
-    record Cancelled(LocalDateTime at, CancelReason reason) implements OrderStatus {}
-}
-
-public sealed interface OrderError permits
-    EmptyOrder, InvalidCustomer, OutOfStock, PaymentFailed, InvalidCoupon {
-    record EmptyOrder() implements OrderError {}
-    record InvalidCustomer(String reason) implements OrderError {}
-    record OutOfStock(ProductId id, int requested, int available) implements OrderError {}
-    record PaymentFailed(String reason) implements OrderError {}
-    record InvalidCoupon(String code, String reason) implements OrderError {}
-}
-
-// 2. 순수 함수 도메인 서비스 (Functional Core)
-public class OrderDomainService {
-    public static Result<ValidatedOrder, OrderError> validate(
-            CreateOrderCommand cmd, Member member, List<InventoryProduct> inventory) {
-        if (!member.isEmailVerified())
-            return Result.failure(new InvalidCustomer("이메일 미인증"));
-        if (cmd.items().isEmpty())
-            return Result.failure(new EmptyOrder());
-        // 재고 확인
-        for (var item : cmd.items()) {
-            var product = findProduct(inventory, item.productId());
-            if (!product.isAvailable(item.quantity()))
-                return Result.failure(new OutOfStock(
-                    item.productId(), item.quantity(), product.stock().value()));
-        }
-        return Result.success(new ValidatedOrder(cmd, member));
-    }
-
-    public static Result<PricedOrder, OrderError> applyPricing(
-            ValidatedOrder order, Optional<Coupon> coupon) {
-        Money subtotal = calculateSubtotal(order.items());
-        Money discount = coupon
-            .filter(Coupon::isAvailable)
-            .map(c -> c.type().calculateDiscount(subtotal))
-            .orElse(Money.zero(Currency.KRW));
-        return Result.success(new PricedOrder(order, subtotal.subtract(discount)));
-    }
-}
-
-// 3. 워크플로우 파이프라인 (Imperative Shell)
-public class PlaceOrderUseCase {
-    public Result<Order, OrderError> execute(CreateOrderCommand cmd) {
-        Member member = memberRepository.findById(cmd.memberId()).orElseThrow();
-        List<InventoryProduct> inventory = inventoryRepository.findAll(cmd.productIds());
-        Optional<Coupon> coupon = cmd.couponCode()
-            .flatMap(couponRepository::findByCode);
-
-        return OrderDomainService.validate(cmd, member, inventory)
-            .flatMap(validated -> OrderDomainService.applyPricing(validated, coupon))
-            .flatMap(priced -> processPayment(priced))
-            .map(paid -> {
-                Order order = createOrder(paid);
-                orderRepository.save(order);
-                return order;
-            });
-    }
-}
+ 1| // package: com.ecommerce.order
+ 2| // [O] 종합 통합: ADT + Result + Pipeline
+ 3| // 1. 각 Bounded Context별 독립 모델
+ 4| public sealed interface OrderStatus {
+ 5|   record Unpaid(LocalDateTime deadline) implements OrderStatus {}
+ 6|   record Paid(LocalDateTime paidAt, TransactionId txId) implements OrderStatus {}
+ 7|   record Shipping(LocalDateTime shippedAt, TrackingNumber tracking) implements OrderStatus {}
+ 8|   record Delivered(LocalDateTime deliveredAt) implements OrderStatus {}
+ 9|   record Cancelled(LocalDateTime at, CancelReason reason) implements OrderStatus {}
+10| }
+11| 
+12| public sealed interface OrderError permits
+13|   EmptyOrder, InvalidCustomer, OutOfStock, PaymentFailed, InvalidCoupon {
+14|   record EmptyOrder() implements OrderError {}
+15|   record InvalidCustomer(String reason) implements OrderError {}
+16|   record OutOfStock(ProductId id, int requested, int available) implements OrderError {}
+17|   record PaymentFailed(String reason) implements OrderError {}
+18|   record InvalidCoupon(String code, String reason) implements OrderError {}
+19| }
+20| 
+21| // 2. 순수 함수 도메인 서비스 (Functional Core)
+22| public class OrderDomainService {
+23|   public static Result<ValidatedOrder, OrderError> validate(
+24|       CreateOrderCommand cmd, Member member, List<InventoryProduct> inventory) {
+25|     if (!member.isEmailVerified())
+26|       return Result.failure(new InvalidCustomer("이메일 미인증"));
+27|     if (cmd.items().isEmpty())
+28|       return Result.failure(new EmptyOrder());
+29|     // 재고 확인
+30|     for (var item : cmd.items()) {
+31|       var product = findProduct(inventory, item.productId());
+32|       if (!product.isAvailable(item.quantity()))
+33|         return Result.failure(new OutOfStock(
+34|           item.productId(), item.quantity(), product.stock().value()));
+35|     }
+36|     return Result.success(new ValidatedOrder(cmd, member));
+37|   }
+38| 
+39|   public static Result<PricedOrder, OrderError> applyPricing(
+40|       ValidatedOrder order, Optional<Coupon> coupon) {
+41|     Money subtotal = calculateSubtotal(order.items());
+42|     Money discount = coupon
+43|       .filter(Coupon::isAvailable)
+44|       .map(c -> c.type().calculateDiscount(subtotal))
+45|       .orElse(Money.zero(Currency.KRW));
+46|     return Result.success(new PricedOrder(order, subtotal.subtract(discount)));
+47|   }
+48| }
+49| 
+50| // 3. 워크플로우 파이프라인 (Imperative Shell)
+51| public class PlaceOrderUseCase {
+52|   public Result<Order, OrderError> execute(CreateOrderCommand cmd) {
+53|     Member member = memberRepository.findById(cmd.memberId()).orElseThrow();
+54|     List<InventoryProduct> inventory = inventoryRepository.findAll(cmd.productIds());
+55|     Optional<Coupon> coupon = cmd.couponCode()
+56|       .flatMap(couponRepository::findByCode);
+57| 
+58|     return OrderDomainService.validate(cmd, member, inventory)
+59|       .flatMap(validated -> OrderDomainService.applyPricing(validated, coupon))
+60|       .flatMap(priced -> processPayment(priced))
+61|       .map(paid -> {
+62|         Order order = createOrder(paid);
+63|         orderRepository.save(order);
+64|         return order;
+65|       });
+66|   }
+67| }
 ```
 - **의도 및 코드 설명**: 도메인 모델(ADT), 순수 함수(Functional Core), 워크플로우(Pipeline)를 종합하여 타입 안전하고 테스트 용이한 구조
 - **무엇이 좋아지나**:
@@ -197,6 +204,7 @@ public class PlaceOrderUseCase {
 
   핵심 원칙: "Entity는 DB와 대화하는 언어, Record는 비즈니스 로직의 언어, Mapper는 통역사"
 
+**[그림 13.2]** JPA Entity vs Domain Record Mapping (JPA Entity와 도메인 Record 매핑)
 ```
 ENTITY vs DOMAIN RECORD
 ==========================
@@ -224,33 +232,36 @@ JPA Entity (Infrastructure):    Domain Record (Core):
 - **"Record를 JPA Entity로 사용"**: Record는 기본 생성자, Setter가 없어 JPA 요구사항 불충족
 
 ### Before: Traditional OOP
+
+**[코드 13.3]** Traditional OOP: Entity를 도메인 로직에서 직접 사용
 ```java
-// [X] Entity를 도메인 로직에서 직접 사용
-@Entity
-public class OrderEntity {
-    @Id @GeneratedValue private Long id;
-    @Enumerated(EnumType.STRING) private OrderStatusEnum status;
-    @Column private BigDecimal totalAmount;
-
-    // JPA 필수: 기본 생성자
-    protected OrderEntity() {}
-
-    // 비즈니스 로직이 Entity에 혼재 (안티패턴)
-    public void markAsPaid(String paymentId) {
-        this.status = OrderStatusEnum.PAID;
-        this.paymentId = paymentId;
-        this.paidAt = LocalDateTime.now();
-    }
-}
-
-public class OrderService {
-    @Transactional
-    public void processOrder(Long orderId) {
-        OrderEntity entity = orderRepository.findById(orderId).orElseThrow();
-        entity.markAsPaid(paymentId); // Entity 직접 조작
-        // JPA Dirty Checking이 자동 저장
-    }
-}
+ 1| // package: com.ecommerce.order
+ 2| // [X] Entity를 도메인 로직에서 직접 사용
+ 3| @Entity
+ 4| public class OrderEntity {
+ 5|   @Id @GeneratedValue private Long id;
+ 6|   @Enumerated(EnumType.STRING) private OrderStatusEnum status;
+ 7|   @Column private BigDecimal totalAmount;
+ 8| 
+ 9|   // JPA 필수: 기본 생성자
+10|   protected OrderEntity() {}
+11| 
+12|   // 비즈니스 로직이 Entity에 혼재 (안티패턴)
+13|   public void markAsPaid(String paymentId) {
+14|     this.status = OrderStatusEnum.PAID;
+15|     this.paymentId = paymentId;
+16|     this.paidAt = LocalDateTime.now();
+17|   }
+18| }
+19| 
+20| public class OrderService {
+21|   @Transactional
+22|   public void processOrder(Long orderId) {
+23|     OrderEntity entity = orderRepository.findById(orderId).orElseThrow();
+24|     entity.markAsPaid(paymentId); // Entity 직접 조작
+25|     // JPA Dirty Checking이 자동 저장
+26|   }
+27| }
 ```
 - **의도 및 코드 설명**: JPA Entity에 비즈니스 로직을 추가하고, 서비스에서 Entity를 직접 조작
 - **뭐가 문제인가**:
@@ -261,59 +272,62 @@ public class OrderService {
   - 순수 함수 테스트 불가 (JPA 컨텍스트 필요)
 
 ### After: Modern Approach
+
+**[코드 13.4]** Modern: Mapper로 Entity와 Domain Record 분리
 ```java
-// [O] Mapper로 Entity와 Domain Record 분리
-// 1. JPA Entity (Infrastructure 전용)
-@Entity @Table(name = "orders")
-public class OrderEntity {
-    @Id @GeneratedValue private Long id;
-    @Enumerated(EnumType.STRING) private OrderStatusEnum status;
-    private BigDecimal totalAmount;
-    private LocalDateTime paidAt;
-    private String paymentId;
-    // JPA 전용: getters, setters, 기본 생성자
-}
-
-// 2. Domain Record (비즈니스 로직 전용)
-public record Order(OrderId id, List<OrderItem> items, Money total, OrderStatus status) {
-    public Order { items = List.copyOf(items); }
-}
-
-// 3. Mapper (통역사)
-public class OrderMapper {
-    public static Order toDomain(OrderEntity entity) {
-        OrderStatus status = switch (entity.getStatus()) {
-            case PENDING -> new OrderStatus.Unpaid(entity.getCreatedAt());
-            case PAID -> new OrderStatus.Paid(entity.getPaidAt(),
-                new TransactionId(entity.getPaymentId()));
-            case SHIPPED -> new OrderStatus.Shipping(entity.getShippedAt(),
-                new TrackingNumber(entity.getTrackingNumber()));
-            case DELIVERED -> new OrderStatus.Delivered(entity.getDeliveredAt());
-            case CANCELED -> new OrderStatus.Cancelled(entity.getCanceledAt(),
-                CancelReason.valueOf(entity.getCancelReason()));
-        };
-        return new Order(
-            new OrderId(entity.getId().toString()),
-            mapItems(entity.getItems()),
-            Money.krw(entity.getTotalAmount().longValue()),
-            status
-        );
-    }
-
-    public static OrderEntity toEntity(Order order) {
-        OrderEntity entity = new OrderEntity();
-        // ... Domain -> Entity 역변환
-        return entity;
-    }
-}
-
-// 4. Repository에서 Mapper 활용
-public class JpaOrderRepository implements OrderRepository {
-    public Optional<Order> findById(OrderId id) {
-        return jpaRepository.findById(Long.parseLong(id.value()))
-            .map(OrderMapper::toDomain);
-    }
-}
+ 1| // package: com.ecommerce.order
+ 2| // [O] Mapper로 Entity와 Domain Record 분리
+ 3| // 1. JPA Entity (Infrastructure 전용)
+ 4| @Entity @Table(name = "orders")
+ 5| public class OrderEntity {
+ 6|   @Id @GeneratedValue private Long id;
+ 7|   @Enumerated(EnumType.STRING) private OrderStatusEnum status;
+ 8|   private BigDecimal totalAmount;
+ 9|   private LocalDateTime paidAt;
+10|   private String paymentId;
+11|   // JPA 전용: getters, setters, 기본 생성자
+12| }
+13| 
+14| // 2. Domain Record (비즈니스 로직 전용)
+15| public record Order(OrderId id, List<OrderItem> items, Money total, OrderStatus status) {
+16|   public Order { items = List.copyOf(items); }
+17| }
+18| 
+19| // 3. Mapper (통역사)
+20| public class OrderMapper {
+21|   public static Order toDomain(OrderEntity entity) {
+22|     OrderStatus status = switch (entity.getStatus()) {
+23|       case PENDING -> new OrderStatus.Unpaid(entity.getCreatedAt());
+24|       case PAID -> new OrderStatus.Paid(entity.getPaidAt(),
+25|         new TransactionId(entity.getPaymentId()));
+26|       case SHIPPED -> new OrderStatus.Shipping(entity.getShippedAt(),
+27|         new TrackingNumber(entity.getTrackingNumber()));
+28|       case DELIVERED -> new OrderStatus.Delivered(entity.getDeliveredAt());
+29|       case CANCELED -> new OrderStatus.Cancelled(entity.getCanceledAt(),
+30|         CancelReason.valueOf(entity.getCancelReason()));
+31|     };
+32|     return new Order(
+33|       new OrderId(entity.getId().toString()),
+34|       mapItems(entity.getItems()),
+35|       Money.krw(entity.getTotalAmount().longValue()),
+36|       status
+37|     );
+38|   }
+39| 
+40|   public static OrderEntity toEntity(Order order) {
+41|     OrderEntity entity = new OrderEntity();
+42|     // ... Domain -> Entity 역변환
+43|     return entity;
+44|   }
+45| }
+46| 
+47| // 4. Repository에서 Mapper 활용
+48| public class JpaOrderRepository implements OrderRepository {
+49|   public Optional<Order> findById(OrderId id) {
+50|     return jpaRepository.findById(Long.parseLong(id.value()))
+51|       .map(OrderMapper::toDomain);
+52|   }
+53| }
 ```
 - **의도 및 코드 설명**: Entity는 JPA 전용, Domain Record는 비즈니스 전용, Mapper가 변환 담당. 도메인은 JPA를 전혀 모름
 - **무엇이 좋아지나**:
@@ -352,6 +366,7 @@ public class JpaOrderRepository implements OrderRepository {
 
   핵심: "작은 승리를 반복하라. 한 번에 큰 변경은 위험하다."
 
+**[그림 13.3]** Gradual Migration Strategy (점진적 마이그레이션 전략)
 ```
 GRADUAL MIGRATION STEPS
 ==========================
@@ -378,36 +393,39 @@ Step 4: Expand gradually
 - **"JPA를 완전히 제거"**: JPA는 유지하되, 도메인 로직만 분리. Entity는 인프라 계층에 남음
 
 ### Before: Traditional OOP
+
+**[코드 13.5]** Traditional OOP: 모든 로직이 Service에 뭉쳐있는 레거시
 ```java
-// [X] 모든 로직이 Service에 뭉쳐있는 레거시
-public class OrderService {
-    @Transactional
-    public Order createOrder(CreateOrderRequest request) {
-        // 100줄의 복잡한 로직이 한 메서드에...
-        BigDecimal subtotal = BigDecimal.ZERO;
-        for (ItemRequest item : request.getItems()) {
-            Product p = productRepository.findById(item.getProductId());
-            subtotal = subtotal.add(p.getPrice().multiply(
-                BigDecimal.valueOf(item.getQuantity())));
-        }
-
-        // 할인 계산 (20줄)
-        BigDecimal discount = BigDecimal.ZERO;
-        if (request.getCouponCode() != null) {
-            // ... 복잡한 할인 로직
-        }
-
-        // 세금 계산 (10줄)
-        BigDecimal tax = subtotal.subtract(discount)
-            .multiply(BigDecimal.valueOf(0.1));
-
-        // 배송비 계산 (15줄)
-        BigDecimal shipping = calculateShipping(request.getAddress(), subtotal);
-
-        BigDecimal total = subtotal.subtract(discount).add(tax).add(shipping);
-        // ... 주문 생성, 결제, 저장
-    }
-}
+ 1| // package: com.ecommerce.order
+ 2| // [X] 모든 로직이 Service에 뭉쳐있는 레거시
+ 3| public class OrderService {
+ 4|   @Transactional
+ 5|   public Order createOrder(CreateOrderRequest request) {
+ 6|     // 100줄의 복잡한 로직이 한 메서드에...
+ 7|     BigDecimal subtotal = BigDecimal.ZERO;
+ 8|     for (ItemRequest item : request.getItems()) {
+ 9|       Product p = productRepository.findById(item.getProductId());
+10|       subtotal = subtotal.add(p.getPrice().multiply(
+11|         BigDecimal.valueOf(item.getQuantity())));
+12|     }
+13| 
+14|     // 할인 계산 (20줄)
+15|     BigDecimal discount = BigDecimal.ZERO;
+16|     if (request.getCouponCode() != null) {
+17|       // ... 복잡한 할인 로직
+18|     }
+19| 
+20|     // 세금 계산 (10줄)
+21|     BigDecimal tax = subtotal.subtract(discount)
+22|       .multiply(BigDecimal.valueOf(0.1));
+23| 
+24|     // 배송비 계산 (15줄)
+25|     BigDecimal shipping = calculateShipping(request.getAddress(), subtotal);
+26| 
+27|     BigDecimal total = subtotal.subtract(discount).add(tax).add(shipping);
+28|     // ... 주문 생성, 결제, 저장
+29|   }
+30| }
 ```
 - **의도 및 코드 설명**: 가격, 할인, 세금, 배송비 계산이 모두 하나의 트랜잭션 메서드에 결합
 - **뭐가 문제인가**:
@@ -417,71 +435,74 @@ public class OrderService {
   - 버그 발생 시 디버깅 범위가 너무 넓음
 
 ### After: Modern Approach
+
+**[코드 13.6]** Modern: 점진적 마이그레이션: 순수 함수 추출 -> 테스트 -> 확장
 ```java
-// [O] 점진적 마이그레이션: 순수 함수 추출 -> 테스트 -> 확장
-// Step 1: 순수 함수 추출 (Functional Core)
-public class PriceCalculations {
-    public static Money calculateSubtotal(List<OrderItem> items) {
-        return items.stream()
-            .map(item -> item.price().multiply(item.quantity().value()))
-            .reduce(Money.zero(Currency.KRW), Money::add);
-    }
-
-    public static Money applyDiscount(Money subtotal, Discount discount) {
-        return switch (discount) {
-            case Discount.NoDiscount() -> subtotal;
-            case Discount.Percentage(int rate) ->
-                subtotal.multiply(BigDecimal.valueOf(100 - rate))
-                    .divide(BigDecimal.valueOf(100));
-            case Discount.FixedAmount(Money amount) ->
-                subtotal.subtract(amount).max(Money.zero(subtotal.currency()));
-        };
-    }
-
-    public static Money applyTax(Money amount, TaxRate rate) {
-        return amount.add(amount.multiply(rate.value()));
-    }
-
-    public static Money calculateTotal(
-            List<OrderItem> items, Discount discount,
-            TaxRate taxRate, ShippingFee shippingFee) {
-        Money subtotal = calculateSubtotal(items);
-        Money discounted = applyDiscount(subtotal, discount);
-        Money taxed = applyTax(discounted, taxRate);
-        return taxed.add(shippingFee.amount());
-    }
-}
-
-// Step 2: 테스트 (Mock 불필요!)
-@Test
-void totalWithPercentageDiscount() {
-    var items = List.of(new OrderItem(productId, Quantity.of(2), Money.krw(10000)));
-    var discount = new Discount.Percentage(10);
-    var tax = new TaxRate(BigDecimal.valueOf(0.1));
-    var shipping = ShippingFee.free();
-
-    Money result = PriceCalculations.calculateTotal(items, discount, tax, shipping);
-    assertEquals(Money.krw(19800), result); // 20000 * 0.9 * 1.1
-}
-
-// Step 3: 기존 Service에서 순수 함수 호출 (Imperative Shell)
-public class OrderService {
-    @Transactional
-    public Order createOrder(CreateOrderRequest request) {
-        // I/O: 데이터 로딩
-        List<OrderItem> items = loadItems(request);
-        Discount discount = loadDiscount(request.couponCode());
-        TaxRate taxRate = taxService.getCurrentRate();
-        ShippingFee shipping = shippingService.calculate(request.address());
-
-        // 순수 함수 호출 (Functional Core)
-        Money total = PriceCalculations.calculateTotal(
-            items, discount, taxRate, shipping);
-
-        // I/O: 저장
-        return saveOrder(request, items, total);
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [O] 점진적 마이그레이션: 순수 함수 추출 -> 테스트 -> 확장
+ 3| // Step 1: 순수 함수 추출 (Functional Core)
+ 4| public class PriceCalculations {
+ 5|   public static Money calculateSubtotal(List<OrderItem> items) {
+ 6|     return items.stream()
+ 7|       .map(item -> item.price().multiply(item.quantity().value()))
+ 8|       .reduce(Money.zero(Currency.KRW), Money::add);
+ 9|   }
+10| 
+11|   public static Money applyDiscount(Money subtotal, Discount discount) {
+12|     return switch (discount) {
+13|       case Discount.NoDiscount() -> subtotal;
+14|       case Discount.Percentage(int rate) ->
+15|         subtotal.multiply(BigDecimal.valueOf(100 - rate))
+16|           .divide(BigDecimal.valueOf(100));
+17|       case Discount.FixedAmount(Money amount) ->
+18|         subtotal.subtract(amount).max(Money.zero(subtotal.currency()));
+19|     };
+20|   }
+21| 
+22|   public static Money applyTax(Money amount, TaxRate rate) {
+23|     return amount.add(amount.multiply(rate.value()));
+24|   }
+25| 
+26|   public static Money calculateTotal(
+27|       List<OrderItem> items, Discount discount,
+28|       TaxRate taxRate, ShippingFee shippingFee) {
+29|     Money subtotal = calculateSubtotal(items);
+30|     Money discounted = applyDiscount(subtotal, discount);
+31|     Money taxed = applyTax(discounted, taxRate);
+32|     return taxed.add(shippingFee.amount());
+33|   }
+34| }
+35| 
+36| // Step 2: 테스트 (Mock 불필요!)
+37| @Test
+38| void totalWithPercentageDiscount() {
+39|   var items = List.of(new OrderItem(productId, Quantity.of(2), Money.krw(10000)));
+40|   var discount = new Discount.Percentage(10);
+41|   var tax = new TaxRate(BigDecimal.valueOf(0.1));
+42|   var shipping = ShippingFee.free();
+43| 
+44|   Money result = PriceCalculations.calculateTotal(items, discount, tax, shipping);
+45|   assertEquals(Money.krw(19800), result); // 20000 * 0.9 * 1.1
+46| }
+47| 
+48| // Step 3: 기존 Service에서 순수 함수 호출 (Imperative Shell)
+49| public class OrderService {
+50|   @Transactional
+51|   public Order createOrder(CreateOrderRequest request) {
+52|     // I/O: 데이터 로딩
+53|     List<OrderItem> items = loadItems(request);
+54|     Discount discount = loadDiscount(request.couponCode());
+55|     TaxRate taxRate = taxService.getCurrentRate();
+56|     ShippingFee shipping = shippingService.calculate(request.address());
+57| 
+58|     // 순수 함수 호출 (Functional Core)
+59|     Money total = PriceCalculations.calculateTotal(
+60|       items, discount, taxRate, shipping);
+61| 
+62|     // I/O: 저장
+63|     return saveOrder(request, items, total);
+64|   }
+65| }
 ```
 - **의도 및 코드 설명**: 복잡한 계산 로직을 순수 함수(PriceCalculations)로 추출하고, Service는 I/O만 담당. 테스트는 Mock 없이 순수 함수만 검증
 - **무엇이 좋아지나**:
@@ -522,6 +543,7 @@ public class OrderService {
   - Imperative Shell (UseCase): 통합 테스트로 I/O 흐름 검증
   - 대부분의 비즈니스 로직이 순수 함수이므로, 테스트 피라미드의 하단(단위 테스트)이 두꺼워짐
 
+**[그림 13.4]** Testing Strategy (테스트 전략) - 순수 함수 우선
 ```
 TEST STRATEGY COMPARISON
 ===========================
@@ -547,36 +569,39 @@ Traditional Unit Test:       Pure Function Test:
 - **"순수 함수만 테스트하면 충분"**: E2E 테스트, 통합 테스트도 필요. 하지만 비중이 줄어듦
 
 ### Before: Traditional OOP
+
+**[코드 13.7]** Traditional OOP: Mock 의존적인 단위 테스트 - 설정이 테스트보다 길다
 ```java
-// [X] Mock 의존적인 단위 테스트 - 설정이 테스트보다 길다
-@ExtendWith(MockitoExtension.class)
-class OrderServiceTest {
-    @Mock private OrderRepository orderRepository;
-    @Mock private ProductRepository productRepository;
-    @Mock private CouponRepository couponRepository;
-    @Mock private PaymentGateway paymentGateway;
-    @InjectMocks private OrderService orderService;
-
-    @Test
-    void createOrder_withCoupon_appliesDiscount() {
-        // Given: Mock 설정 (20줄+)
-        when(productRepository.findById(any()))
-            .thenReturn(new Product(1L, "상품", BigDecimal.valueOf(10000)));
-        when(couponRepository.findByCode("SAVE10"))
-            .thenReturn(new Coupon("SAVE10", 10, false));
-        when(paymentGateway.charge(any(), any()))
-            .thenReturn(new PaymentResult(true, "tx-123"));
-        when(orderRepository.save(any()))
-            .thenAnswer(inv -> inv.getArgument(0));
-
-        // When: 실제 테스트 (2줄)
-        Order result = orderService.createOrder(request);
-
-        // Then: 검증 (5줄)
-        verify(paymentGateway).charge(any(), eq(BigDecimal.valueOf(9000)));
-        verify(orderRepository).save(any());
-    }
-}
+ 1| // package: com.ecommerce.order
+ 2| // [X] Mock 의존적인 단위 테스트 - 설정이 테스트보다 길다
+ 3| @ExtendWith(MockitoExtension.class)
+ 4| class OrderServiceTest {
+ 5|   @Mock private OrderRepository orderRepository;
+ 6|   @Mock private ProductRepository productRepository;
+ 7|   @Mock private CouponRepository couponRepository;
+ 8|   @Mock private PaymentGateway paymentGateway;
+ 9|   @InjectMocks private OrderService orderService;
+10| 
+11|   @Test
+12|   void createOrder_withCoupon_appliesDiscount() {
+13|     // Given: Mock 설정 (20줄+)
+14|     when(productRepository.findById(any()))
+15|       .thenReturn(new Product(1L, "상품", BigDecimal.valueOf(10000)));
+16|     when(couponRepository.findByCode("SAVE10"))
+17|       .thenReturn(new Coupon("SAVE10", 10, false));
+18|     when(paymentGateway.charge(any(), any()))
+19|       .thenReturn(new PaymentResult(true, "tx-123"));
+20|     when(orderRepository.save(any()))
+21|       .thenAnswer(inv -> inv.getArgument(0));
+22| 
+23|     // When: 실제 테스트 (2줄)
+24|     Order result = orderService.createOrder(request);
+25| 
+26|     // Then: 검증 (5줄)
+27|     verify(paymentGateway).charge(any(), eq(BigDecimal.valueOf(9000)));
+28|     verify(orderRepository).save(any());
+29|   }
+30| }
 ```
 - **의도 및 코드 설명**: 4개의 Mock 의존성 설정, 실제 테스트 로직은 2줄, 대부분이 설정과 검증
 - **뭐가 문제인가**:
@@ -587,59 +612,62 @@ class OrderServiceTest {
   - 느린 테스트 실행 (Mock 프레임워크 초기화)
 
 ### After: Modern Approach
+
+**[코드 13.8]** Modern: 순수 함수 우선 테스트 - Mock 없이 빠르고 안정적
 ```java
-// [O] 순수 함수 우선 테스트 - Mock 없이 빠르고 안정적
-class PriceCalculationsTest {
-
-    @Test
-    void subtotal_withMultipleItems() {
-        var items = List.of(
-            new OrderItem(productId1, Quantity.of(2), Money.krw(10000)),
-            new OrderItem(productId2, Quantity.of(1), Money.krw(5000))
-        );
-        assertEquals(Money.krw(25000), PriceCalculations.calculateSubtotal(items));
-    }
-
-    @Test
-    void discount_percentage_appliesCorrectly() {
-        var discount = new Discount.Percentage(10);
-        assertEquals(Money.krw(9000),
-            PriceCalculations.applyDiscount(Money.krw(10000), discount));
-    }
-
-    @Test
-    void discount_noDiscount_returnsOriginal() {
-        assertEquals(Money.krw(10000),
-            PriceCalculations.applyDiscount(Money.krw(10000), new Discount.NoDiscount()));
-    }
-
-    @Test
-    void total_withAllFactors() {
-        var items = List.of(new OrderItem(productId, Quantity.of(2), Money.krw(10000)));
-        Money result = PriceCalculations.calculateTotal(
-            items, new Discount.Percentage(10),
-            new TaxRate(BigDecimal.valueOf(0.1)), ShippingFee.free());
-        assertEquals(Money.krw(19800), result); // 20000*0.9*1.1
-    }
-}
-
-// 상태 전이 테스트도 순수 함수!
-class OrderTransitionTest {
-    @Test
-    void unpaidOrder_canBePaid() {
-        var order = new Order(orderId, items, total, new OrderStatus.Unpaid(deadline));
-        var result = order.pay(transactionId);
-        assertTrue(result instanceof Result.Success);
-    }
-
-    @Test
-    void shippedOrder_cannotBeCancelled() {
-        var order = new Order(orderId, items, total,
-            new OrderStatus.Shipping(LocalDateTime.now(), tracking));
-        var result = order.cancel(CancelReason.CUSTOMER_REQUEST);
-        assertTrue(result instanceof Result.Failure);
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [O] 순수 함수 우선 테스트 - Mock 없이 빠르고 안정적
+ 3| class PriceCalculationsTest {
+ 4| 
+ 5|   @Test
+ 6|   void subtotal_withMultipleItems() {
+ 7|     var items = List.of(
+ 8|       new OrderItem(productId1, Quantity.of(2), Money.krw(10000)),
+ 9|       new OrderItem(productId2, Quantity.of(1), Money.krw(5000))
+10|     );
+11|     assertEquals(Money.krw(25000), PriceCalculations.calculateSubtotal(items));
+12|   }
+13| 
+14|   @Test
+15|   void discount_percentage_appliesCorrectly() {
+16|     var discount = new Discount.Percentage(10);
+17|     assertEquals(Money.krw(9000),
+18|       PriceCalculations.applyDiscount(Money.krw(10000), discount));
+19|   }
+20| 
+21|   @Test
+22|   void discount_noDiscount_returnsOriginal() {
+23|     assertEquals(Money.krw(10000),
+24|       PriceCalculations.applyDiscount(Money.krw(10000), new Discount.NoDiscount()));
+25|   }
+26| 
+27|   @Test
+28|   void total_withAllFactors() {
+29|     var items = List.of(new OrderItem(productId, Quantity.of(2), Money.krw(10000)));
+30|     Money result = PriceCalculations.calculateTotal(
+31|       items, new Discount.Percentage(10),
+32|       new TaxRate(BigDecimal.valueOf(0.1)), ShippingFee.free());
+33|     assertEquals(Money.krw(19800), result); // 20000*0.9*1.1
+34|   }
+35| }
+36| 
+37| // 상태 전이 테스트도 순수 함수!
+38| class OrderTransitionTest {
+39|   @Test
+40|   void unpaidOrder_canBePaid() {
+41|     var order = new Order(orderId, items, total, new OrderStatus.Unpaid(deadline));
+42|     var result = order.pay(transactionId);
+43|     assertTrue(result instanceof Result.Success);
+44|   }
+45| 
+46|   @Test
+47|   void shippedOrder_cannotBeCancelled() {
+48|     var order = new Order(orderId, items, total,
+49|       new OrderStatus.Shipping(LocalDateTime.now(), tracking));
+50|     var result = order.cancel(CancelReason.CUSTOMER_REQUEST);
+51|     assertTrue(result instanceof Result.Failure);
+52|   }
+53| }
 ```
 - **의도 및 코드 설명**: 순수 함수 테스트는 입력과 예상 출력만으로 완성. Mock 설정 없이 각 함수를 독립적으로 검증
 - **무엇이 좋아지나**:
@@ -677,6 +705,7 @@ class OrderTransitionTest {
   - 레거시 상황: 그린필드 vs 기존 코드 존재
   - 변경 빈도: 비즈니스 규칙이 자주 변하는지
 
+**[그림 13.5]** Architecture Decision Record (아키텍처 결정 기록) - when to use which pattern
 ```
 PATTERN SELECTION DECISION TREE
 ==================================
@@ -712,24 +741,27 @@ PATTERN SELECTION DECISION TREE
 - **"패턴은 서로 배타적"**: 하나의 프로젝트에서 상황에 따라 다른 패턴 조합 가능
 
 ### Before: Traditional OOP
-```java
-// [X] 맥락 없는 패턴 적용 - 과잉 설계
-// 단순 CRUD인데 Result + Pipeline + ADT를 모두 적용
-public sealed interface UserError permits NotFound, AlreadyExists {}
-public record User(UserId id, String name) {}
 
-public class CreateUserUseCase {
-    public Result<User, UserError> execute(CreateUserCommand cmd) {
-        return validateName(cmd.name())
-            .flatMap(name -> checkDuplicate(name))
-            .flatMap(name -> createUser(name))
-            .map(user -> {
-                userRepository.save(user);
-                return user;
-            });
-    }
-    // 단순 CRUD에 4단계 파이프라인? 과잉!
-}
+**[코드 13.9]** Traditional OOP: 맥락 없는 패턴 적용 - 과잉 설계
+```java
+ 1| // package: com.ecommerce.auth
+ 2| // [X] 맥락 없는 패턴 적용 - 과잉 설계
+ 3| // 단순 CRUD인데 Result + Pipeline + ADT를 모두 적용
+ 4| public sealed interface UserError permits NotFound, AlreadyExists {}
+ 5| public record User(UserId id, String name) {}
+ 6| 
+ 7| public class CreateUserUseCase {
+ 8|   public Result<User, UserError> execute(CreateUserCommand cmd) {
+ 9|     return validateName(cmd.name())
+10|       .flatMap(name -> checkDuplicate(name))
+11|       .flatMap(name -> createUser(name))
+12|       .map(user -> {
+13|         userRepository.save(user);
+14|         return user;
+15|       });
+16|   }
+17|   // 단순 CRUD에 4단계 파이프라인? 과잉!
+18| }
 ```
 - **의도 및 코드 설명**: 간단한 사용자 생성에 Result + Pipeline + sealed interface를 모두 적용하여 과잉 설계
 - **뭐가 문제인가**:
@@ -739,38 +771,41 @@ public class CreateUserUseCase {
   - YAGNI(You Aren't Gonna Need It) 위반
 
 ### After: Modern Approach
+
+**[코드 13.10]** Modern: ADR 기반 패턴 선택 - 맥락에 맞는 적절한 수준
 ```java
-// [O] ADR 기반 패턴 선택 - 맥락에 맞는 적절한 수준
-// ADR-001: 결제 도메인에 Result + Pipeline 적용
-// Context: 결제는 실패 가능성이 높고, 에러 종류가 다양하며, 상태 전이가 복잡
-// Decision: Result + sealed interface + Pipeline 적용
-// Consequences: 모든 결제 에러가 타입으로 명시, 테스트 용이
-
-public sealed interface PaymentError permits InsufficientFunds, CardExpired, Timeout {}
-
-public Result<Payment, PaymentError> processPayment(PaymentRequest request) {
-    return validateCard(request.card())
-        .flatMap(card -> checkBalance(card, request.amount()))
-        .flatMap(balance -> chargeCard(balance, request.amount()));
-}
-
-// ADR-002: 사용자 CRUD에는 단순 접근
-// Context: 단순 CRUD, 실패 시 예외로 충분
-// Decision: 기본 JPA + Optional 사용
-// Consequences: 간결한 코드, 팀 학습 부담 최소
-
-public class UserService {
-    public User createUser(String name) {
-        if (userRepository.existsByName(name))
-            throw new DuplicateException("이미 존재: " + name);
-        return userRepository.save(new UserEntity(name));
-    }
-}
-
-// ADR-003: 할인 규칙에 Rule Engine 적용
-// Context: 마케팅 팀이 자주 규칙을 변경, 코드 배포 없이 변경 필요
-// Decision: Rule as Data (인터프리터 패턴) 적용
-// Consequences: 관리자 UI로 규칙 관리 가능, 규칙 로딩 인프라 필요
+ 1| // package: com.ecommerce.payment
+ 2| // [O] ADR 기반 패턴 선택 - 맥락에 맞는 적절한 수준
+ 3| // ADR-001: 결제 도메인에 Result + Pipeline 적용
+ 4| // Context: 결제는 실패 가능성이 높고, 에러 종류가 다양하며, 상태 전이가 복잡
+ 5| // Decision: Result + sealed interface + Pipeline 적용
+ 6| // Consequences: 모든 결제 에러가 타입으로 명시, 테스트 용이
+ 7| 
+ 8| public sealed interface PaymentError permits InsufficientFunds, CardExpired, Timeout {}
+ 9| 
+10| public Result<Payment, PaymentError> processPayment(PaymentRequest request) {
+11|   return validateCard(request.card())
+12|     .flatMap(card -> checkBalance(card, request.amount()))
+13|     .flatMap(balance -> chargeCard(balance, request.amount()));
+14| }
+15| 
+16| // ADR-002: 사용자 CRUD에는 단순 접근
+17| // Context: 단순 CRUD, 실패 시 예외로 충분
+18| // Decision: 기본 JPA + Optional 사용
+19| // Consequences: 간결한 코드, 팀 학습 부담 최소
+20| 
+21| public class UserService {
+22|   public User createUser(String name) {
+23|     if (userRepository.existsByName(name))
+24|       throw new DuplicateException("이미 존재: " + name);
+25|     return userRepository.save(new UserEntity(name));
+26|   }
+27| }
+28| 
+29| // ADR-003: 할인 규칙에 Rule Engine 적용
+30| // Context: 마케팅 팀이 자주 규칙을 변경, 코드 배포 없이 변경 필요
+31| // Decision: Rule as Data (인터프리터 패턴) 적용
+32| // Consequences: 관리자 UI로 규칙 관리 가능, 규칙 로딩 인프라 필요
 ```
 - **의도 및 코드 설명**: 각 도메인의 복잡도와 요구사항에 맞게 패턴을 선택하고, 그 근거를 ADR로 기록
 - **무엇이 좋아지나**:

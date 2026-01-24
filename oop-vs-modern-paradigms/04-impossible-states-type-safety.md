@@ -11,6 +11,7 @@
 - **통찰**: 런타임 if 검증 대신, 타입 시스템으로 불가능한 상태를 아예 표현하지 못하게 만든다.
 - **설명**: "결제됐는데 취소됨", "배송됐는데 미결제"와 같은 모순 상태가 코드로 작성조차 되지 않으면, 런타임 검증이 필요 없습니다. 이는 "경비원을 더 잘 훈련시키자"가 아니라 "처음부터 자물쇠를 설치하자"는 접근입니다.
 
+**[그림 04.1]** Make Illegal States Unrepresentable (불가능한 상태를 표현 불가능하게)
 ```
 RUNTIME VALIDATION (Guard)        COMPILE-TIME SAFETY (Lock)
 ==========================        ==========================
@@ -31,27 +32,30 @@ RUNTIME VALIDATION (Guard)        COMPILE-TIME SAFETY (Lock)
 - **"타입이 많으면 복잡해진다"**: 타입은 복잡성을 추가하는 게 아니라, 도메인의 복잡성을 명시적으로 드러냄
 
 ### Before: Traditional OOP
-```java
-// [X] 런타임 검증에 의존: 개발자가 검증을 빠뜨리면 버그
-public class OrderService {
-    public void processOrder(Order order) {
-        if (order.getStatus() == null)
-            throw new IllegalStateException("상태 없음");
-        if ("PAID".equals(order.getStatus()) && order.isCanceled())
-            throw new IllegalStateException("결제됐는데 취소?");
-        if ("SHIPPED".equals(order.getStatus()) && !"PAID".equals(order.getPreviousStatus()))
-            throw new IllegalStateException("결제 없이 배송?");
-        // ... 수십 줄의 검증 로직 후에야 비즈니스 로직 시작
-        doProcess(order);
-    }
 
-    public void shipOrder(Order order) {
-        // 또 같은 검증 반복...
-        if (!"PAID".equals(order.getStatus()))
-            throw new IllegalStateException("결제 안 됨");
-        order.setStatus("SHIPPED");
-    }
-}
+**[코드 04.1]** Traditional OOP: 런타임 검증에 의존: 개발자가 검증을 빠뜨리면 버그
+```java
+ 1| // package: com.ecommerce.order
+ 2| // [X] 런타임 검증에 의존: 개발자가 검증을 빠뜨리면 버그
+ 3| public class OrderService {
+ 4|   public void processOrder(Order order) {
+ 5|     if (order.getStatus() == null)
+ 6|       throw new IllegalStateException("상태 없음");
+ 7|     if ("PAID".equals(order.getStatus()) && order.isCanceled())
+ 8|       throw new IllegalStateException("결제됐는데 취소?");
+ 9|     if ("SHIPPED".equals(order.getStatus()) && !"PAID".equals(order.getPreviousStatus()))
+10|       throw new IllegalStateException("결제 없이 배송?");
+11|     // ... 수십 줄의 검증 로직 후에야 비즈니스 로직 시작
+12|     doProcess(order);
+13|   }
+14| 
+15|   public void shipOrder(Order order) {
+16|     // 또 같은 검증 반복...
+17|     if (!"PAID".equals(order.getStatus()))
+18|       throw new IllegalStateException("결제 안 됨");
+19|     order.setStatus("SHIPPED");
+20|   }
+21| }
 ```
 - **의도 및 코드 설명**: 모든 메서드에서 상태 검증을 반복하는 방어적 프로그래밍
 - **뭐가 문제인가**:
@@ -61,39 +65,42 @@ public class OrderService {
   - 새 상태 추가 시 모든 검증 코드를 수동으로 업데이트
 
 ### After: Modern Approach
+
+**[코드 04.2]** Modern: 타입으로 불가능한 상태 차단: 검증 없이도 안전
 ```java
-// [O] 타입으로 불가능한 상태 차단: 검증 없이도 안전
-public sealed interface OrderStatus {
-    record Unpaid(LocalDateTime createdAt) implements OrderStatus {}
-    record Paid(LocalDateTime paidAt, PaymentId paymentId) implements OrderStatus {}
-    record Shipped(LocalDateTime shippedAt, TrackingNumber tracking) implements OrderStatus {}
-    record Delivered(LocalDateTime deliveredAt) implements OrderStatus {}
-    record Canceled(LocalDateTime canceledAt, CancelReason reason) implements OrderStatus {}
-}
-
-public record Order(OrderId id, List<OrderItem> items, OrderStatus status) {
-    public Order { items = List.copyOf(items); }
-}
-
-// 상태 전이 함수: 타입이 규칙을 강제
-public class OrderTransitions {
-    // PaidOrder에서만 배송 가능: Unpaid를 넣으면 컴파일 에러
-    public static Order ship(Order order, TrackingNumber tracking) {
-        return switch (order.status()) {
-            case OrderStatus.Paid paid ->
-                new Order(order.id(), order.items(),
-                    new OrderStatus.Shipped(LocalDateTime.now(), tracking));
-            case OrderStatus.Unpaid u ->
-                throw new IllegalStateException("결제되지 않은 주문");
-            case OrderStatus.Shipped s ->
-                throw new IllegalStateException("이미 배송됨");
-            case OrderStatus.Delivered d ->
-                throw new IllegalStateException("이미 배달 완료");
-            case OrderStatus.Canceled c ->
-                throw new IllegalStateException("취소된 주문");
-        };
-    }
-}
+ 1| // package: com.ecommerce.order
+ 2| // [O] 타입으로 불가능한 상태 차단: 검증 없이도 안전
+ 3| public sealed interface OrderStatus {
+ 4|   record Unpaid(LocalDateTime createdAt) implements OrderStatus {}
+ 5|   record Paid(LocalDateTime paidAt, PaymentId paymentId) implements OrderStatus {}
+ 6|   record Shipped(LocalDateTime shippedAt, TrackingNumber tracking) implements OrderStatus {}
+ 7|   record Delivered(LocalDateTime deliveredAt) implements OrderStatus {}
+ 8|   record Canceled(LocalDateTime canceledAt, CancelReason reason) implements OrderStatus {}
+ 9| }
+10| 
+11| public record Order(OrderId id, List<OrderItem> items, OrderStatus status) {
+12|   public Order { items = List.copyOf(items); }
+13| }
+14| 
+15| // 상태 전이 함수: 타입이 규칙을 강제
+16| public class OrderTransitions {
+17|   // PaidOrder에서만 배송 가능: Unpaid를 넣으면 컴파일 에러
+18|   public static Order ship(Order order, TrackingNumber tracking) {
+19|     return switch (order.status()) {
+20|       case OrderStatus.Paid paid ->
+21|         new Order(order.id(), order.items(),
+22|           new OrderStatus.Shipped(LocalDateTime.now(), tracking));
+23|       case OrderStatus.Unpaid u ->
+24|         throw new IllegalStateException("결제되지 않은 주문");
+25|       case OrderStatus.Shipped s ->
+26|         throw new IllegalStateException("이미 배송됨");
+27|       case OrderStatus.Delivered d ->
+28|         throw new IllegalStateException("이미 배달 완료");
+29|       case OrderStatus.Canceled c ->
+30|         throw new IllegalStateException("취소된 주문");
+31|     };
+32|   }
+33| }
 ```
 - **의도 및 코드 설명**: sealed interface로 상태를 정의하고, switch expression으로 모든 케이스를 망라적으로 처리
 - **무엇이 좋아지나**:
@@ -106,6 +113,7 @@ public class OrderTransitions {
 
 **Boolean 필드 vs Sum Type 변환 가이드**:
 
+**[표 04.1]** Make Illegal States Unrepresentable (불가능한 상태를 표현 불가능하게)
 | Before (Boolean) | After (Sum Type) | 효과 |
 |-------------------|-------------------|------|
 | `isVerified` + `verifiedAt` | `sealed{Unverified, Verified(at)}` | null 조합 제거 |
@@ -132,6 +140,7 @@ public class OrderTransitions {
 - **통찰**: 함수의 시그니처가 "이 상태에서만 이 연산이 가능함"을 표현하면, 잘못된 순서의 호출이 컴파일 에러가 된다.
 - **설명**: `ship()` 함수가 `PaidOrder` 타입만 받으면, 결제 안 된 주문을 배송하려는 시도는 컴파일 단계에서 차단됩니다. 각 상태가 별도 타입이므로, 상태 전이는 "한 타입에서 다른 타입으로의 변환 함수"가 됩니다.
 
+**[그림 04.2]** 상태별 Entity 패턴 (State-per-Entity Pattern)
 ```
 State Machine as Types:
 
@@ -147,24 +156,27 @@ State Machine as Types:
 - **"상태가 많으면 타입도 많아진다"**: 그게 장점. 각 상태의 계약이 명확해짐
 
 ### Before: Traditional OOP
+
+**[코드 04.3]** Traditional OOP: 상태를 String으로 관리: 잘못된 전이가 런타임에만 발견됨
 ```java
-// [X] 상태를 String으로 관리: 잘못된 전이가 런타임에만 발견됨
-public class Order {
-    private String status = "UNPAID";
-
-    public void pay(PaymentInfo payment) {
-        if (!"UNPAID".equals(status))
-            throw new IllegalStateException("이미 결제됨");
-        this.status = "PAID";
-        this.paymentInfo = payment;
-    }
-
-    public void ship(TrackingNumber tracking) {
-        // 개발자가 이 검증을 빠뜨리면?
-        // if (!"PAID".equals(status)) throw ...
-        this.status = "SHIPPED";  // 결제 안 됐는데 배송! 런타임 버그!
-    }
-}
+ 1| // package: com.ecommerce.order
+ 2| // [X] 상태를 String으로 관리: 잘못된 전이가 런타임에만 발견됨
+ 3| public class Order {
+ 4|   private String status = "UNPAID";
+ 5| 
+ 6|   public void pay(PaymentInfo payment) {
+ 7|     if (!"UNPAID".equals(status))
+ 8|       throw new IllegalStateException("이미 결제됨");
+ 9|     this.status = "PAID";
+10|     this.paymentInfo = payment;
+11|   }
+12| 
+13|   public void ship(TrackingNumber tracking) {
+14|     // 개발자가 이 검증을 빠뜨리면?
+15|     // if (!"PAID".equals(status)) throw ...
+16|     this.status = "SHIPPED";  // 결제 안 됐는데 배송! 런타임 버그!
+17|   }
+18| }
 ```
 - **의도 및 코드 설명**: String 기반 상태 관리로 전이 규칙을 메서드 내부에서 검증
 - **뭐가 문제인가**:
@@ -173,51 +185,54 @@ public class Order {
   - 상태별로 다른 데이터를 관리하기 어려움
 
 ### After: Modern Approach
+
+**[코드 04.4]** Modern: 상태별 타입: 함수 시그니처가 전이 규칙을 강제
 ```java
-// [O] 상태별 타입: 함수 시그니처가 전이 규칙을 강제
-public sealed interface OrderState
-    permits UnpaidOrder, PaidOrder, ShippedOrder, DeliveredOrder {}
-
-public record UnpaidOrder(OrderId id, List<OrderItem> items, Money total)
-    implements OrderState {
-    public UnpaidOrder { items = List.copyOf(items); }
-}
-
-public record PaidOrder(OrderId id, List<OrderItem> items, Money total,
-    PaymentId paymentId, LocalDateTime paidAt) implements OrderState {
-    public PaidOrder { items = List.copyOf(items); }
-}
-
-public record ShippedOrder(OrderId id, PaymentId paymentId,
-    TrackingNumber tracking, LocalDateTime shippedAt) implements OrderState {}
-
-public record DeliveredOrder(OrderId id, PaymentId paymentId,
-    TrackingNumber tracking, LocalDateTime deliveredAt) implements OrderState {}
-
-// 전이 함수: 타입이 규칙을 강제
-public class OrderWorkflow {
-    // UnpaidOrder만 결제 가능
-    public static PaidOrder pay(UnpaidOrder order, PaymentId paymentId) {
-        return new PaidOrder(order.id(), order.items(), order.total(),
-            paymentId, LocalDateTime.now());
-    }
-
-    // PaidOrder만 배송 가능
-    public static ShippedOrder ship(PaidOrder order, TrackingNumber tracking) {
-        return new ShippedOrder(order.id(), order.paymentId(),
-            tracking, LocalDateTime.now());
-    }
-
-    // ShippedOrder만 배달 완료 가능
-    public static DeliveredOrder deliver(ShippedOrder order) {
-        return new DeliveredOrder(order.id(), order.paymentId(),
-            order.tracking(), LocalDateTime.now());
-    }
-}
-
-// 컴파일 에러!
-UnpaidOrder unpaid = new UnpaidOrder(id, items, total);
-OrderWorkflow.ship(unpaid, tracking);  // Type mismatch: UnpaidOrder != PaidOrder
+ 1| // package: com.ecommerce.order
+ 2| // [O] 상태별 타입: 함수 시그니처가 전이 규칙을 강제
+ 3| public sealed interface OrderState
+ 4|   permits UnpaidOrder, PaidOrder, ShippedOrder, DeliveredOrder {}
+ 5| 
+ 6| public record UnpaidOrder(OrderId id, List<OrderItem> items, Money total)
+ 7|   implements OrderState {
+ 8|   public UnpaidOrder { items = List.copyOf(items); }
+ 9| }
+10| 
+11| public record PaidOrder(OrderId id, List<OrderItem> items, Money total,
+12|   PaymentId paymentId, LocalDateTime paidAt) implements OrderState {
+13|   public PaidOrder { items = List.copyOf(items); }
+14| }
+15| 
+16| public record ShippedOrder(OrderId id, PaymentId paymentId,
+17|   TrackingNumber tracking, LocalDateTime shippedAt) implements OrderState {}
+18| 
+19| public record DeliveredOrder(OrderId id, PaymentId paymentId,
+20|   TrackingNumber tracking, LocalDateTime deliveredAt) implements OrderState {}
+21| 
+22| // 전이 함수: 타입이 규칙을 강제
+23| public class OrderWorkflow {
+24|   // UnpaidOrder만 결제 가능
+25|   public static PaidOrder pay(UnpaidOrder order, PaymentId paymentId) {
+26|     return new PaidOrder(order.id(), order.items(), order.total(),
+27|       paymentId, LocalDateTime.now());
+28|   }
+29| 
+30|   // PaidOrder만 배송 가능
+31|   public static ShippedOrder ship(PaidOrder order, TrackingNumber tracking) {
+32|     return new ShippedOrder(order.id(), order.paymentId(),
+33|       tracking, LocalDateTime.now());
+34|   }
+35| 
+36|   // ShippedOrder만 배달 완료 가능
+37|   public static DeliveredOrder deliver(ShippedOrder order) {
+38|     return new DeliveredOrder(order.id(), order.paymentId(),
+39|       order.tracking(), LocalDateTime.now());
+40|   }
+41| }
+42| 
+43| // 컴파일 에러!
+44| UnpaidOrder unpaid = new UnpaidOrder(id, items, total);
+45| OrderWorkflow.ship(unpaid, tracking);  // Type mismatch: UnpaidOrder != PaidOrder
 ```
 - **의도 및 코드 설명**: 각 상태가 별도 Record, 전이 함수가 입출력 타입으로 규칙 강제
 - **무엇이 좋아지나**:
@@ -245,6 +260,7 @@ OrderWorkflow.ship(unpaid, tracking);  // Type mismatch: UnpaidOrder != PaidOrde
 - **통찰**: 타입 파라미터를 런타임에 사용하지 않으면서도, 컴파일 타임에 상태를 추적할 수 있다.
 - **설명**: `Email<Unverified>`와 `Email<Verified>`는 런타임에는 같은 구조이지만, 컴파일러는 이들을 다른 타입으로 취급합니다. 인증된 이메일만 받는 함수에 미인증 이메일을 전달하면 컴파일 에러가 발생합니다.
 
+**[그림 04.3]** Phantom Type 패턴 (팬텀 타입)
 ```
 Phantom Type = "invisible stamp"
 
@@ -258,18 +274,21 @@ Phantom Type = "invisible stamp"
 - **"복잡한 기법"**: 실제로는 marker interface + 제네릭일 뿐
 
 ### Before: Traditional OOP
-```java
-// [X] boolean 플래그로 인증 상태 관리
-public class EmailService {
-    public void sendWelcomeEmail(String email, boolean isVerified) {
-        if (!isVerified)
-            throw new IllegalStateException("인증된 이메일에만 전송 가능");
-        // 전송 로직
-    }
-}
 
-// 호출 시 실수: verified 파라미터를 잘못 전달해도 컴파일 OK
-emailService.sendWelcomeEmail("test@example.com", false);  // 런타임 에러
+**[코드 04.5]** Traditional OOP: boolean 플래그로 인증 상태 관리
+```java
+ 1| // package: com.ecommerce.shared
+ 2| // [X] boolean 플래그로 인증 상태 관리
+ 3| public class EmailService {
+ 4|   public void sendWelcomeEmail(String email, boolean isVerified) {
+ 5|     if (!isVerified)
+ 6|       throw new IllegalStateException("인증된 이메일에만 전송 가능");
+ 7|     // 전송 로직
+ 8|   }
+ 9| }
+10| 
+11| // 호출 시 실수: verified 파라미터를 잘못 전달해도 컴파일 OK
+12| emailService.sendWelcomeEmail("test@example.com", false);  // 런타임 에러
 ```
 - **의도 및 코드 설명**: boolean 파라미터로 인증 여부를 전달
 - **뭐가 문제인가**:
@@ -277,39 +296,42 @@ emailService.sendWelcomeEmail("test@example.com", false);  // 런타임 에러
   - 검증 누락 시 미인증 이메일에 메일 전송
 
 ### After: Modern Approach
+
+**[코드 04.6]** Modern: Phantom Type: 타입 파라미터로 상태를 컴파일 타임에 추적
 ```java
-// [O] Phantom Type: 타입 파라미터로 상태를 컴파일 타임에 추적
-public sealed interface EmailState permits Unverified, Verified {}
-public record Unverified() implements EmailState {}
-public record Verified() implements EmailState {}
-
-public record Email<S extends EmailState>(String value) {
-    public Email {
-        if (value == null || !value.contains("@"))
-            throw new IllegalArgumentException("유효하지 않은 이메일");
-    }
-}
-
-// 인증 함수: Unverified → Verified로 상태 전환
-public class EmailVerification {
-    public static Email<Verified> verify(Email<Unverified> email, String code) {
-        // 인증 코드 확인 로직...
-        return new Email<>(email.value());  // 같은 데이터, 다른 타입
-    }
-}
-
-// 인증된 이메일만 받는 함수
-public class NotificationService {
-    public static void sendWelcome(Email<Verified> email) {
-        // 인증 체크 불필요! 타입이 보장
-        send(email.value(), "Welcome!");
-    }
-}
-
-// 컴파일 에러!
-Email<Unverified> unverified = new Email<>("test@example.com");
-NotificationService.sendWelcome(unverified);
-// Type mismatch: Email<Unverified> != Email<Verified>
+ 1| // package: com.ecommerce.shared
+ 2| // [O] Phantom Type: 타입 파라미터로 상태를 컴파일 타임에 추적
+ 3| public sealed interface EmailState permits Unverified, Verified {}
+ 4| public record Unverified() implements EmailState {}
+ 5| public record Verified() implements EmailState {}
+ 6| 
+ 7| public record Email<S extends EmailState>(String value) {
+ 8|   public Email {
+ 9|     if (value == null || !value.contains("@"))
+10|       throw new IllegalArgumentException("유효하지 않은 이메일");
+11|   }
+12| }
+13| 
+14| // 인증 함수: Unverified → Verified로 상태 전환
+15| public class EmailVerification {
+16|   public static Email<Verified> verify(Email<Unverified> email, String code) {
+17|     // 인증 코드 확인 로직...
+18|     return new Email<>(email.value());  // 같은 데이터, 다른 타입
+19|   }
+20| }
+21| 
+22| // 인증된 이메일만 받는 함수
+23| public class NotificationService {
+24|   public static void sendWelcome(Email<Verified> email) {
+25|     // 인증 체크 불필요! 타입이 보장
+26|     send(email.value(), "Welcome!");
+27|   }
+28| }
+29| 
+30| // 컴파일 에러!
+31| Email<Unverified> unverified = new Email<>("test@example.com");
+32| NotificationService.sendWelcome(unverified);
+33| // Type mismatch: Email<Unverified> != Email<Verified>
 ```
 - **의도 및 코드 설명**: 타입 파라미터 `S`는 런타임에 사용되지 않지만, 컴파일러가 상태를 구분
 - **무엇이 좋아지나**:
@@ -341,22 +363,25 @@ NotificationService.sendWelcome(unverified);
 - **"Optional을 필드에 쓰면 안 된다"**: 엄격한 규칙은 아니지만, Record 필드에는 피하는 게 관례
 
 ### Before: Traditional OOP
+
+**[코드 04.7]** Traditional OOP: null로 부재 표현: NullPointerException 지뢰밭
 ```java
-// [X] null로 부재 표현: NullPointerException 지뢰밭
-public class Customer {
-    private String nickname;  // null일 수 있음? 없음? 시그니처에 안 보임
-
-    public String getDisplayName() {
-        return nickname.toUpperCase();  // NPE 가능!
-    }
-}
-
-// 방어적 코딩 필요
-if (customer.getNickname() != null) {
-    // 사용
-} else {
-    // null인 경우 처리
-}
+ 1| // package: com.ecommerce.member
+ 2| // [X] null로 부재 표현: NullPointerException 지뢰밭
+ 3| public class Customer {
+ 4|   private String nickname;  // null일 수 있음? 없음? 시그니처에 안 보임
+ 5| 
+ 6|   public String getDisplayName() {
+ 7|     return nickname.toUpperCase();  // NPE 가능!
+ 8|   }
+ 9| }
+10| 
+11| // 방어적 코딩 필요
+12| if (customer.getNickname() != null) {
+13|   // 사용
+14| } else {
+15|   // null인 경우 처리
+16| }
 ```
 - **의도 및 코드 설명**: null로 값의 부재를 표현하지만, 시그니처에 드러나지 않음
 - **뭐가 문제인가**:
@@ -365,26 +390,29 @@ if (customer.getNickname() != null) {
   - "의도적 null"과 "실수로 null"을 구분 불가
 
 ### After: Modern Approach
-```java
-// [O] Optional 또는 Sum Type으로 부재를 타입에 명시
-// 방법 1: Optional (간단한 경우)
-public record Customer(
-    CustomerId id,
-    String name,
-    Optional<String> nickname  // "없을 수도 있음"이 타입에 명시
-) {
-    public String displayName() {
-        return nickname.orElse(name);  // 컴파일러가 처리를 강제
-    }
-}
 
-// 방법 2: Sum Type (상태에 따라 데이터가 다른 경우)
-public sealed interface ContactInfo {
-    record EmailOnly(EmailAddress email) implements ContactInfo {}
-    record PhoneOnly(PhoneNumber phone) implements ContactInfo {}
-    record Both(EmailAddress email, PhoneNumber phone) implements ContactInfo {}
-}
-// "이메일은 있는데 전화번호는 없고..." → 타입으로 명확히 표현
+**[코드 04.8]** Modern: Optional 또는 Sum Type으로 부재를 타입에 명시
+```java
+ 1| // package: com.ecommerce.shared
+ 2| // [O] Optional 또는 Sum Type으로 부재를 타입에 명시
+ 3| // 방법 1: Optional (간단한 경우)
+ 4| public record Customer(
+ 5|   CustomerId id,
+ 6|   String name,
+ 7|   Optional<String> nickname  // "없을 수도 있음"이 타입에 명시
+ 8| ) {
+ 9|   public String displayName() {
+10|     return nickname.orElse(name);  // 컴파일러가 처리를 강제
+11|   }
+12| }
+13| 
+14| // 방법 2: Sum Type (상태에 따라 데이터가 다른 경우)
+15| public sealed interface ContactInfo {
+16|   record EmailOnly(EmailAddress email) implements ContactInfo {}
+17|   record PhoneOnly(PhoneNumber phone) implements ContactInfo {}
+18|   record Both(EmailAddress email, PhoneNumber phone) implements ContactInfo {}
+19| }
+20| // "이메일은 있는데 전화번호는 없고..." → 타입으로 명확히 표현
 ```
 - **의도 및 코드 설명**: Optional은 부재 가능성을 명시, Sum Type은 가능한 조합을 열거
 - **무엇이 좋아지나**:

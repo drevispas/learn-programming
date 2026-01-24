@@ -6,6 +6,7 @@
 
 ## 핵심 패턴 요약
 
+**[표 B.1]** 핵심 패턴 요약
 | # | Pattern | One-line Description | Topic |
 |---|---------|---------------------|-------|
 | 1 | Value Object | 원시 타입 대신 도메인 의미를 가진 불변 래퍼 타입 | 02 |
@@ -39,213 +40,289 @@
 ## 미니 코드 예제
 
 ### 1. Value Object
+
+**[코드 B.1]** Money record
 ```java
-public record Money(BigDecimal amount, Currency currency) {
-    public Money { if (amount.signum() < 0) throw new IllegalArgumentException(); }
-    public Money add(Money o) { return new Money(amount.add(o.amount), currency); }
-}
+1| // package: com.ecommerce.shared
+2| public record Money(BigDecimal amount, Currency currency) {
+3|   public Money { if (amount.signum() < 0) throw new IllegalArgumentException(); }
+4|   public Money add(Money o) { return new Money(amount.add(o.amount), currency); }
+5| }
 ```
 
 ### 2. Compact Constructor
+
+**[코드 B.2]** Email record
 ```java
-public record Email(String value) {
-    public Email { if (!value.contains("@")) throw new IllegalArgumentException("유효하지 않은 이메일"); }
-}
+1| // package: com.ecommerce.shared
+2| public record Email(String value) {
+3|   public Email { if (!value.contains("@")) throw new IllegalArgumentException("유효하지 않은 이메일"); }
+4| }
 ```
 
 ### 3. Wither Pattern
+
+**[코드 B.3]** Order record
 ```java
-public record Order(OrderId id, OrderStatus status, Money total) {
-    public Order withStatus(OrderStatus s) { return new Order(id, s, total); }
-}
+1| // package: com.ecommerce.order
+2| public record Order(OrderId id, OrderStatus status, Money total) {
+3|   public Order withStatus(OrderStatus s) { return new Order(id, s, total); }
+4| }
 ```
 
 ### 4. Sum Type (ADT)
+
+**[코드 B.4]** OrderStatus interface
 ```java
-public sealed interface OrderStatus permits Unpaid, Paid, Shipped, Cancelled {}
-public record Unpaid(LocalDateTime deadline) implements OrderStatus {}
-public record Paid(LocalDateTime paidAt, TransactionId txId) implements OrderStatus {}
+1| // package: com.ecommerce.order
+2| public sealed interface OrderStatus permits Unpaid, Paid, Shipped, Cancelled {}
+3| public record Unpaid(LocalDateTime deadline) implements OrderStatus {}
+4| public record Paid(LocalDateTime paidAt, TransactionId txId) implements OrderStatus {}
 ```
 
 ### 5. Product Type
+
+**[코드 B.5]** OrderLine record
 ```java
-public record OrderLine(ProductId productId, Quantity quantity, Money unitPrice) {
-    public Money lineTotal() { return unitPrice.multiply(quantity.value()); }
-}
+1| // package: com.ecommerce.shared
+2| public record OrderLine(ProductId productId, Quantity quantity, Money unitPrice) {
+3|   public Money lineTotal() { return unitPrice.multiply(quantity.value()); }
+4| }
 ```
 
 ### 6. Exhaustive Pattern Matching
+
+**[코드 B.6]** Exhaustive Pattern Matching
 ```java
-String label = switch (status) {
-    case Unpaid u -> "결제 대기";
-    case Paid p -> "결제 완료";
-    case Shipped s -> "배송 중";
-    case Cancelled c -> "취소됨";
-};
+1| // package: com.ecommerce.shared
+2| String label = switch (status) {
+3|   case Unpaid u -> "결제 대기";
+4|   case Paid p -> "결제 완료";
+5|   case Shipped s -> "배송 중";
+6|   case Cancelled c -> "취소됨";
+7| };
 ```
 
 ### 7. Record Pattern
+
+**[코드 B.7]** Record Pattern
 ```java
-return switch (status) {
-    case Paid(var at, var txId) -> "결제일: " + at + ", TX: " + txId;
-    case Unpaid _ -> "미결제";
-    case Shipped _, Cancelled _ -> "기타";
-};
+1| // package: com.ecommerce.shared
+2| return switch (status) {
+3|   case Paid(var at, var txId) -> "결제일: " + at + ", TX: " + txId;
+4|   case Unpaid _ -> "미결제";
+5|   case Shipped _, Cancelled _ -> "기타";
+6| };
 ```
 
 ### 8. State Machine
+
+**[코드 B.8]** State Machine
 ```java
-public Result<Order, OrderError> ship(TrackingNumber tracking) {
-    return switch (status) {
-        case Paid p -> Result.success(withStatus(new Shipped(LocalDateTime.now(), tracking)));
-        case Unpaid _, Shipped _, Cancelled _ -> Result.failure(new CannotShip(id));
-    };
-}
+1| // package: com.ecommerce.shared
+2| public Result<Order, OrderError> ship(TrackingNumber tracking) {
+3|   return switch (status) {
+4|     case Paid p -> Result.success(withStatus(new Shipped(LocalDateTime.now(), tracking)));
+5|     case Unpaid _, Shipped _, Cancelled _ -> Result.failure(new CannotShip(id));
+6|   };
+7| }
 ```
 
 ### 9. Phantom Type
+
+**[코드 B.9]** Email record
 ```java
-public record Email<S extends EmailState>(String value) {}
-sealed interface EmailState permits Unverified, Verified {}
-Email<Verified> verify(Email<Unverified> email, String code) { /*...*/ }
+1| // package: com.ecommerce.shared
+2| public record Email<S extends EmailState>(String value) {}
+3| sealed interface EmailState permits Unverified, Verified {}
+4| Email<Verified> verify(Email<Unverified> email, String code) { /*...*/ }
 ```
 
 ### 10. Total Function
+
+**[코드 B.10]** Total Function
 ```java
-public static Result<Money, DivisionError> safeDivide(Money amount, int divisor) {
-    if (divisor == 0) return Result.failure(new DivisionByZero());
-    return Result.success(amount.divide(divisor));
-}
+1| // package: com.ecommerce.shared
+2| public static Result<Money, DivisionError> safeDivide(Money amount, int divisor) {
+3|   if (divisor == 0) return Result.failure(new DivisionByZero());
+4|   return Result.success(amount.divide(divisor));
+5| }
 ```
 
 ### 11. Result Type
+
+**[코드 B.11]** Result interface
 ```java
-public sealed interface Result<S, F> {
-    record Success<S, F>(S value) implements Result<S, F> {}
-    record Failure<S, F>(F error) implements Result<S, F> {}
-}
+1| // package: com.ecommerce.shared
+2| public sealed interface Result<S, F> {
+3|   record Success<S, F>(S value) implements Result<S, F> {}
+4|   record Failure<S, F>(F error) implements Result<S, F> {}
+5| }
 ```
 
 ### 12. Railway-Oriented Programming
+
+**[코드 B.12]** Railway-Oriented Programming
 ```java
-Result<Order, OrderError> result = validate(cmd)
-    .flatMap(v -> applyPricing(v))
-    .flatMap(p -> processPayment(p))
-    .map(paid -> createOrder(paid));
+1| // package: com.ecommerce.order
+2| Result<Order, OrderError> result = validate(cmd)
+3|   .flatMap(v -> applyPricing(v))
+4|   .flatMap(p -> processPayment(p))
+5|   .map(paid -> createOrder(paid));
 ```
 
 ### 13. Pipeline Pattern
+
+**[코드 B.13]** Pipeline Pattern
 ```java
-public Result<Order, OrderError> execute(CreateOrderCommand cmd) {
-    return OrderDomainService.validate(cmd, member, inventory)
-        .flatMap(validated -> applyPricing(validated, coupon))
-        .flatMap(priced -> charge(priced))
-        .map(paid -> save(paid));
-}
+1| // package: com.ecommerce.order
+2| public Result<Order, OrderError> execute(CreateOrderCommand cmd) {
+3|   return OrderDomainService.validate(cmd, member, inventory)
+4|     .flatMap(validated -> applyPricing(validated, coupon))
+5|     .flatMap(priced -> charge(priced))
+6|     .map(paid -> save(paid));
+7| }
 ```
 
 ### 14. Functional Core / Imperative Shell
+
+**[코드 B.14]** Core (pure): static Money calculateTotal(List<Item> items, Discount d) { ... }
 ```java
-// Core (pure): static Money calculateTotal(List<Item> items, Discount d) { ... }
-// Shell (I/O): items = repo.findAll(); total = calculateTotal(items, d); repo.save(order);
+1| // package: com.ecommerce.coupon
+2| // Core (pure): static Money calculateTotal(List<Item> items, Discount d) { ... }
+3| // Shell (I/O): items = repo.findAll(); total = calculateTotal(items, d); repo.save(order);
 ```
 
 ### 15. Validation (Applicative)
+
+**[코드 B.15]** Validation (Applicative)
 ```java
-Validation<User, List<Error>> user = Validation.combine3(
-    validateName(name), validateEmail(email), validatePhone(phone), User::new
-); // 모든 에러 수집
+1| // package: com.ecommerce.auth
+2| Validation<User, List<Error>> user = Validation.combine3(
+3|   validateName(name), validateEmail(email), validatePhone(phone), User::new
+4| ); // 모든 에러 수집
 ```
 
 ### 16. Monoid (Assoc + Identity)
+
+**[코드 B.16]** Monoid (Assoc + Identity)
 ```java
-Money total = orderTotals.parallelStream()
-    .reduce(Money.zero(Currency.KRW), Money::add);
-// 항등원 + 결합법칙 -> 병렬 안전
+1| // package: com.ecommerce.shared
+2| Money total = orderTotals.parallelStream()
+3|   .reduce(Money.zero(Currency.KRW), Money::add);
+4| // 항등원 + 결합법칙 -> 병렬 안전
 ```
 
 ### 17. Idempotent Operation
+
+**[코드 B.17]** Idempotent Operation
 ```java
-public Result<Payment, Error> process(PaymentId id, PaymentRequest req) {
-    if (paymentRepo.exists(id)) return Result.success(paymentRepo.findById(id).get());
-    return doProcess(req).map(p -> { paymentRepo.save(id, p); return p; });
-}
+1| // package: com.ecommerce.payment
+2| public Result<Payment, Error> process(PaymentId id, PaymentRequest req) {
+3|   if (paymentRepo.exists(id)) return Result.success(paymentRepo.findById(id).get());
+4|   return doProcess(req).map(p -> { paymentRepo.save(id, p); return p; });
+5| }
 ```
 
 ### 18. Rule as Data
+
+**[코드 B.18]** Rule interface
 ```java
-public sealed interface Rule {
-    record Equals(String attr, String value) implements Rule {}
-    record GTE(String attr, int threshold) implements Rule {}
-    record And(Rule left, Rule right) implements Rule {}
-}
+1| // package: com.ecommerce.rule
+2| public sealed interface Rule {
+3|   record Equals(String attr, String value) implements Rule {}
+4|   record GTE(String attr, int threshold) implements Rule {}
+5|   record And(Rule left, Rule right) implements Rule {}
+6| }
 ```
 
 ### 19. Rule Engine
+
+**[코드 B.19]** Rule Engine
 ```java
-public static boolean evaluate(Rule rule, Customer c) {
-    return switch (rule) {
-        case Equals(var a, var v) -> getAttr(c, a).equals(v);
-        case GTE(var a, var t) -> getInt(c, a) >= t;
-        case And(var l, var r) -> evaluate(l, c) && evaluate(r, c);
-    };
-}
+1| // package: com.ecommerce.rule
+2| public static boolean evaluate(Rule rule, Customer c) {
+3|   return switch (rule) {
+4|     case Equals(var a, var v) -> getAttr(c, a).equals(v);
+5|     case GTE(var a, var t) -> getInt(c, a) >= t;
+6|     case And(var l, var r) -> evaluate(l, c) && evaluate(r, c);
+7|   };
+8| }
 ```
 
 ### 20. Interpreter Separation
+
+**[코드 B.20]** Rule = WHAT (data), Interpreter = HOW (function)
 ```java
-// Rule = WHAT (data), Interpreter = HOW (function)
-boolean result = RuleEvaluator.evaluate(rule, customer);   // 평가
-String desc = RuleExplainer.explain(rule);                 // 설명
-String sql = RuleToSql.toWhere(rule);                      // SQL 변환
+1| // package: com.ecommerce.rule
+2| // Rule = WHAT (data), Interpreter = HOW (function)
+3| boolean result = RuleEvaluator.evaluate(rule, customer);   // 평가
+4| String desc = RuleExplainer.explain(rule);                 // 설명
+5| String sql = RuleToSql.toWhere(rule);                      // SQL 변환
 ```
 
 ### 21. Entity-Record Mapper
+
+**[코드 B.21]** Entity-Record Mapper
 ```java
-public static Order toDomain(OrderEntity e) {
-    OrderStatus status = switch (e.getStatus()) {
-        case PAID -> new Paid(e.getPaidAt(), new TransactionId(e.getPaymentId()));
-        case PENDING -> new Unpaid(e.getCreatedAt());
-    };
-    return new Order(new OrderId(e.getId().toString()), mapItems(e.getItems()), status);
-}
+1| // package: com.ecommerce.order
+2| public static Order toDomain(OrderEntity e) {
+3|   OrderStatus status = switch (e.getStatus()) {
+4|     case PAID -> new Paid(e.getPaidAt(), new TransactionId(e.getPaymentId()));
+5|     case PENDING -> new Unpaid(e.getCreatedAt());
+6|   };
+7|   return new Order(new OrderId(e.getId().toString()), mapItems(e.getItems()), status);
+8| }
 ```
 
 ### 22. Gradual Migration
+
+**[코드 B.22]** Step 1: 순수 함수 추출
 ```java
-// Step 1: 순수 함수 추출
-public class PriceCalc { static Money total(List<Item> items, Discount d) { ... } }
-// Step 2: Service에서 호출
-Money total = PriceCalc.total(items, discount); // 기존 Service 구조 유지!
+1| // package: com.ecommerce.shared
+2| // Step 1: 순수 함수 추출
+3| public class PriceCalc { static Money total(List<Item> items, Discount d) { ... } }
+4| // Step 2: Service에서 호출
+5| Money total = PriceCalc.total(items, discount); // 기존 Service 구조 유지!
 ```
 
 ### 23. Bounded Context Model
+
+**[코드 B.23]** DisplayProduct record
 ```java
-public record DisplayProduct(ProductId id, String name, Money price) {}     // 전시용
-public record InventoryProduct(ProductId id, int stock) {}                  // 재고용
-public record SettlementProduct(ProductId id, Money supplyPrice) {}         // 정산용
+1| // package: com.ecommerce.product
+2| public record DisplayProduct(ProductId id, String name, Money price) {}     // 전시용
+3| public record InventoryProduct(ProductId id, int stock) {}                  // 재고용
+4| public record SettlementProduct(ProductId id, Money supplyPrice) {}         // 정산용
 ```
 
 ### 24. Defensive Copy
+
+**[코드 B.24]** Cart record
 ```java
-public record Cart(List<CartItem> items) {
-    public Cart { items = List.copyOf(items); } // 외부 변경 차단
-}
+1| // package: com.ecommerce.shared
+2| public record Cart(List<CartItem> items) {
+3|   public Cart { items = List.copyOf(items); } // 외부 변경 차단
+4| }
 ```
 
 ### 25. Null Object via ADT
+
+**[코드 B.25]** Discount interface
 ```java
-public sealed interface Discount {
-    record NoDiscount() implements Discount {}    // null 대신 항등원
-    record Percentage(int rate) implements Discount {}
-    record FixedAmount(Money amt) implements Discount {}
-}
+1| // package: com.ecommerce.coupon
+2| public sealed interface Discount {
+3|   record NoDiscount() implements Discount {}    // null 대신 항등원
+4|   record Percentage(int rate) implements Discount {}
+5|   record FixedAmount(Money amt) implements Discount {}
+6| }
 ```
 
 ---
 
 ## 패턴 조합 가이드
 
+**[표 B.2]** 패턴 조합 가이드
 | 상황 | 추천 패턴 조합 |
 |------|---------------|
 | 단순 CRUD | Value Object + Compact Constructor |

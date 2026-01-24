@@ -18,6 +18,7 @@
 
   Java에서 Functor에 해당하는 대표적인 타입들: Optional의 `.map()`, Stream의 `.map()`, CompletableFuture의 `.thenApply()`.
 
+**[그림 09.1]** Functor 패턴 (map으로 값 변환)
 ```
 +-------------------------------------------------------------------+
 |                  Functor = map 가능한 컨테이너                       |
@@ -45,25 +46,28 @@
 - **flatMap과 같은 것**: map은 중첩을 방지하지 않는다. `map`의 결과가 컨테이너이면 `Container<Container<T>>`가 된다.
 
 ### Before: Traditional OOP
+
+**[코드 09.1]** Traditional OOP: null 체크를 수동으로 반복하며 변환 수행
 ```java
-// [X] null 체크를 수동으로 반복하며 변환 수행
-public class UserService {
-    public String getUserDisplayName(Long userId) {
-        User user = userRepository.findById(userId);
-        if (user == null) {
-            return "Unknown";
-        }
-        String name = user.getName();
-        if (name == null) {
-            return "Unknown";
-        }
-        String trimmed = name.trim();
-        if (trimmed.isEmpty()) {
-            return "Unknown";
-        }
-        return trimmed.toUpperCase();
-    }
-}
+ 1| // package: com.ecommerce.auth
+ 2| // [X] null 체크를 수동으로 반복하며 변환 수행
+ 3| public class UserService {
+ 4|   public String getUserDisplayName(Long userId) {
+ 5|     User user = userRepository.findById(userId);
+ 6|     if (user == null) {
+ 7|       return "Unknown";
+ 8|     }
+ 9|     String name = user.getName();
+10|     if (name == null) {
+11|       return "Unknown";
+12|     }
+13|     String trimmed = name.trim();
+14|     if (trimmed.isEmpty()) {
+15|       return "Unknown";
+16|     }
+17|     return trimmed.toUpperCase();
+18|   }
+19| }
 ```
 - **의도 및 코드 설명**: 사용자 ID로 조회한 후 이름을 변환(trim, uppercase)한다. 각 단계에서 null 체크를 수행한다.
 - **뭐가 문제인가**:
@@ -73,20 +77,23 @@ public class UserService {
   - "무엇을 하는지"보다 "방어 코드"가 먼저 눈에 들어옴
 
 ### After: Modern Approach
-```java
-// [O] Functor(Optional)의 map으로 컨텍스트 유지하며 변환
-import java.util.Optional;
 
-public class UserService {
-    public String getUserDisplayName(Long userId) {
-        return Optional.ofNullable(userRepository.findById(userId))
-            .map(User::getName)         // Optional<String>: null이면 빈 Optional 유지
-            .map(String::trim)          // Optional<String>: 빈 문자열은 그대로 통과
-            .filter(name -> !name.isEmpty())  // 빈 문자열이면 Optional.empty()
-            .map(String::toUpperCase)   // Optional<String>: 대문자 변환
-            .orElse("Unknown");         // 최종: 값이 없으면 기본값
-    }
-}
+**[코드 09.2]** Modern: Functor(Optional)의 map으로 컨텍스트 유지하며 변환
+```java
+ 1| // package: com.ecommerce.shared
+ 2| // [O] Functor(Optional)의 map으로 컨텍스트 유지하며 변환
+ 3| import java.util.Optional;
+ 4| 
+ 5| public class UserService {
+ 6|   public String getUserDisplayName(Long userId) {
+ 7|     return Optional.ofNullable(userRepository.findById(userId))
+ 8|       .map(User::getName)         // Optional<String>: null이면 빈 Optional 유지
+ 9|       .map(String::trim)          // Optional<String>: 빈 문자열은 그대로 통과
+10|       .filter(name -> !name.isEmpty())  // 빈 문자열이면 Optional.empty()
+11|       .map(String::toUpperCase)   // Optional<String>: 대문자 변환
+12|       .orElse("Unknown");         // 최종: 값이 없으면 기본값
+13|   }
+14| }
 ```
 - **의도 및 코드 설명**: Optional을 Functor로 활용하여 map 체이닝으로 변환한다. null 처리는 Optional 내부에서 자동으로 이루어진다.
 - **무엇이 좋아지나**:
@@ -97,16 +104,19 @@ public class UserService {
 
 ### 이해를 위한 부가 상세
 Functor 법칙을 코드로 검증:
+
+**[코드 09.3]** Functor 패턴 (map으로 값 변환)
 ```java
-Optional<Integer> box = Optional.of(5);
-Function<Integer, Integer> f = x -> x + 1;
-Function<Integer, Integer> g = x -> x * 2;
-
-// Identity Law
-assert box.map(x -> x).equals(box);
-
-// Composition Law
-assert box.map(f).map(g).equals(box.map(f.andThen(g)));
+ 1| // package: com.ecommerce.shared
+ 2| Optional<Integer> box = Optional.of(5);
+ 3| Function<Integer, Integer> f = x -> x + 1;
+ 4| Function<Integer, Integer> g = x -> x * 2;
+ 5| 
+ 6| // Identity Law
+ 7| assert box.map(x -> x).equals(box);
+ 8| 
+ 9| // Composition Law
+10| assert box.map(f).map(g).equals(box.map(f.andThen(g)));
 ```
 
 ### 틀리기/놓치기 쉬운 부분
@@ -133,6 +143,7 @@ Functor의 map은 "컨텍스트(Optional, Stream, Future)를 보존하면서 내
 
   이 패턴을 Railway-Oriented Programming이라 부르기도 한다. 성공 트랙과 실패 트랙 두 개의 선로가 있고, flatMap이 분기점(switch) 역할을 한다.
 
+**[그림 09.2]** Monad 패턴 (flatMap으로 컨텍스트 연결)
 ```
 +-------------------------------------------------------------------+
 |                  Monad = 중첩 없는 연결                              |
@@ -161,25 +172,28 @@ Functor의 map은 "컨텍스트(Optional, Stream, Future)를 보존하면서 내
 - **모든 컨텍스트에 적용 가능**: Validation(Applicative)처럼 flatMap이 의미를 잃는 경우도 있다(에러 수집 불가).
 
 ### Before: Traditional OOP
+
+**[코드 09.4]** Traditional OOP: 중첩 null 체크로 순차 조회 수행 (null 지옥)
 ```java
-// [X] 중첩 null 체크로 순차 조회 수행 (null 지옥)
-public class OrderService {
-    public String getDeliveryCity(Long userId) {
-        User user = userRepository.findById(userId);
-        if (user == null) {
-            return null;
-        }
-        Long addressId = user.getDefaultAddressId();
-        if (addressId == null) {
-            return null;
-        }
-        Address address = addressRepository.findById(addressId);
-        if (address == null) {
-            return null;
-        }
-        return address.getCity();
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [X] 중첩 null 체크로 순차 조회 수행 (null 지옥)
+ 3| public class OrderService {
+ 4|   public String getDeliveryCity(Long userId) {
+ 5|     User user = userRepository.findById(userId);
+ 6|     if (user == null) {
+ 7|       return null;
+ 8|     }
+ 9|     Long addressId = user.getDefaultAddressId();
+10|     if (addressId == null) {
+11|       return null;
+12|     }
+13|     Address address = addressRepository.findById(addressId);
+14|     if (address == null) {
+15|       return null;
+16|     }
+17|     return address.getCity();
+18|   }
+19| }
 ```
 - **의도 및 코드 설명**: 사용자 -> 기본 주소 ID -> 주소 -> 도시를 순차적으로 조회한다. 각 단계가 null을 반환할 수 있어 매번 체크한다.
 - **뭐가 문제인가**:
@@ -189,30 +203,33 @@ public class OrderService {
   - 조회 단계가 추가될수록 중첩이 기하급수적으로 증가
 
 ### After: Modern Approach
+
+**[코드 09.5]** Modern: Monad(Optional)의 flatMap으로 순차 의존 조회를 선형 표현
 ```java
-// [O] Monad(Optional)의 flatMap으로 순차 의존 조회를 선형 표현
-import java.util.Optional;
-
-public class OrderService {
-    record User(Long id, String name, Optional<Long> defaultAddressId) {}
-    record Address(Long id, String street, String city) {}
-
-    private Optional<User> findUser(Long id) {
-        return Optional.ofNullable(userRepository.findById(id));
-    }
-
-    private Optional<Address> findAddress(Long id) {
-        return Optional.ofNullable(addressRepository.findById(id));
-    }
-
-    public Optional<String> getDeliveryCity(Long userId) {
-        return findUser(userId)                     // Optional<User>
-            .flatMap(User::defaultAddressId)        // Optional<Long> (중첩 방지!)
-            .flatMap(this::findAddress)             // Optional<Address> (중첩 방지!)
-            .map(Address::city);                    // Optional<String>
-    }
-    // 어느 단계에서든 empty이면 이후 자동 건너뜀!
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [O] Monad(Optional)의 flatMap으로 순차 의존 조회를 선형 표현
+ 3| import java.util.Optional;
+ 4| 
+ 5| public class OrderService {
+ 6|   record User(Long id, String name, Optional<Long> defaultAddressId) {}
+ 7|   record Address(Long id, String street, String city) {}
+ 8| 
+ 9|   private Optional<User> findUser(Long id) {
+10|     return Optional.ofNullable(userRepository.findById(id));
+11|   }
+12| 
+13|   private Optional<Address> findAddress(Long id) {
+14|     return Optional.ofNullable(addressRepository.findById(id));
+15|   }
+16| 
+17|   public Optional<String> getDeliveryCity(Long userId) {
+18|     return findUser(userId)                     // Optional<User>
+19|       .flatMap(User::defaultAddressId)        // Optional<Long> (중첩 방지!)
+20|       .flatMap(this::findAddress)             // Optional<Address> (중첩 방지!)
+21|       .map(Address::city);                    // Optional<String>
+22|   }
+23|   // 어느 단계에서든 empty이면 이후 자동 건너뜀!
+24| }
 ```
 - **의도 및 코드 설명**: 각 조회가 Optional을 반환하고, flatMap으로 중첩 없이 연결한다. 마지막 단순 변환은 map으로 처리한다.
 - **무엇이 좋아지나**:
@@ -223,6 +240,8 @@ public class OrderService {
 
 ### 이해를 위한 부가 상세
 Java의 주요 Monad와 그 flatMap:
+
+**[표 09.1]** Monad 패턴 (flatMap으로 컨텍스트 연결)
 | Monad | of | flatMap | 컨텍스트 |
 |-------|------|---------|----------|
 | `Optional<T>` | `Optional.of()` | `.flatMap()` | 값 존재/부재 |
@@ -253,6 +272,7 @@ flatMap은 "이전 단계의 결과에 의존하는 다음 단계"를 중첩 없
 
   선택 기준: 검증 간 의존성이 있으면 Result(Monad), 독립적이면 Validation(Applicative).
 
+**[그림 09.3]** Applicative 패턴 (여러 컨텍스트 결합)
 ```
 +-------------------------------------------------------------------+
 |                  Monad vs Applicative                                |
@@ -277,18 +297,21 @@ flatMap은 "이전 단계의 결과에 의존하는 다음 단계"를 중첩 없
 - **try-catch 여러 개**: try-catch는 예외를 "하나만" 잡는다. Validation은 모든 검증을 실행하고 에러를 모은다.
 
 ### Before: Traditional OOP
+
+**[코드 09.6]** Traditional OOP: Monad(Result) 체이닝: 첫 에러에서 중단, 나머지 에러 안 보임
 ```java
-// [X] Monad(Result) 체이닝: 첫 에러에서 중단, 나머지 에러 안 보임
-public class UserRegistration {
-    public Result<User, String> register(String name, String email, int age) {
-        return validateName(name)
-            .flatMap(validName -> validateEmail(email)
-                .flatMap(validEmail -> validateAge(age)
-                    .map(validAge -> new User(validName, validEmail, validAge))));
-        // 이름이 잘못되면 이메일, 나이 에러는 사용자에게 안 보임!
-        // 사용자는 에러를 하나씩 고치며 여러 번 제출해야 함
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [X] Monad(Result) 체이닝: 첫 에러에서 중단, 나머지 에러 안 보임
+ 3| public class UserRegistration {
+ 4|   public Result<User, String> register(String name, String email, int age) {
+ 5|     return validateName(name)
+ 6|       .flatMap(validName -> validateEmail(email)
+ 7|         .flatMap(validEmail -> validateAge(age)
+ 8|           .map(validAge -> new User(validName, validEmail, validAge))));
+ 9|     // 이름이 잘못되면 이메일, 나이 에러는 사용자에게 안 보임!
+10|     // 사용자는 에러를 하나씩 고치며 여러 번 제출해야 함
+11|   }
+12| }
 ```
 - **의도 및 코드 설명**: 회원가입 시 이름, 이메일, 나이를 순차적으로 검증한다. flatMap으로 연결하면 첫 에러에서 중단된다.
 - **뭐가 문제인가**:
@@ -298,81 +321,84 @@ public class UserRegistration {
   - 실제로 앞 검증 결과가 뒤 검증에 필요하지 않음
 
 ### After: Modern Approach
+
+**[코드 09.7]** Modern: Applicative(Validation)로 독립 검증 수행, 에러 전체 수집
 ```java
-// [O] Applicative(Validation)로 독립 검증 수행, 에러 전체 수집
-import java.util.List;
-import java.util.function.Function;
-
-public class UserRegistration {
-
-    // Validation 타입 정의
-    sealed interface Validation<E, A> permits Valid, Invalid {
-        record Valid<E, A>(A value) implements Validation<E, A> {}
-        record Invalid<E, A>(List<E> errors) implements Validation<E, A> {}
-    }
-
-    // 각 필드 검증 (서로 독립!)
-    Validation<String, String> validateName(String name) {
-        if (name == null || name.isBlank())
-            return new Validation.Invalid<>(List.of("이름은 필수입니다"));
-        if (name.length() < 2)
-            return new Validation.Invalid<>(List.of("이름은 2자 이상이어야 합니다"));
-        return new Validation.Valid<>(name.trim());
-    }
-
-    Validation<String, String> validateEmail(String email) {
-        if (email == null || !email.contains("@"))
-            return new Validation.Invalid<>(List.of("유효한 이메일을 입력하세요"));
-        return new Validation.Valid<>(email.toLowerCase());
-    }
-
-    Validation<String, Integer> validateAge(int age) {
-        if (age < 0 || age > 150)
-            return new Validation.Invalid<>(List.of("나이는 0~150 사이여야 합니다"));
-        return new Validation.Valid<>(age);
-    }
-
-    // Applicative 결합: 모든 에러 수집!
-    public Validation<String, User> register(String name, String email, int age) {
-        var nameV = validateName(name);
-        var emailV = validateEmail(email);
-        var ageV = validateAge(age);
-
-        return combine3(nameV, emailV, ageV, User::new);
-        // 세 검증이 모두 성공하면 User 생성
-        // 하나라도 실패하면 모든 에러를 합쳐서 반환!
-    }
-
-    // combine3: 세 Validation을 결합
-    static <E, A, B, C, R> Validation<E, R> combine3(
-            Validation<E, A> va, Validation<E, B> vb, Validation<E, C> vc,
-            TriFunction<A, B, C, R> combiner) {
-        List<E> errors = new java.util.ArrayList<>();
-        if (va instanceof Validation.Invalid<E, A> i) errors.addAll(i.errors());
-        if (vb instanceof Validation.Invalid<E, B> i) errors.addAll(i.errors());
-        if (vc instanceof Validation.Invalid<E, C> i) errors.addAll(i.errors());
-
-        if (!errors.isEmpty()) return new Validation.Invalid<>(errors);
-
-        return new Validation.Valid<>(combiner.apply(
-            ((Validation.Valid<E, A>) va).value(),
-            ((Validation.Valid<E, B>) vb).value(),
-            ((Validation.Valid<E, C>) vc).value()
-        ));
-    }
-
-    @FunctionalInterface
-    interface TriFunction<A, B, C, R> {
-        R apply(A a, B b, C c);
-    }
-
-    record User(String name, String email, int age) {}
-}
-
-// 사용 예
-// register("", "bad", -5)
-// --> Invalid(["이름은 필수입니다", "유효한 이메일을 입력하세요", "나이는 0~150 사이여야 합니다"])
-// 세 개의 에러가 한 번에!
+ 1| // package: com.ecommerce.auth
+ 2| // [O] Applicative(Validation)로 독립 검증 수행, 에러 전체 수집
+ 3| import java.util.List;
+ 4| import java.util.function.Function;
+ 5| 
+ 6| public class UserRegistration {
+ 7| 
+ 8|   // Validation 타입 정의
+ 9|   sealed interface Validation<E, A> permits Valid, Invalid {
+10|     record Valid<E, A>(A value) implements Validation<E, A> {}
+11|     record Invalid<E, A>(List<E> errors) implements Validation<E, A> {}
+12|   }
+13| 
+14|   // 각 필드 검증 (서로 독립!)
+15|   Validation<String, String> validateName(String name) {
+16|     if (name == null || name.isBlank())
+17|       return new Validation.Invalid<>(List.of("이름은 필수입니다"));
+18|     if (name.length() < 2)
+19|       return new Validation.Invalid<>(List.of("이름은 2자 이상이어야 합니다"));
+20|     return new Validation.Valid<>(name.trim());
+21|   }
+22| 
+23|   Validation<String, String> validateEmail(String email) {
+24|     if (email == null || !email.contains("@"))
+25|       return new Validation.Invalid<>(List.of("유효한 이메일을 입력하세요"));
+26|     return new Validation.Valid<>(email.toLowerCase());
+27|   }
+28| 
+29|   Validation<String, Integer> validateAge(int age) {
+30|     if (age < 0 || age > 150)
+31|       return new Validation.Invalid<>(List.of("나이는 0~150 사이여야 합니다"));
+32|     return new Validation.Valid<>(age);
+33|   }
+34| 
+35|   // Applicative 결합: 모든 에러 수집!
+36|   public Validation<String, User> register(String name, String email, int age) {
+37|     var nameV = validateName(name);
+38|     var emailV = validateEmail(email);
+39|     var ageV = validateAge(age);
+40| 
+41|     return combine3(nameV, emailV, ageV, User::new);
+42|     // 세 검증이 모두 성공하면 User 생성
+43|     // 하나라도 실패하면 모든 에러를 합쳐서 반환!
+44|   }
+45| 
+46|   // combine3: 세 Validation을 결합
+47|   static <E, A, B, C, R> Validation<E, R> combine3(
+48|       Validation<E, A> va, Validation<E, B> vb, Validation<E, C> vc,
+49|       TriFunction<A, B, C, R> combiner) {
+50|     List<E> errors = new java.util.ArrayList<>();
+51|     if (va instanceof Validation.Invalid<E, A> i) errors.addAll(i.errors());
+52|     if (vb instanceof Validation.Invalid<E, B> i) errors.addAll(i.errors());
+53|     if (vc instanceof Validation.Invalid<E, C> i) errors.addAll(i.errors());
+54| 
+55|     if (!errors.isEmpty()) return new Validation.Invalid<>(errors);
+56| 
+57|     return new Validation.Valid<>(combiner.apply(
+58|       ((Validation.Valid<E, A>) va).value(),
+59|       ((Validation.Valid<E, B>) vb).value(),
+60|       ((Validation.Valid<E, C>) vc).value()
+61|     ));
+62|   }
+63| 
+64|   @FunctionalInterface
+65|   interface TriFunction<A, B, C, R> {
+66|     R apply(A a, B b, C c);
+67|   }
+68| 
+69|   record User(String name, String email, int age) {}
+70| }
+71| 
+72| // 사용 예
+73| // register("", "bad", -5)
+74| // --> Invalid(["이름은 필수입니다", "유효한 이메일을 입력하세요", "나이는 0~150 사이여야 합니다"])
+75| // 세 개의 에러가 한 번에!
 ```
 - **의도 및 코드 설명**: 각 필드를 독립적으로 검증하고, combine3으로 모든 에러를 수집한다. 전부 성공하면 User를 생성한다.
 - **무엇이 좋아지나**:
@@ -383,6 +409,8 @@ public class UserRegistration {
 
 ### 이해를 위한 부가 상세
 Result(Monad) vs Validation(Applicative) 선택 가이드:
+
+**[그림 09.4]** Applicative 패턴 (여러 컨텍스트 결합)
 ```
 단계 간 의존성 있는가?
   |
@@ -421,6 +449,7 @@ Applicative의 핵심 가치는 "독립 연산의 에러 수집"이다. 폼 검�
 
   Optional 체이닝에서 map과 flatMap을 적절히 조합하면, 중첩된 if-null-check를 완전히 제거하고 선형적인 파이프라인으로 대체할 수 있다.
 
+**[그림 09.5]** Optional as Monad (Optional의 모나드적 활용)
 ```
 +-------------------------------------------------------------------+
 |                  Optional Monad 패턴                                 |
@@ -446,24 +475,27 @@ Applicative의 핵심 가치는 "독립 연산의 에러 수집"이다. 폼 검�
 - **메서드 파라미터 타입**: Optional을 인자로 받는 것은 호출자에게 불필요한 래핑을 강제한다.
 
 ### Before: Traditional OOP
+
+**[코드 09.8]** Traditional OOP: Optional을 단순 null 체크 래퍼로만 사용 (안티패턴)
 ```java
-// [X] Optional을 단순 null 체크 래퍼로만 사용 (안티패턴)
-public class BookingService {
-    public String getBookingConfirmation(Long bookingId) {
-        Optional<Booking> optBooking = bookingRepository.findById(bookingId);
-        if (optBooking.isPresent()) {
-            Booking booking = optBooking.get();
-            Optional<Payment> optPayment = paymentRepository.findByBookingId(booking.id());
-            if (optPayment.isPresent()) {
-                Payment payment = optPayment.get();
-                if (payment.isConfirmed()) {
-                    return "예약 확정: " + booking.guestName() + ", 결제액: " + payment.amount();
-                }
-            }
-        }
-        return "예약 정보를 찾을 수 없습니다";
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [X] Optional을 단순 null 체크 래퍼로만 사용 (안티패턴)
+ 3| public class BookingService {
+ 4|   public String getBookingConfirmation(Long bookingId) {
+ 5|     Optional<Booking> optBooking = bookingRepository.findById(bookingId);
+ 6|     if (optBooking.isPresent()) {
+ 7|       Booking booking = optBooking.get();
+ 8|       Optional<Payment> optPayment = paymentRepository.findByBookingId(booking.id());
+ 9|       if (optPayment.isPresent()) {
+10|         Payment payment = optPayment.get();
+11|         if (payment.isConfirmed()) {
+12|           return "예약 확정: " + booking.guestName() + ", 결제액: " + payment.amount();
+13|         }
+14|       }
+15|     }
+16|     return "예약 정보를 찾을 수 없습니다";
+17|   }
+18| }
 ```
 - **의도 및 코드 설명**: 예약 -> 결제 -> 확정 여부를 조회한다. Optional을 사용했지만 isPresent/get 패턴으로 null 체크와 본질적으로 동일하다.
 - **뭐가 문제인가**:
@@ -473,34 +505,37 @@ public class BookingService {
   - 새 조회 단계 추가 시 중첩이 더 깊어짐
 
 ### After: Modern Approach
+
+**[코드 09.9]** Modern: Optional을 Monad로 활용하여 선형 파이프라인 구성
 ```java
-// [O] Optional을 Monad로 활용하여 선형 파이프라인 구성
-public class BookingService {
-    record Booking(Long id, String guestName, Long paymentId) {}
-    record Payment(Long id, java.math.BigDecimal amount, boolean confirmed) {
-        public boolean isConfirmed() { return confirmed; }
-    }
-
-    public String getBookingConfirmation(Long bookingId) {
-        return bookingRepository.findById(bookingId)            // Optional<Booking>
-            .flatMap(booking ->
-                paymentRepository.findByBookingId(booking.id()) // Optional<Payment>
-                    .filter(Payment::isConfirmed)               // 확정된 것만
-                    .map(payment -> "예약 확정: " + booking.guestName()
-                        + ", 결제액: " + payment.amount())
-            )
-            .orElse("예약 정보를 찾을 수 없습니다");
-    }
-
-    // 더 복잡한 체이닝 예시
-    public Optional<String> getGuestEmail(Long bookingId) {
-        return bookingRepository.findById(bookingId)
-            .map(Booking::guestName)
-            .flatMap(name -> guestRepository.findByName(name))
-            .map(Guest::email)
-            .filter(email -> email.contains("@"));
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [O] Optional을 Monad로 활용하여 선형 파이프라인 구성
+ 3| public class BookingService {
+ 4|   record Booking(Long id, String guestName, Long paymentId) {}
+ 5|   record Payment(Long id, java.math.BigDecimal amount, boolean confirmed) {
+ 6|     public boolean isConfirmed() { return confirmed; }
+ 7|   }
+ 8| 
+ 9|   public String getBookingConfirmation(Long bookingId) {
+10|     return bookingRepository.findById(bookingId)            // Optional<Booking>
+11|       .flatMap(booking ->
+12|         paymentRepository.findByBookingId(booking.id()) // Optional<Payment>
+13|           .filter(Payment::isConfirmed)               // 확정된 것만
+14|           .map(payment -> "예약 확정: " + booking.guestName()
+15|             + ", 결제액: " + payment.amount())
+16|       )
+17|       .orElse("예약 정보를 찾을 수 없습니다");
+18|   }
+19| 
+20|   // 더 복잡한 체이닝 예시
+21|   public Optional<String> getGuestEmail(Long bookingId) {
+22|     return bookingRepository.findById(bookingId)
+23|       .map(Booking::guestName)
+24|       .flatMap(name -> guestRepository.findByName(name))
+25|       .map(Guest::email)
+26|       .filter(email -> email.contains("@"));
+27|   }
+28| }
 ```
 - **의도 및 코드 설명**: flatMap, map, filter를 체이닝하여 "예약 찾기 -> 결제 찾기 -> 확정 여부 -> 메시지 생성"을 선형으로 표현한다.
 - **무엇이 좋아지나**:
@@ -511,24 +546,27 @@ public class BookingService {
 
 ### 이해를 위한 부가 상세
 Optional 활용 패턴 정리:
+
+**[코드 09.10]** 패턴 1: 단순 변환
 ```java
-// 패턴 1: 단순 변환
-optional.map(String::toUpperCase);
-
-// 패턴 2: Optional 반환 함수 연결
-optional.flatMap(this::findAddress);
-
-// 패턴 3: 조건부 비움
-optional.filter(age -> age >= 18);
-
-// 패턴 4: 대안 Optional
-optional.or(() -> findAlternative());  // Java 9+
-
-// 패턴 5: 부재 시 예외
-optional.orElseThrow(() -> new NotFoundException("not found"));
-
-// 패턴 6: 부재 시 기본값 (지연 계산)
-optional.orElseGet(() -> computeDefault());
+ 1| // package: com.ecommerce.shared
+ 2| // 패턴 1: 단순 변환
+ 3| optional.map(String::toUpperCase);
+ 4| 
+ 5| // 패턴 2: Optional 반환 함수 연결
+ 6| optional.flatMap(this::findAddress);
+ 7| 
+ 8| // 패턴 3: 조건부 비움
+ 9| optional.filter(age -> age >= 18);
+10| 
+11| // 패턴 4: 대안 Optional
+12| optional.or(() -> findAlternative());  // Java 9+
+13| 
+14| // 패턴 5: 부재 시 예외
+15| optional.orElseThrow(() -> new NotFoundException("not found"));
+16| 
+17| // 패턴 6: 부재 시 기본값 (지연 계산)
+18| optional.orElseGet(() -> computeDefault());
 ```
 
 ### 틀리기/놓치기 쉬운 부분
@@ -556,6 +594,7 @@ Optional을 "있거나 없거나"라는 컨텍스트를 가진 Monad로 사용�
 
   Result의 에러 타입을 sealed interface로 정의하면, 패턴 매칭으로 모든 에러 케이스를 빠짐없이 처리할 수 있다.
 
+**[그림 09.6]** Result/Either as Monad (에러 처리 모나드)
 ```
 +-------------------------------------------------------------------+
 |                  Result = 성공 OR 실패                                |
@@ -583,40 +622,43 @@ Optional을 "있거나 없거나"라는 컨텍스트를 가진 Monad로 사용�
 - **try-catch의 함수형 래퍼**: Result는 try-catch를 감싸는 것이 아니라, 에러를 타입으로 표현하여 컴파일러가 처리를 강제하는 것이다.
 
 ### Before: Traditional OOP
-```java
-// [X] 예외로 에러를 처리: 시그니처에 드러나지 않고 제어 흐름이 비선형적
-public class PaymentService {
-    public Receipt processPayment(OrderRequest request)
-            throws ValidationException, InventoryException, PaymentException {
-        // 검증
-        if (request.items().isEmpty()) {
-            throw new ValidationException("주문 항목이 비어있습니다");
-        }
-        // 재고 확인
-        for (var item : request.items()) {
-            if (!inventoryService.isAvailable(item)) {
-                throw new InventoryException("재고 부족: " + item.name());
-            }
-        }
-        // 결제
-        PaymentResult result = gateway.charge(request.totalAmount());
-        if (!result.isSuccess()) {
-            throw new PaymentException("결제 실패: " + result.reason());
-        }
-        return new Receipt(result.transactionId(), request);
-    }
-}
 
-// 호출 측: 어떤 예외가 올지 모르고, catch 순서에 의존
-try {
-    Receipt receipt = paymentService.processPayment(request);
-} catch (ValidationException e) {
-    // ...
-} catch (InventoryException e) {
-    // ...
-} catch (PaymentException e) {
-    // ...
-}
+**[코드 09.11]** Traditional OOP: 예외로 에러를 처리: 시그니처에 드러나지 않고 제어 흐름이 비선형적
+```java
+ 1| // package: com.ecommerce.payment
+ 2| // [X] 예외로 에러를 처리: 시그니처에 드러나지 않고 제어 흐름이 비선형적
+ 3| public class PaymentService {
+ 4|   public Receipt processPayment(OrderRequest request)
+ 5|       throws ValidationException, InventoryException, PaymentException {
+ 6|     // 검증
+ 7|     if (request.items().isEmpty()) {
+ 8|       throw new ValidationException("주문 항목이 비어있습니다");
+ 9|     }
+10|     // 재고 확인
+11|     for (var item : request.items()) {
+12|       if (!inventoryService.isAvailable(item)) {
+13|         throw new InventoryException("재고 부족: " + item.name());
+14|       }
+15|     }
+16|     // 결제
+17|     PaymentResult result = gateway.charge(request.totalAmount());
+18|     if (!result.isSuccess()) {
+19|       throw new PaymentException("결제 실패: " + result.reason());
+20|     }
+21|     return new Receipt(result.transactionId(), request);
+22|   }
+23| }
+24| 
+25| // 호출 측: 어떤 예외가 올지 모르고, catch 순서에 의존
+26| try {
+27|   Receipt receipt = paymentService.processPayment(request);
+28| } catch (ValidationException e) {
+29|   // ...
+30| } catch (InventoryException e) {
+31|   // ...
+32| } catch (PaymentException e) {
+33|   // ...
+34| }
 ```
 - **의도 및 코드 설명**: 주문 검증 -> 재고 확인 -> 결제를 순차 수행한다. 각 단계의 실패를 예외로 표현한다.
 - **뭐가 문제인가**:
@@ -626,81 +668,84 @@ try {
   - 람다/Stream 내에서 checked exception 사용이 불편
 
 ### After: Modern Approach
+
+**[코드 09.12]** Modern: Result Monad로 에러를 값으로 다루고 flatMap으로 파이프라인 구성
 ```java
-// [O] Result Monad로 에러를 값으로 다루고 flatMap으로 파이프라인 구성
-public class PaymentService {
-
-    // 도메인 에러를 sealed interface로 정의
-    sealed interface OrderError permits ValidationError, InventoryError, PaymentError {
-        record ValidationError(List<String> messages) implements OrderError {}
-        record InventoryError(String itemName) implements OrderError {}
-        record PaymentError(String reason) implements OrderError {}
-    }
-
-    // Result 타입 정의
-    sealed interface Result<S, F> permits Result.Success, Result.Failure {
-        record Success<S, F>(S value) implements Result<S, F> {}
-        record Failure<S, F>(F error) implements Result<S, F> {}
-
-        default <R> Result<R, F> map(Function<S, R> f) {
-            return switch (this) {
-                case Success<S, F> s -> new Success<>(f.apply(s.value()));
-                case Failure<S, F> fail -> new Failure<>(fail.error());
-            };
-        }
-
-        default <R> Result<R, F> flatMap(Function<S, Result<R, F>> f) {
-            return switch (this) {
-                case Success<S, F> s -> f.apply(s.value());
-                case Failure<S, F> fail -> new Failure<>(fail.error());
-            };
-        }
-    }
-
-    // 각 단계를 Result를 반환하는 순수 함수로 정의
-    Result<ValidatedOrder, OrderError> validate(OrderRequest request) {
-        if (request.items().isEmpty())
-            return new Result.Failure<>(
-                new OrderError.ValidationError(List.of("주문 항목이 비어있습니다")));
-        return new Result.Success<>(new ValidatedOrder(request));
-    }
-
-    Result<ReservedOrder, OrderError> checkInventory(ValidatedOrder order) {
-        for (var item : order.items()) {
-            if (!inventoryService.isAvailable(item))
-                return new Result.Failure<>(new OrderError.InventoryError(item.name()));
-        }
-        return new Result.Success<>(new ReservedOrder(order));
-    }
-
-    Result<Receipt, OrderError> charge(ReservedOrder order) {
-        var payResult = gateway.charge(order.totalAmount());
-        if (!payResult.isSuccess())
-            return new Result.Failure<>(new OrderError.PaymentError(payResult.reason()));
-        return new Result.Success<>(new Receipt(payResult.transactionId(), order));
-    }
-
-    // Railway-Oriented Programming: flatMap 체이닝
-    public Result<Receipt, OrderError> processPayment(OrderRequest request) {
-        return validate(request)                    // Result<ValidatedOrder, OrderError>
-            .flatMap(this::checkInventory)          // Result<ReservedOrder, OrderError>
-            .flatMap(this::charge);                 // Result<Receipt, OrderError>
-        // 어느 단계에서든 Failure이면 이후 자동 건너뜀!
-    }
-
-    // 호출 측: 패턴 매칭으로 모든 에러 빠짐없이 처리
-    public String handleResult(Result<Receipt, OrderError> result) {
-        return switch (result) {
-            case Result.Success<Receipt, OrderError> s ->
-                "결제 성공: " + s.value().transactionId();
-            case Result.Failure<Receipt, OrderError> f -> switch (f.error()) {
-                case OrderError.ValidationError e -> "검증 실패: " + e.messages();
-                case OrderError.InventoryError e -> "재고 부족: " + e.itemName();
-                case OrderError.PaymentError e -> "결제 실패: " + e.reason();
-            };
-        };
-    }
-}
+ 1| // package: com.ecommerce.shared
+ 2| // [O] Result Monad로 에러를 값으로 다루고 flatMap으로 파이프라인 구성
+ 3| public class PaymentService {
+ 4| 
+ 5|   // 도메인 에러를 sealed interface로 정의
+ 6|   sealed interface OrderError permits ValidationError, InventoryError, PaymentError {
+ 7|     record ValidationError(List<String> messages) implements OrderError {}
+ 8|     record InventoryError(String itemName) implements OrderError {}
+ 9|     record PaymentError(String reason) implements OrderError {}
+10|   }
+11| 
+12|   // Result 타입 정의
+13|   sealed interface Result<S, F> permits Result.Success, Result.Failure {
+14|     record Success<S, F>(S value) implements Result<S, F> {}
+15|     record Failure<S, F>(F error) implements Result<S, F> {}
+16| 
+17|     default <R> Result<R, F> map(Function<S, R> f) {
+18|       return switch (this) {
+19|         case Success<S, F> s -> new Success<>(f.apply(s.value()));
+20|         case Failure<S, F> fail -> new Failure<>(fail.error());
+21|       };
+22|     }
+23| 
+24|     default <R> Result<R, F> flatMap(Function<S, Result<R, F>> f) {
+25|       return switch (this) {
+26|         case Success<S, F> s -> f.apply(s.value());
+27|         case Failure<S, F> fail -> new Failure<>(fail.error());
+28|       };
+29|     }
+30|   }
+31| 
+32|   // 각 단계를 Result를 반환하는 순수 함수로 정의
+33|   Result<ValidatedOrder, OrderError> validate(OrderRequest request) {
+34|     if (request.items().isEmpty())
+35|       return new Result.Failure<>(
+36|         new OrderError.ValidationError(List.of("주문 항목이 비어있습니다")));
+37|     return new Result.Success<>(new ValidatedOrder(request));
+38|   }
+39| 
+40|   Result<ReservedOrder, OrderError> checkInventory(ValidatedOrder order) {
+41|     for (var item : order.items()) {
+42|       if (!inventoryService.isAvailable(item))
+43|         return new Result.Failure<>(new OrderError.InventoryError(item.name()));
+44|     }
+45|     return new Result.Success<>(new ReservedOrder(order));
+46|   }
+47| 
+48|   Result<Receipt, OrderError> charge(ReservedOrder order) {
+49|     var payResult = gateway.charge(order.totalAmount());
+50|     if (!payResult.isSuccess())
+51|       return new Result.Failure<>(new OrderError.PaymentError(payResult.reason()));
+52|     return new Result.Success<>(new Receipt(payResult.transactionId(), order));
+53|   }
+54| 
+55|   // Railway-Oriented Programming: flatMap 체이닝
+56|   public Result<Receipt, OrderError> processPayment(OrderRequest request) {
+57|     return validate(request)                    // Result<ValidatedOrder, OrderError>
+58|       .flatMap(this::checkInventory)          // Result<ReservedOrder, OrderError>
+59|       .flatMap(this::charge);                 // Result<Receipt, OrderError>
+60|     // 어느 단계에서든 Failure이면 이후 자동 건너뜀!
+61|   }
+62| 
+63|   // 호출 측: 패턴 매칭으로 모든 에러 빠짐없이 처리
+64|   public String handleResult(Result<Receipt, OrderError> result) {
+65|     return switch (result) {
+66|       case Result.Success<Receipt, OrderError> s ->
+67|         "결제 성공: " + s.value().transactionId();
+68|       case Result.Failure<Receipt, OrderError> f -> switch (f.error()) {
+69|         case OrderError.ValidationError e -> "검증 실패: " + e.messages();
+70|         case OrderError.InventoryError e -> "재고 부족: " + e.itemName();
+71|         case OrderError.PaymentError e -> "결제 실패: " + e.reason();
+72|       };
+73|     };
+74|   }
+75| }
 ```
 - **의도 및 코드 설명**: 각 단계가 Result를 반환하고, flatMap으로 체이닝한다. 에러는 sealed interface로 타입화하여 패턴 매칭으로 빠짐없이 처리한다.
 - **무엇이 좋아지나**:
@@ -712,6 +757,8 @@ public class PaymentService {
 
 ### 이해를 위한 부가 상세
 에러 처리 전략 선택:
+
+**[표 09.2]** Result/Either as Monad (에러 처리 모나드)
 | 상황 | 방식 |
 |------|------|
 | 비즈니스/도메인 에러 | Result (값으로 표현) |
