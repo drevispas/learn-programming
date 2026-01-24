@@ -19,7 +19,12 @@
       "Bash(mvn test:*)",
       "Bash(git pull:*)",
       "Bash(git stash:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "Bash(test:*)",
+      "Bash(python3:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

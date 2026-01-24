@@ -218,23 +218,24 @@ Functional Parameter:
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] 비즈니스 로직에도 DI 사용 - 테스트 시 Mock 필수
- 3| public class PriceService {
- 4|   @Autowired private TaxService taxService;
- 5|   @Autowired private ExchangeRateService exchangeRateService;
- 6|   @Autowired private DiscountPolicyService discountPolicyService;
- 7| 
- 8|   public Money calculateFinalPrice(Order order) {
- 9|     TaxRate taxRate = taxService.getCurrentRate();
-10|     ExchangeRate rate = exchangeRateService.getRate(Currency.USD, Currency.KRW);
-11|     DiscountPolicy policy = discountPolicyService.getActivePolicy();
-12| 
-13|     Money base = order.subtotal();
-14|     Money taxed = base.applyTax(taxRate);
-15|     Money converted = taxed.convert(rate);
-16|     return converted.applyDiscount(policy);
-17|   }
-18|   // 테스트: 3개의 Mock 설정 필요
-19| }
+ 3| @RequiredArgsConstructor
+ 4| public class PriceService {
+ 5|   private final TaxService taxService;
+ 6|   private final ExchangeRateService exchangeRateService;
+ 7|   private final DiscountPolicyService discountPolicyService;
+ 8|
+ 9|   public Money calculateFinalPrice(Order order) {
+10|     TaxRate taxRate = taxService.getCurrentRate();
+11|     ExchangeRate rate = exchangeRateService.getRate(Currency.USD, Currency.KRW);
+12|     DiscountPolicy policy = discountPolicyService.getActivePolicy();
+13|
+14|     Money base = order.subtotal();
+15|     Money taxed = base.applyTax(taxRate);
+16|     Money converted = taxed.convert(rate);
+17|     return converted.applyDiscount(policy);
+18|   }
+19|   // 테스트: 3개의 Mock 설정 필요
+20| }
 ```
 - **의도 및 코드 설명**: 세율, 환율, 할인 정책을 모두 서비스 인터페이스를 통해 호출한다.
 - **뭐가 문제인가**:
@@ -264,35 +265,36 @@ Functional Parameter:
 15|       .orElse(converted);
 16|   }
 17| }
-18| 
+18|
 19| // Shell에서 DI 사용하여 데이터 수집 후 Core 호출
-20| public class CalculatePriceUseCase {
-21|   @Autowired private TaxService taxService;           // Shell의 DI
-22|   @Autowired private ExchangeRateService rateService; // Shell의 DI
-23| 
-24|   public Money execute(Order order, Currency targetCurrency) {
-25|     // Shell: 데이터 수집
-26|     TaxRate taxRate = taxService.getCurrentRate();
-27|     ExchangeRate rate = rateService.getRate(order.currency(), targetCurrency);
-28| 
-29|     // Core: 순수 계산 (Mock 없이 테스트 가능)
-30|     return PriceCalculations.calculateFinalPrice(
-31|       order.subtotal(), taxRate, rate, order.discountPolicy()
-32|     );
-33|   }
-34| }
-35| 
-36| // 테스트: Mock 없이 직접 값 전달
-37| @Test
-38| void calculateFinalPrice_appliesTaxAndExchangeRate() {
-39|   Money result = PriceCalculations.calculateFinalPrice(
-40|     Money.usd(100),
-41|     new TaxRate(10),               // 10% 세금
-42|     new ExchangeRate(1300),         // 1 USD = 1300 KRW
-43|     Optional.empty()
-44|   );
-45|   assertEquals(Money.krw(143000), result);  // 100 * 1.1 * 1300
-46| }
+20| @RequiredArgsConstructor
+21| public class CalculatePriceUseCase {
+22|   private final TaxService taxService;
+23|   private final ExchangeRateService rateService;
+24|
+25|   public Money execute(Order order, Currency targetCurrency) {
+26|     // Shell: 데이터 수집
+27|     TaxRate taxRate = taxService.getCurrentRate();
+28|     ExchangeRate rate = rateService.getRate(order.currency(), targetCurrency);
+29|
+30|     // Core: 순수 계산 (Mock 없이 테스트 가능)
+31|     return PriceCalculations.calculateFinalPrice(
+32|       order.subtotal(), taxRate, rate, order.discountPolicy()
+33|     );
+34|   }
+35| }
+36|
+37| // 테스트: Mock 없이 직접 값 전달
+38| @Test
+39| void calculateFinalPrice_appliesTaxAndExchangeRate() {
+40|   Money result = PriceCalculations.calculateFinalPrice(
+41|     Money.usd(100),
+42|     new TaxRate(10),               // 10% 세금
+43|     new ExchangeRate(1300),         // 1 USD = 1300 KRW
+44|     Optional.empty()
+45|   );
+46|   assertEquals(Money.krw(143000), result);  // 100 * 1.1 * 1300
+47| }
 ```
 - **의도 및 코드 설명**: `PriceCalculations`는 모든 의존성을 값으로 받는 순수 함수다. Shell인 `CalculatePriceUseCase`에서 DI로 서비스를 받아 데이터를 수집한 후, 순수 함수에 전달한다.
 - **무엇이 좋아지나**:
@@ -389,25 +391,26 @@ Sandwich Architecture(DOP)는 시간 순서로 코드를 배치한다. Top Bun(I
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 계층 없이 모든 것이 뒤섞인 서비스
- 3| public class OrderService {
- 4|   @Autowired private JpaOrderRepository jpaRepository;  // 인프라 직접 참조
- 5|   @Autowired private PaymentClient paymentClient;       // 외부 API 직접 참조
- 6| 
- 7|   public OrderEntity placeOrder(OrderDto dto) {
- 8|     // 도메인 로직이 인프라 타입(Entity, DTO)에 직접 의존
- 9|     OrderEntity entity = new OrderEntity();
-10|     entity.setCustomerId(dto.getCustomerId());
-11|     entity.setAmount(dto.getAmount());
-12| 
-13|     // 비즈니스 규칙이 인프라 호출과 섞임
-14|     if (entity.getAmount().compareTo(BigDecimal.valueOf(50000)) > 0) {
-15|       PaymentResponse resp = paymentClient.authorize(entity.getAmount());
-16|       entity.setPaymentId(resp.getTxId());
-17|     }
-18| 
-19|     return jpaRepository.save(entity);
-20|   }
-21| }
+ 3| @RequiredArgsConstructor
+ 4| public class OrderService {
+ 5|   private final JpaOrderRepository jpaRepository;  // 인프라 직접 참조
+ 6|   private final PaymentClient paymentClient;       // 외부 API 직접 참조
+ 7|
+ 8|   public OrderEntity placeOrder(OrderDto dto) {
+ 9|     // 도메인 로직이 인프라 타입(Entity, DTO)에 직접 의존
+10|     OrderEntity entity = new OrderEntity();
+11|     entity.setCustomerId(dto.getCustomerId());
+12|     entity.setAmount(dto.getAmount());
+13|
+14|     // 비즈니스 규칙이 인프라 호출과 섞임
+15|     if (entity.getAmount().compareTo(BigDecimal.valueOf(50000)) > 0) {
+16|       PaymentResponse resp = paymentClient.authorize(entity.getAmount());
+17|       entity.setPaymentId(resp.getTxId());
+18|     }
+19|
+20|     return jpaRepository.save(entity);
+21|   }
+22| }
 ```
 - **의도 및 코드 설명**: 하나의 서비스가 JPA Entity, 외부 API Client, 비즈니스 규칙을 모두 직접 사용한다.
 - **뭐가 문제인가**:

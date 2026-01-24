@@ -51,39 +51,40 @@
 ```java
  1| // package: com.ecommerce.order
  2| // [X] God Class: 모든 것을 담은 OrderService
- 3| public class OrderService {
- 4|   @Autowired private UserRepository userRepo;
- 5|   @Autowired private ProductRepository productRepo;
- 6|   @Autowired private PaymentGateway paymentGateway;
- 7|   @Autowired private ShippingService shippingService;
- 8|   @Autowired private EmailService emailService;
- 9|   @Autowired private InventoryService inventoryService;
-10|   @Autowired private CouponService couponService;
-11|   @Autowired private TaxCalculator taxCalculator;
-12| 
-13|   public Order createOrder(CreateOrderRequest request) {
-14|     // 200줄의 혼합된 로직: 검증 + 계산 + 저장 + 알림
-15|     Coupon coupon = couponService.validate(request.getCouponCode());
-16|     for (OrderItem item : request.getItems()) {
-17|       if (!inventoryService.hasStock(item.getProductId(), item.getQuantity()))
-18|         throw new OutOfStockException();
-19|     }
-20|     BigDecimal total = calculateTotal(request.getItems());
-21|     BigDecimal discounted = coupon.apply(total);
-22|     Order order = new Order();
-23|     order.setItems(request.getItems());
-24|     order.setTotalAmount(discounted);
-25|     order.setStatus("CREATED");
-26|     orderRepository.save(order);
-27|     inventoryService.decreaseStock(/*...*/);
-28|     emailService.sendOrderCreatedNotification(order);
-29|     return order;
-30|   }
-31| 
-32|   public void processPayment(Order order, PaymentInfo info) { /* 150줄 */ }
-33|   public void arrangeShipping(Order order) { /* 100줄 */ }
-34|   // ... 메서드가 계속 증가
-35| }
+ 3| @RequiredArgsConstructor
+ 4| public class OrderService {
+ 5|   private final UserRepository userRepo;
+ 6|   private final ProductRepository productRepo;
+ 7|   private final PaymentGateway paymentGateway;
+ 8|   private final ShippingService shippingService;
+ 9|   private final EmailService emailService;
+10|   private final InventoryService inventoryService;
+11|   private final CouponService couponService;
+12|   private final TaxCalculator taxCalculator;
+13|
+14|   public Order createOrder(CreateOrderRequest request) {
+15|     // 200줄의 혼합된 로직: 검증 + 계산 + 저장 + 알림
+16|     Coupon coupon = couponService.validate(request.getCouponCode());
+17|     for (OrderItem item : request.getItems()) {
+18|       if (!inventoryService.hasStock(item.getProductId(), item.getQuantity()))
+19|         throw new OutOfStockException();
+20|     }
+21|     BigDecimal total = calculateTotal(request.getItems());
+22|     BigDecimal discounted = coupon.apply(total);
+23|     Order order = new Order();
+24|     order.setItems(request.getItems());
+25|     order.setTotalAmount(discounted);
+26|     order.setStatus("CREATED");
+27|     orderRepository.save(order);
+28|     inventoryService.decreaseStock(/*...*/);
+29|     emailService.sendOrderCreatedNotification(order);
+30|     return order;
+31|   }
+32|
+33|   public void processPayment(Order order, PaymentInfo info) { /* 150줄 */ }
+34|   public void arrangeShipping(Order order) { /* 100줄 */ }
+35|   // ... 메서드가 계속 증가
+36| }
 ```
 - **의도 및 코드 설명**: 하나의 서비스 클래스가 주문 생성, 결제, 배송, 알림까지 모두 담당
 - **뭐가 문제인가**:
@@ -94,84 +95,147 @@
 
 ### After: DMMF 관점 (DDD + FP)
 
-**[코드 01.2]** DMMF: Bounded Context별 분리 + 순수 함수 로직
+**[코드 01.2]** DMMF: Bounded Context별 분리 + 순수 함수 + Orchestration Shell
 ```java
  1| // package: com.ecommerce.order (primary), com.ecommerce.auth
- 2| // [O] Bounded Context별 분리 + 순수 함수 로직
- 3| // 각 맥락에 필요한 데이터만 포함하는 별도 타입
- 4| package com.ecommerce.order;
- 5| 
- 6| public record Customer(
- 7|   CustomerId id,
- 8|   ShippingAddress address,
- 9|   ContactInfo contact
-10| ) {}
-11| 
-12| package com.ecommerce.auth;
-13| 
-14| public record AppUser(
-15|   long id,
-16|   String username,
-17|   String passwordHash,
-18|   Set<Role> roles
-19| ) {}
-20| 
-21| // 순수 비즈니스 로직: OrderDomainService
-22| public class OrderDomainService {
-23|   public static Money calculateTotal(List<OrderItem> items) {
-24|     return items.stream()
-25|       .map(item -> item.unitPrice().multiply(item.quantity().value()))
-26|       .reduce(Money.zero(), Money::add);
-27|   }
-28| 
-29|   public static Money applyDiscount(Money total, DiscountRate rate) {
-30|     return rate.applyTo(total);
-31|   }
-32| }
+ 2| // [O] Bounded Context별 분리 + 순수 함수 + Orchestration Shell
+ 3|
+ 4| // --- Domain Types (Bounded Context별) ---
+ 5| package com.ecommerce.order;
+ 6|
+ 7| public record Customer(
+ 8|   CustomerId id,
+ 9|   ShippingAddress address,
+10|   ContactInfo contact
+11| ) {}
+12|
+13| package com.ecommerce.auth;
+14|
+15| public record AppUser(
+16|   long id,
+17|   String username,
+18|   String passwordHash,
+19|   Set<Role> roles
+20| ) {}
+21|
+22| // --- Pure Domain Logic ---
+23| public class OrderDomainService {
+24|   public static Money calculateTotal(List<OrderItem> items) {
+25|     return items.stream()
+26|       .map(item -> item.unitPrice().multiply(item.quantity().value()))
+27|       .reduce(Money.zero(), Money::add);
+28|   }
+29|
+30|   public static Money applyDiscount(Money total, DiscountRate rate) {
+31|     return rate.applyTo(total);
+32|   }
+33|
+34|   public static Result<Coupon, OrderError> validateCoupon(CouponCode code, Coupon coupon) {
+35|     return coupon.isValid()
+36|       ? Result.success(coupon)
+37|       : Result.failure(new OrderError.InvalidCoupon(code));
+38|   }
+39|
+40|   public static Result<Void, OrderError> validateStock(List<OrderItem> items, StockInfo stock) {
+41|     return items.stream().allMatch(item -> stock.hasEnough(item.productId(), item.quantity()))
+42|       ? Result.success(null)
+43|       : Result.failure(new OrderError.OutOfStock());
+44|   }
+45| }
+46|
+47| // --- Orchestration Shell (Impure) ---
+48| @RequiredArgsConstructor
+49| public class PlaceOrderUseCase {
+50|   private final OrderRepository orderRepository;
+51|   private final InventoryService inventoryService;
+52|   private final CouponRepository couponRepository;
+53|   private final EmailService emailService;
+54|
+55|   public Result<Order, OrderError> execute(CreateOrderCommand cmd) {
+56|     Coupon coupon = couponRepository.findByCode(cmd.couponCode());
+57|     StockInfo stock = inventoryService.getStockInfo(cmd.productIds());
+58|
+59|     return OrderDomainService.validateCoupon(cmd.couponCode(), coupon)
+60|       .flatMap(_ -> OrderDomainService.validateStock(cmd.items(), stock))
+61|       .map(_ -> OrderDomainService.calculateTotal(cmd.items()))
+62|       .map(total -> OrderDomainService.applyDiscount(total, coupon.discountRate()))
+63|       .map(discounted -> new Order(
+64|         OrderId.generate(), cmd.customerId(), cmd.items(), discounted, OrderStatus.CREATED))
+65|       .peek(order -> orderRepository.save(order))
+66|       .peek(order -> inventoryService.decreaseStock(cmd.items()))
+67|       .peek(order -> emailService.sendOrderCreatedNotification(order));
+68|   }
+69| }
 ```
 
 ### After: DOP 관점
 
-**[코드 01.3]** DOP: 데이터(Record)와 로직(Calculations) 완전 분리
+**[코드 01.3]** DOP: 데이터(Record) + 계산(Calculations) + 조율(Orchestrator)
 ```java
  1| // package: com.ecommerce.order
- 2| // [O] 데이터(Record)와 로직(Calculations) 완전 분리
- 3| public record Order(
- 4|   OrderId id,
- 5|   CustomerId customerId,
- 6|   List<OrderItem> items,
- 7|   Money totalAmount,
- 8|   OrderStatus status
- 9| ) {}
-10| 
-11| // 순수 계산 함수 모음 (static, stateless)
-12| public class OrderCalculations {
-13|   public static Money calculateTotal(List<OrderItem> items) {
-14|     return items.stream()
-15|       .map(item -> item.unitPrice().multiply(item.quantity().value()))
-16|       .reduce(Money.zero(), Money::add);
-17|   }
-18| 
-19|   public static Money applyDiscount(Money total, DiscountRate rate) {
-20|     return rate.applyTo(total);
-21|   }
-22| }
-23| 
-24| // Orchestration (Impure Shell) - I/O만 담당
-25| public class OrderOrchestrator {
-26|   public Result<Order, OrderError> createOrder(CreateOrderRequest request) {
-27|     // Impure: 데이터 수집
-28|     StockInfo stock = inventoryService.getStockInfo(request.productIds());
-29|     // Pure: 비즈니스 로직
-30|     return OrderValidations.validateStock(request.items(), stock)
-31|       .map(items -> OrderCalculations.calculateTotal(items))
-32|       .map(total -> new Order(
-33|         OrderId.generate(), request.customerId(),
-34|         request.items(), total,
-35|         new OrderStatus.Created(LocalDateTime.now())
-36|       ));
-37|   }
-38| }
+ 2| // [O] 데이터(Record) + 계산(Calculations) + 조율(Orchestrator)
+ 3|
+ 4| // --- Data ---
+ 5| public record Order(
+ 6|   OrderId id,
+ 7|   CustomerId customerId,
+ 8|   List<OrderItem> items,
+ 9|   Money totalAmount,
+10|   OrderStatus status
+11| ) {}
+12|
+13| // --- Calculations (Pure, Static) ---
+14| public class OrderCalculations {
+15|   public static Money calculateTotal(List<OrderItem> items) {
+16|     return items.stream()
+17|       .map(item -> item.unitPrice().multiply(item.quantity().value()))
+18|       .reduce(Money.zero(), Money::add);
+19|   }
+20|
+21|   public static Money applyDiscount(Money total, DiscountRate rate) {
+22|     return rate.applyTo(total);
+23|   }
+24| }
+25|
+26| public class OrderValidations {
+27|   public static Result<List<OrderItem>, OrderError> validateStock(
+28|     List<OrderItem> items, StockInfo stock
+29|   ) {
+30|     return items.stream().allMatch(item -> stock.hasEnough(item.productId(), item.quantity()))
+31|       ? Result.success(items)
+32|       : Result.failure(new OrderError.OutOfStock());
+33|   }
+34|
+35|   public static Result<Coupon, OrderError> validateCoupon(CouponCode code, Coupon coupon) {
+36|     return coupon.isValid()
+37|       ? Result.success(coupon)
+38|       : Result.failure(new OrderError.InvalidCoupon(code));
+39|   }
+40| }
+41|
+42| // --- Orchestrator (Impure Shell) ---
+43| @RequiredArgsConstructor
+44| public class OrderOrchestrator {
+45|   private final InventoryService inventoryService;
+46|   private final CouponRepository couponRepository;
+47|   private final OrderRepository orderRepository;
+48|   private final EmailService emailService;
+49|
+50|   public Result<Order, OrderError> createOrder(CreateOrderRequest request) {
+51|     StockInfo stock = inventoryService.getStockInfo(request.productIds());
+52|     Coupon coupon = couponRepository.findByCode(request.couponCode());
+53|
+54|     return OrderValidations.validateStock(request.items(), stock)
+55|       .flatMap(_ -> OrderValidations.validateCoupon(request.couponCode(), coupon))
+56|       .map(_ -> OrderCalculations.calculateTotal(request.items()))
+57|       .map(total -> OrderCalculations.applyDiscount(total, coupon.discountRate()))
+58|       .map(discounted -> new Order(
+59|         OrderId.generate(), request.customerId(), request.items(), discounted, OrderStatus.CREATED))
+60|       .peek(order -> orderRepository.save(order))
+61|       .peek(_ -> inventoryService.decreaseStock(request.items()))
+62|       .peek(order -> emailService.sendOrderCreatedNotification(order));
+63|   }
+64| }
 ```
 
 ### 관점 차이 분석
