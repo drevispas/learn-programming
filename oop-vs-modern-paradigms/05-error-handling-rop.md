@@ -46,30 +46,40 @@ DOP에서는 "시그니처가 거짓말하면 호출자가 실패 케이스를 �
  1| // package: com.ecommerce.order
  2| // [X] Partial Function - 시그니처가 거짓말하는 안티패턴
  3| public class UserService {
- 4|   public User findUser(int id) {
- 5|     User user = database.find(id);
- 6|     if (user == null) {
- 7|       throw new NotFoundException("User not found: " + id);
- 8|       // 시그니처에는 이 예외에 대한 언급이 없음
- 9|     }
-10|     return user;
-11|   }
-12| 
-13|   public Order createOrder(OrderRequest request) {
-14|     // 시그니처: "항상 Order를 반환합니다"
-15|     // 현실: 재고 부족, 잘못된 쿠폰 등으로 예외 발생 가능
-16|     if (outOfStock) throw new OutOfStockException();
-17|     if (invalidCoupon) throw new InvalidCouponException();
-18|     return new Order(...);
+ 4|   // 패턴 1: 예외를 던짐 - 시그니처에 드러나지 않음
+ 5|   public User findUser(int id) {
+ 6|     User user = database.find(id);
+ 7|     if (user == null) {
+ 8|       throw new NotFoundException("User not found: " + id);
+ 9|       // 시그니처에는 이 예외에 대한 언급이 없음
+10|     }
+11|     return user;
+12|   }
+13|
+14|   // 패턴 2: null을 반환 - 시그니처는 "User 반환"이라고 거짓말
+15|   public User findUserOrNull(int id) {
+16|     return database.find(id);  // null일 수 있음!
+17|     // 시그니처 `User`는 "항상 User를 반환"이라고 말하지만
+18|     // 실제로는 null을 반환할 수 있다 → 거짓말!
 19|   }
-20| }
+20|
+21|   // 패턴 3: 여러 실패 경로를 예외로 숨김
+22|   public Order createOrder(OrderRequest request) {
+23|     // 시그니처: "항상 Order를 반환합니다"
+24|     // 현실: 재고 부족, 잘못된 쿠폰 등으로 예외 발생 가능
+25|     if (outOfStock) throw new OutOfStockException();
+26|     if (invalidCoupon) throw new InvalidCouponException();
+27|     return new Order(...);
+28|   }
+29| }
 ```
-- **의도 및 코드 설명**: `findUser`와 `createOrder`는 정상 경로만 시그니처에 표현하고, 실패 경로는 Exception으로 숨긴다.
+- **의도 및 코드 설명**: `findUser`는 예외로, `findUserOrNull`은 null로, `createOrder`는 여러 예외로 실패를 숨긴다. 세 가지 모두 시그니처가 거짓말하는 부분 함수이다.
 - **뭐가 문제인가**:
-  - 시그니처 거짓말: 메서드 시그니처가 실패 가능성을 숨김
-  - 비지역적 점프: 코드가 GOTO처럼 예측 불가능하게 점프
-  - 에러 처리 강제 불가: try-catch 없어도 컴파일 성공
-  - 호출자가 소스를 읽지 않으면 어떤 예외가 발생하는지 알 수 없음
+  - 시그니처 거짓말: 메서드 시그니처가 실패 가능성을 숨김 (예외든 null이든)
+  - null 반환: 호출자가 null 체크를 빠뜨리면 NPE 발생
+  - 비지역적 점프: 예외는 코드가 GOTO처럼 예측 불가능하게 점프
+  - 에러 처리 강제 불가: try-catch나 null 체크 없어도 컴파일 성공
+  - 호출자가 소스를 읽지 않으면 어떤 실패가 발생하는지 알 수 없음
 
 ### After: Modern Approach
 
@@ -230,8 +240,30 @@ DOP에서는 에러 타입을 sealed interface로 정의하여 패턴 매칭으�
 41|   record InvalidCoupon(CouponCode code, String reason) implements OrderError {}
 42|   record PaymentFailed(String reason) implements OrderError {}
 43| }
+44|
+45| // 사용 예: Result를 반환하는 메서드와 호출자
+46| public class OrderProcessor {
+47|   public Result<OrderResult, OrderError> processOrder(OrderRequest request) {
+48|     return createOrder(request)
+49|       .flatMap(this::processPayment)
+50|       .map(order -> new OrderResult(order, order.payment()));
+51|   }
+52| }
+53|
+54| // 호출 측: fold로 성공/실패를 하나의 응답으로 변환
+55| Result<OrderResult, OrderError> result = processor.processOrder(request);
+56| HttpResponse response = result.fold(
+57|   success -> HttpResponse.ok(success),
+58|   error -> switch (error) {
+59|     case OrderError.EmptyOrder e -> HttpResponse.badRequest("주문 항목 없음");
+60|     case OrderError.OutOfStock e -> HttpResponse.conflict("재고 부족: " + e.productId());
+61|     case OrderError.InvalidCoupon e -> HttpResponse.badRequest("쿠폰 오류: " + e.reason());
+62|     case OrderError.PaymentFailed e -> HttpResponse.paymentRequired("결제 실패: " + e.reason());
+63|   }
+64| );
+65| // 모든 에러 케이스 처리 강제 (sealed interface + switch exhaustiveness)
 ```
-- **의도 및 코드 설명**: Result는 sealed interface로 구현하며, Success와 Failure를 record로 정의한다. map/flatMap/fold 연산으로 값을 변환하거나 결과를 추출한다.
+- **의도 및 코드 설명**: Result는 sealed interface로 구현하며, Success와 Failure를 record로 정의한다. 호출 측에서는 `fold`와 패턴 매칭으로 모든 에러 케이스를 처리한다.
 - **무엇이 좋아지나**:
   - 에러가 값(데이터): 변환, 결합, 직렬화 가능
   - 합성 가능: map/flatMap으로 체이닝
@@ -478,27 +510,45 @@ flatMap + (A -> Result<B>):
  8|       .flatMap(this::processPayment)           // Result<PaidOrder, OrderError>
  9|       .map(this::toConfirmation);              // Result<OrderConfirmation, OrderError>
 10|   }
-11| 
-12|   // 절대 실패하지 않는 변환 -> map
-13|   private PricedOrder calculatePrice(ValidatedOrder order) {
-14|     Money total = order.lines().stream()
-15|       .map(line -> line.unitPrice().multiply(line.quantity()))
-16|       .reduce(Money.zero(), Money::add);
-17|     return new PricedOrder(order.customerId(), order.lines(), total);
+11|
+12|   // Result 반환 -> 파이프라인에서 flatMap으로 호출
+13|   private Result<ValidatedOrder, OrderError> validateOrder(PlaceOrderCommand cmd) {
+14|     if (cmd.lines().isEmpty()) {
+15|       return Result.failure(new OrderError.EmptyOrder());
+16|     }
+17|     return Result.success(new ValidatedOrder(cmd.customerId(), cmd.lines()));
 18|   }
-19| 
-20|   // 실패할 수 있는 연산 -> flatMap
-21|   private Result<PaidOrder, OrderError> processPayment(PricedOrder order) {
-22|     return paymentGateway.charge(order.totalAmount())
-23|       .map(txId -> new PaidOrder(order, txId))
-24|       .mapError(e -> new OrderError.PaymentFailed(e.message()));
-25|   }
-26| 
-27|   // 절대 실패하지 않는 변환 -> map
-28|   private OrderConfirmation toConfirmation(PaidOrder order) {
-29|     return new OrderConfirmation(order.id(), order.totalAmount(), LocalDateTime.now());
-30|   }
-31| }
+19|
+20|   // Result 반환 -> 파이프라인에서 flatMap으로 호출
+21|   private Result<ValidatedOrder, OrderError> checkInventory(ValidatedOrder order) {
+22|     for (var line : order.lines()) {
+23|       if (!inventoryService.isAvailable(line.productId(), line.quantity())) {
+24|         return Result.failure(new OrderError.OutOfStock(line.productId()));
+25|       }
+26|     }
+27|     return Result.success(order);
+28|   }
+29|
+30|   // 단순 값 반환 -> 파이프라인에서 map으로 호출
+31|   private PricedOrder calculatePrice(ValidatedOrder order) {
+32|     Money total = order.lines().stream()
+33|       .map(line -> line.unitPrice().multiply(line.quantity()))
+34|       .reduce(Money.zero(), Money::add);
+35|     return new PricedOrder(order.customerId(), order.lines(), total);
+36|   }
+37|
+38|   // Result 반환 -> 파이프라인에서 flatMap으로 호출
+39|   private Result<PaidOrder, OrderError> processPayment(PricedOrder order) {
+40|     return paymentGateway.charge(order.totalAmount())
+41|       .map(txId -> new PaidOrder(order, txId))
+42|       .mapError(e -> new OrderError.PaymentFailed(e.message()));
+43|   }
+44|
+45|   // 단순 값 반환 -> 파이프라인에서 map으로 호출
+46|   private OrderConfirmation toConfirmation(PaidOrder order) {
+47|     return new OrderConfirmation(order.id(), order.totalAmount(), LocalDateTime.now());
+48|   }
+49| }
 ```
 - **의도 및 코드 설명**: `calculatePrice`와 `toConfirmation`은 실패하지 않으므로 `map`, `checkInventory`와 `processPayment`는 실패할 수 있으므로 `flatMap`을 사용한다.
 - **무엇이 좋아지나**:

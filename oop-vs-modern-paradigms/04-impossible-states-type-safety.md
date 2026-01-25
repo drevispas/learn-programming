@@ -255,8 +255,31 @@ State Machine as Types:
 
 ## 3. Phantom Type 패턴 (팬텀 타입)
 
+### 배경 지식: Type Erasure (타입 소거)
+Java 제네릭은 **Type Erasure(타입 소거)** 방식으로 구현된다. 컴파일러가 제네릭 타입 정보를 사용하여 타입 안전성을 검증한 후, 바이트코드 생성 시 타입 파라미터를 제거한다.
+
+**[그림 04.A]** Type Erasure (타입 소거)
+```
+Compile Time                          Runtime (Bytecode)
+=============                         ==================
+
+List<String> names;         -->       List names;        // String 정보 사라짐
+List<Integer> numbers;      -->       List numbers;      // Integer 정보 사라짐
+
+Box<Verified> verified;     -->       Box verified;      // Verified 정보 사라짐
+Box<Unverified> unverified; -->       Box unverified;    // 런타임에는 동일!
+```
+
+**왜 Type Erasure인가?**
+- Java 5에서 제네릭 도입 시 **하위 호환성** 유지를 위해 선택
+- 제네릭이 없던 Java 1.4 코드와 제네릭 코드가 같은 JVM에서 동작해야 했음
+- 결과: 런타임에는 `List<String>`과 `List<Integer>`가 구분되지 않음
+
+**Phantom Type과의 관계**:
+Type Erasure 때문에 Phantom Type이 "공짜"가 된다. `Email<Verified>`와 `Email<Unverified>`는 런타임에 동일한 바이트코드이지만, **컴파일 타임 검증**이라는 목적은 충분히 달성된다. 런타임 오버헤드 없이 타입 안전성을 얻는 것이다.
+
 ### 핵심 개념
-- **관련 키워드**: Phantom Type, Type Parameter, Zero-Cost Abstraction, State Tag
+- **관련 키워드**: Phantom Type, Type Parameter, Zero-Cost Abstraction, State Tag, Type Erasure
 - **통찰**: 타입 파라미터를 런타임에 사용하지 않으면서도, 컴파일 타임에 상태를 추적할 수 있다.
 - **설명**: `Email<Unverified>`와 `Email<Verified>`는 런타임에는 같은 구조이지만, 컴파일러는 이들을 다른 타입으로 취급합니다. 인증된 이메일만 받는 함수에 미인증 이메일을 전달하면 컴파일 에러가 발생합니다.
 
@@ -359,7 +382,7 @@ Phantom Type = "invisible stamp"
 - **설명**: Tony Hoare가 "10억 달러짜리 실수"라고 자인한 NULL은 타입 시스템에서 "없음"을 구분하지 못합니다. Optional은 "값이 있거나 없다"를 타입으로 강제하여, 개발자가 "없음"을 반드시 처리하도록 합니다.
 
 ### 개념이 아닌 것
-- **"Optional = null의 래퍼"**: Optional은 "부재의 가능성"을 타입으로 표현하는 도구
+- **"Optional = null의 래퍼"**: null은 다중 의미를 가진다 — 없음(absence), 해당없음(not applicable), 모름(unknown), 미초기화(uninitialized), 에러(error) 등. Optional은 이 중 **"없을 수도 있음(possible absence)"** 이라는 단일 의미만을 타입으로 명시한다. 단순 래핑이 아니라 **의미의 명확화**이다.
 - **"Optional을 필드에 쓰면 안 된다"**: 엄격한 규칙은 아니지만, Record 필드에는 피하는 게 관례
 
 ### Before: Traditional OOP

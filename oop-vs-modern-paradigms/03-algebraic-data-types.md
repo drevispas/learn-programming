@@ -112,10 +112,10 @@ State space:                   State space:
 
 ### 이해를 위한 부가 상세
 
-**Record 위치 (내부 vs 외부)**:
+**Record 위치 (sealed interface의 내부 vs 외부)**:
 - 내부 정의: `OrderStatus.Created` → 부모 없이 의미 없는 타입에 적합
 - 외부 정의: `Created` → 독립적으로 재사용되는 타입에 적합
-- 실무 가이드: variant가 5개 이하면 내부 정의, 많으면 외부 분리
+- 실무 가이드: *variant가 5개 이하면 내부 정의, 많으면 외부 분리*
 
 ### 틀리기/놓치기 쉬운 부분
 - **`permits` 절 생략**: 내부 정의 시 생략 가능, 외부 정의 시 필수
@@ -135,20 +135,20 @@ State space:                   State space:
 ### 핵심 개념
 - **관련 키워드**: Cardinality, State Space, Complexity, Boolean Explosion
 - **통찰**: 복잡도는 "가능한 상태의 총 개수"와 비례한다. 곱 타입은 상태를 곱하고, 합 타입은 상태를 더한다.
-- **설명**: `boolean` 필드 5개가 있으면 상태 공간은 2^5 = 32입니다. 하지만 유효한 상태가 5개뿐이라면, 27가지의 불가능한 상태가 존재합니다. Sealed Interface로 5가지 variant를 정의하면 상태 공간이 정확히 5로 줄어들어 복잡도가 84% 감소합니다.
+- **설명**: `boolean` 필드 5개가 있으면 상태 공간은 2^5 = 32입니다. 하지만 유효한 상태가 5개뿐이라면, 32 - 5 = 27가지의 불가능한 상태가 존재합니다. Sealed Interface로 5가지 variant를 정의하면 상태 공간이 정확히 5로 줄어들어 복잡도가 84% 감소합니다.
 
 **[그림 03.2]** 기수 이론: 상태 공간 계산 (Cardinality Theory: State Space Calculation)
 ```
 BOOLEAN FLAGS (Product Type)       SEALED INTERFACE (Sum Type)
 ============================       ============================
 
-isCreated:  T/F                    sealed interface OrderStatus {
-isPaid:     T/F      2^5 = 32       Created    |
-isShipped:  T/F   possible states   Paid       | = 5 states
+isCreated:   T/F                    sealed interface OrderStatus {
+isPaid:      T/F     2^5 = 32        Created    |
+isShipped:   T/F  possible states    Paid       | = 5 states
 isDelivered: T/F                     Shipped    |
-isCanceled: T/F                      Delivered  |
+isCanceled:  T/F                     Delivered  |
                                      Canceled   |
-Valid: 5                            }
+Valid: 5                           }
 Invalid: 27 (!)
                                    Complexity reduced by 84%!
 ```
@@ -231,7 +231,7 @@ Invalid: 27 (!)
 
 **실전 예시**: 결제 방법(3가지) + 배송 방법(2가지)
 - 곱 타입: 3 × 2 = 6가지 조합 (전부 유효하면 OK)
-- 불필요한 조합이 있으면 합 타입으로 분리
+- *불필요한 조합이 있으면 합 타입으로 분리*
 
 ### 틀리기/놓치기 쉬운 부분
 - **enum vs sealed interface**: 상태에 데이터가 필요 없으면 enum으로 충분. 데이터가 필요하면 sealed interface
@@ -318,7 +318,7 @@ Invalid: 27 (!)
 - **Unnamed Patterns**: `case CreditCard(_, var exp, _) ->` 불필요한 필드 무시 (Java 22+)
 
 ### 꼭 기억할 것
-1. **default 금지**: sealed interface switch에서 default 사용하지 말 것
+1. **default 금지**: *sealed interface switch에서 default 사용하지 말 것* 
 2. **Record Patterns**: `case Type(var a, var b) ->` 로 필드 직접 분해
 3. **Switch Expression**: 값을 반환하는 형태 사용 (statement 아닌 expression)
 4. **Exhaustiveness**: 컴파일러가 모든 케이스 처리를 강제

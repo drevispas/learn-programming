@@ -248,6 +248,25 @@ Java의 주요 Monad와 그 flatMap:
 | `Stream<T>` | `Stream.of()` | `.flatMap()` | 0~N개 값 |
 | `CompletableFuture<T>` | `.completedFuture()` | `.thenCompose()` | 비동기 계산 |
 
+### flatMap이 필요한 이유: 반환 타입의 의미론
+함수의 반환 타입이 컨테이너인 것은 설계 선택이 아니라, 해당 연산의 **본질적 의미(semantics)** 를 표현하는 것이다:
+
+**[표 09.A]** 컨테이너 반환 타입의 의미론
+| 반환 타입 | 의미 | 예시 |
+|-----------|------|------|
+| `Optional<T>` | 없을 수도 있다 | `findById(id)` - 해당 ID가 없을 수 있음 |
+| `List<T>` / `Stream<T>` | 여러 개일 수 있다 | `findByCategory(cat)` - 0~N개 결과 |
+| `Either<E, T>` / `Try<T>` | 실패할 수 있다 | `parseJson(str)` - 파싱 실패 가능 |
+| `CompletableFuture<T>` | 나중에 올 수 있다 | `fetchFromApi(url)` - 비동기 결과 |
+
+따라서 `flatMap`은 "선택"이 아니라 "필연"이다:
+- `findUserById(id)`가 `Optional<User>`를 반환하는 것은 "사용자가 없을 수도 있음"이라는 도메인 진실
+- `findOrdersByUser(user)`가 `List<Order>`를 반환하는 것은 "주문이 여러 개일 수 있음"이라는 도메인 진실
+- 이 함수들을 `map`으로 연결하면 `Optional<Optional<T>>`나 `List<List<T>>`가 되어 의미가 왜곡됨
+- `flatMap`은 이 중첩을 평탄화하여 본래의 의미론을 유지함
+
+**핵심**: 컨테이너 반환 타입을 보면 "왜 이 함수가 컨테이너를 반환하는가?"를 먼저 질문하라. 그 답이 곧 `flatMap`이 필요한 이유이다.
+
 ### 틀리기/놓치기 쉬운 부분
 - map과 flatMap의 선택 기준: 변환 함수의 반환 타입이 `T`이면 map, `Optional<T>`(컨테이너)이면 flatMap.
 - `Optional.flatMap()`에 전달하는 함수는 반드시 `Optional`을 반환해야 한다. 일반 값을 반환하면 컴파일 에러.
