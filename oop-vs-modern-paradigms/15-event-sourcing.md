@@ -1,4 +1,4 @@
-# 14. Event Sourcing (이벤트 소싱)
+# 15. Event Sourcing (이벤트 소싱)
 
 > **Sources**: DOP Ch.9 (Event Sourcing), DMMF Ch.11 (Event-Driven Architecture), FP 관점의 fold 패턴
 
@@ -19,7 +19,7 @@
   - 이벤트 재생 (replay) - 버그 수정 후 과거 이벤트를 새 로직으로 재처리
   - 도메인 이해 향상 - 비즈니스에서 실제로 일어나는 "사건"을 명시적으로 모델링
 
-**[그림 14.1]** Event Store vs Traditional State Storage
+**[그림 15.1]** Event Store vs Traditional State Storage
 ```
 TRADITIONAL (CRUD)              EVENT SOURCING
 ==================              ==============
@@ -43,7 +43,7 @@ TRADITIONAL (CRUD)              EVENT SOURCING
 
 ### Before: Traditional OOP
 
-**[코드 14.1]** Traditional OOP: 상태만 저장 - 변경 이력 손실
+**[코드 15.1]** Traditional OOP: 상태만 저장 - 변경 이력 손실
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 상태만 저장 - 변경 이력 손실
@@ -74,7 +74,7 @@ TRADITIONAL (CRUD)              EVENT SOURCING
 
 ### After: Modern Approach
 
-**[코드 14.2]** Modern: 이벤트로 상태 변화 기록 - 완전한 이력 보존
+**[코드 15.2]** Modern: 이벤트로 상태 변화 기록 - 완전한 이력 보존
 ```java
  1| // package: com.ecommerce.order
  2| // [O] 이벤트로 상태 변화 기록 - 완전한 이력 보존
@@ -134,7 +134,7 @@ Event Sourcing에서 이벤트는 **과거 시제**로 명명한다 (`OrderPlace
 ### 틀리기/놓치기 쉬운 부분
 - 이벤트 스키마 변경 시 기존 이벤트와의 호환성 관리 필요 (upcasting)
 - 이벤트 저장과 외부 시스템 알림을 원자적으로 처리해야 함 (Outbox Pattern)
-- 이벤트 양이 많아지면 조회 성능 저하 -> 스냅샷으로 해결 (14.5절)
+- 이벤트 양이 많아지면 조회 성능 저하 -> 스냅샷으로 해결 (15.5절)
 
 ### 꼭 기억할 것
 - 상태 = 이벤트의 함수: `State = fold(initialState, events)`
@@ -160,7 +160,7 @@ Event Sourcing에서 이벤트는 **과거 시제**로 명명한다 (`OrderPlace
   - 테스트가 매우 쉬움 (Mock 불필요)
   - 병렬 재구성 가능 (스냅샷 + 이후 이벤트)
 
-**[그림 14.2]** Aggregate Reconstitution via fold
+**[그림 15.2]** Aggregate Reconstitution via fold
 ```
 RECONSTITUTION = fold(initialState, events)
 ============================================
@@ -185,7 +185,7 @@ Code:
 
 ### Before: Traditional OOP
 
-**[코드 14.3]** Traditional OOP: 객체 메서드로 상태 변경 - 이력 추적 불가
+**[코드 15.3]** Traditional OOP: 객체 메서드로 상태 변경 - 이력 추적 불가
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 객체 메서드로 상태 변경 - 이력 추적 불가
@@ -217,7 +217,7 @@ Code:
 
 ### After: Modern Approach
 
-**[코드 14.4]** Modern: fold 패턴으로 상태 재구성 - 순수 함수 기반
+**[코드 15.4]** Modern: fold 패턴으로 상태 재구성 - 순수 함수 기반
 ```java
  1| // package: com.ecommerce.order
  2| // [O] fold 패턴으로 상태 재구성 - 순수 함수 기반
@@ -329,7 +329,7 @@ Monoid 관점에서, `(OrderState, apply, Empty())`는 모노이드를 형성한
 ### 틀리기/놓치기 쉬운 부분
 - apply에서 비즈니스 검증을 하지 말 것. 이미 발생한 이벤트는 항상 유효하다고 가정
 - 상태 타입(OrderState)과 이벤트 타입(OrderEvent)을 모두 sealed interface로 정의해야 망라성 보장
-- 이벤트가 많아지면 재구성 비용 증가 -> 스냅샷으로 해결 (14.5절)
+- 이벤트가 많아지면 재구성 비용 증가 -> 스냅샷으로 해결 (15.5절)
 
 ### 꼭 기억할 것
 - `apply(State, Event) -> State`는 순수 함수
@@ -356,7 +356,7 @@ Monoid 관점에서, `(OrderState, apply, Empty())`는 모노이드를 형성한
 
   이 패턴은 CQRS의 Command 측면과 Railway-Oriented Programming(05장, 06장)을 결합한 것이다.
 
-**[그림 14.3]** Decider Pattern Flow
+**[그림 15.3]** Decider Pattern Flow
 ```
 DECIDER: (State, Command) -> Result<Events, Error>
 ===================================================
@@ -390,7 +390,7 @@ Code:
 
 ### Before: Traditional OOP
 
-**[코드 14.5]** Traditional OOP: 예외 기반 검증 - 부수효과와 로직 혼재
+**[코드 15.5]** Traditional OOP: 예외 기반 검증 - 부수효과와 로직 혼재
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 예외 기반 검증 - 부수효과와 로직 혼재
@@ -428,7 +428,7 @@ Code:
 
 ### After: Modern Approach
 
-**[코드 14.6]** Modern: Decider 패턴 - 순수 함수로 커맨드 처리
+**[코드 15.6]** Modern: Decider 패턴 - 순수 함수로 커맨드 처리
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Decider 패턴 - 순수 함수로 커맨드 처리
@@ -624,7 +624,7 @@ State initial()                                  // initial state
   - **읽기 모델**: Projection (이벤트 -> 조회용 테이블/캐시)
   - **동기화**: 이벤트를 구독하여 Projection 업데이트 (Eventual Consistency)
 
-**[그림 14.4]** CQRS with Event Sourcing
+**[그림 15.4]** CQRS with Event Sourcing
 ```
 CQRS: COMMAND SIDE vs QUERY SIDE
 =================================
@@ -663,7 +663,7 @@ COMMAND SIDE                    QUERY SIDE
 
 ### Before: Traditional OOP
 
-**[코드 14.7]** Traditional OOP: 단일 모델로 쓰기와 읽기 - 복잡한 쿼리
+**[코드 15.7]** Traditional OOP: 단일 모델로 쓰기와 읽기 - 복잡한 쿼리
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 단일 모델로 쓰기와 읽기 - 복잡한 쿼리
@@ -696,7 +696,7 @@ COMMAND SIDE                    QUERY SIDE
 
 ### After: Modern Approach
 
-**[코드 14.8]** Modern: Projection으로 읽기 전용 모델 구축
+**[코드 15.8]** Modern: Projection으로 읽기 전용 모델 구축
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Projection으로 읽기 전용 모델 구축
@@ -858,7 +858,7 @@ Projection은 여러 개일 수 있다. 같은 이벤트 스트림에서:
 
   스냅샷은 순수한 성능 최적화이다. 스냅샷 없이도 시스템은 정확히 동작하며, 스냅샷이 손상되어도 이벤트에서 재구성 가능하다.
 
-**[그림 14.5]** Snapshot Optimization
+**[그림 15.5]** Snapshot Optimization
 ```
 SNAPSHOT = CHECKPOINT FOR RECONSTITUTION
 =========================================
@@ -882,7 +882,7 @@ Snapshot = OrderState serialized at version 50
 
 ### Before: Traditional OOP
 
-**[코드 14.9]** Traditional OOP: 캐시 없는 매번 전체 조회
+**[코드 15.9]** Traditional OOP: 캐시 없는 매번 전체 조회
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 캐시 없는 매번 전체 조회 (성능 문제는 DB 튜닝으로 해결 시도)
@@ -904,7 +904,7 @@ Snapshot = OrderState serialized at version 50
 
 ### After: Modern Approach
 
-**[코드 14.10]** Modern: 스냅샷으로 재구성 최적화
+**[코드 15.10]** Modern: 스냅샷으로 재구성 최적화
 ```java
  1| // package: com.ecommerce.order
  2| // [O] 스냅샷으로 재구성 최적화

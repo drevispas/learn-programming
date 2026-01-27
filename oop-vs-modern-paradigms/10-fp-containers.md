@@ -1,4 +1,4 @@
-# 09. FP Containers (함수형 컨테이너)
+# 10. FP Containers (함수형 컨테이너)
 
 > 값을 감싸는 컨테이너(Functor, Monad, Applicative)의 원리를 이해하고, Optional과 Result를 모나드적으로 활용하여 null 체크 지옥과 에러 처리 보일러플레이트를 제거한다.
 
@@ -18,7 +18,7 @@
 
   Java에서 Functor에 해당하는 대표적인 타입들: Optional의 `.map()`, Stream의 `.map()`, CompletableFuture의 `.thenApply()`.
 
-**[그림 09.1]** Functor 패턴 (map으로 값 변환)
+**[그림 10.1]** Functor 패턴 (map으로 값 변환)
 ```
 +-------------------------------------------------------------------+
 |                  Functor = map 가능한 컨테이너                       |
@@ -47,7 +47,7 @@
 
 ### Before: Traditional OOP
 
-**[코드 09.1]** Traditional OOP: null 체크를 수동으로 반복하며 변환 수행
+**[코드 10.1]** Traditional OOP: null 체크를 수동으로 반복하며 변환 수행
 ```java
  1| // package: com.ecommerce.auth
  2| // [X] null 체크를 수동으로 반복하며 변환 수행
@@ -78,7 +78,7 @@
 
 ### After: Modern Approach
 
-**[코드 09.2]** Modern: Functor(Optional)의 map으로 컨텍스트 유지하며 변환
+**[코드 10.2]** Modern: Functor(Optional)의 map으로 컨텍스트 유지하며 변환
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] Functor(Optional)의 map으로 컨텍스트 유지하며 변환
@@ -105,7 +105,7 @@
 ### 이해를 위한 부가 상세
 Functor 법칙을 코드로 검증:
 
-**[코드 09.3]** Functor 패턴 (map으로 값 변환)
+**[코드 10.3]** Functor 패턴 (map으로 값 변환)
 ```java
  1| // package: com.ecommerce.shared
  2| Optional<Integer> box = Optional.of(5);
@@ -143,7 +143,7 @@ Functor의 map은 "컨텍스트(Optional, Stream, Future)를 보존하면서 내
 
   이 패턴을 Railway-Oriented Programming이라 부르기도 한다. 성공 트랙과 실패 트랙 두 개의 선로가 있고, flatMap이 분기점(switch) 역할을 한다.
 
-**[그림 09.2]** Monad 패턴 (flatMap으로 컨텍스트 연결)
+**[그림 10.2]** Monad 패턴 (flatMap으로 컨텍스트 연결)
 ```
 +-------------------------------------------------------------------+
 |                  Monad = 중첩 없는 연결                              |
@@ -173,7 +173,7 @@ Functor의 map은 "컨텍스트(Optional, Stream, Future)를 보존하면서 내
 
 ### Before: Traditional OOP
 
-**[코드 09.4]** Traditional OOP: 중첩 null 체크로 순차 조회 수행 (null 지옥)
+**[코드 10.4]** Traditional OOP: 중첩 null 체크로 순차 조회 수행 (null 지옥)
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] 중첩 null 체크로 순차 조회 수행 (null 지옥)
@@ -204,7 +204,7 @@ Functor의 map은 "컨텍스트(Optional, Stream, Future)를 보존하면서 내
 
 ### After: Modern Approach
 
-**[코드 09.5]** Modern: Monad(Optional)의 flatMap으로 순차 의존 조회를 선형 표현
+**[코드 10.5]** Modern: Monad(Optional)의 flatMap으로 순차 의존 조회를 선형 표현
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] Monad(Optional)의 flatMap으로 순차 의존 조회를 선형 표현
@@ -241,7 +241,7 @@ Functor의 map은 "컨텍스트(Optional, Stream, Future)를 보존하면서 내
 ### 이해를 위한 부가 상세
 Java의 주요 Monad와 그 flatMap:
 
-**[표 09.1]** Monad 패턴 (flatMap으로 컨텍스트 연결)
+**[표 10.1]** Monad 패턴 (flatMap으로 컨텍스트 연결)
 | Monad | of | flatMap | 컨텍스트 |
 |-------|------|---------|----------|
 | `Optional<T>` | `Optional.of()` | `.flatMap()` | 값 존재/부재 |
@@ -251,7 +251,7 @@ Java의 주요 Monad와 그 flatMap:
 ### flatMap이 필요한 이유: 반환 타입의 의미론
 함수의 반환 타입이 컨테이너인 것은 설계 선택이 아니라, 해당 연산의 **본질적 의미(semantics)** 를 표현하는 것이다:
 
-**[표 09.A]** 컨테이너 반환 타입의 의미론
+**[표 10.A]** 컨테이너 반환 타입의 의미론
 | 반환 타입 | 의미 | 예시 |
 |-----------|------|------|
 | `Optional<T>` | 없을 수도 있다 | `findById(id)` - 해당 ID가 없을 수 있음 |
@@ -291,7 +291,7 @@ flatMap은 "이전 단계의 결과에 의존하는 다음 단계"를 중첩 없
 
   선택 기준: 검증 간 의존성이 있으면 Result(Monad), 독립적이면 Validation(Applicative).
 
-**[그림 09.3]** Applicative 패턴 (여러 컨텍스트 결합)
+**[그림 10.3]** Applicative 패턴 (여러 컨텍스트 결합)
 ```
 +-------------------------------------------------------------------+
 |                  Monad vs Applicative                                |
@@ -317,7 +317,7 @@ flatMap은 "이전 단계의 결과에 의존하는 다음 단계"를 중첩 없
 
 ### Before: Traditional OOP
 
-**[코드 09.6]** Traditional OOP: Monad(Result) 체이닝: 첫 에러에서 중단, 나머지 에러 안 보임
+**[코드 10.6]** Traditional OOP: Monad(Result) 체이닝: 첫 에러에서 중단, 나머지 에러 안 보임
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] Monad(Result) 체이닝: 첫 에러에서 중단, 나머지 에러 안 보임
@@ -341,7 +341,7 @@ flatMap은 "이전 단계의 결과에 의존하는 다음 단계"를 중첩 없
 
 ### After: Modern Approach
 
-**[코드 09.7]** Modern: Applicative(Validation)로 독립 검증 수행, 에러 전체 수집
+**[코드 10.7]** Modern: Applicative(Validation)로 독립 검증 수행, 에러 전체 수집
 ```java
  1| // package: com.ecommerce.auth
  2| // [O] Applicative(Validation)로 독립 검증 수행, 에러 전체 수집
@@ -429,7 +429,7 @@ flatMap은 "이전 단계의 결과에 의존하는 다음 단계"를 중첩 없
 ### 이해를 위한 부가 상세
 Result(Monad) vs Validation(Applicative) 선택 가이드:
 
-**[그림 09.4]** Applicative 패턴 (여러 컨텍스트 결합)
+**[그림 10.4]** Applicative 패턴 (여러 컨텍스트 결합)
 ```
 단계 간 의존성 있는가?
   |
@@ -468,7 +468,7 @@ Applicative의 핵심 가치는 "독립 연산의 에러 수집"이다. 폼 검�
 
   Optional 체이닝에서 map과 flatMap을 적절히 조합하면, 중첩된 if-null-check를 완전히 제거하고 선형적인 파이프라인으로 대체할 수 있다.
 
-**[그림 09.5]** Optional as Monad (Optional의 모나드적 활용)
+**[그림 10.5]** Optional as Monad (Optional의 모나드적 활용)
 ```
 +-------------------------------------------------------------------+
 |                  Optional Monad 패턴                                 |
@@ -495,7 +495,7 @@ Applicative의 핵심 가치는 "독립 연산의 에러 수집"이다. 폼 검�
 
 ### Before: Traditional OOP
 
-**[코드 09.8]** Traditional OOP: Optional을 단순 null 체크 래퍼로만 사용 (안티패턴)
+**[코드 10.8]** Traditional OOP: Optional을 단순 null 체크 래퍼로만 사용 (안티패턴)
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] Optional을 단순 null 체크 래퍼로만 사용 (안티패턴)
@@ -525,7 +525,7 @@ Applicative의 핵심 가치는 "독립 연산의 에러 수집"이다. 폼 검�
 
 ### After: Modern Approach
 
-**[코드 09.9]** Modern: Optional을 Monad로 활용하여 선형 파이프라인 구성
+**[코드 10.9]** Modern: Optional을 Monad로 활용하여 선형 파이프라인 구성
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] Optional을 Monad로 활용하여 선형 파이프라인 구성
@@ -566,7 +566,7 @@ Applicative의 핵심 가치는 "독립 연산의 에러 수집"이다. 폼 검�
 ### 이해를 위한 부가 상세
 Optional 활용 패턴 정리:
 
-**[코드 09.10]** 패턴 1: 단순 변환
+**[코드 10.10]** 패턴 1: 단순 변환
 ```java
  1| // package: com.ecommerce.shared
  2| // 패턴 1: 단순 변환
@@ -613,7 +613,7 @@ Optional을 "있거나 없거나"라는 컨텍스트를 가진 Monad로 사용�
 
   Result의 에러 타입을 sealed interface로 정의하면, 패턴 매칭으로 모든 에러 케이스를 빠짐없이 처리할 수 있다.
 
-**[그림 09.6]** Result/Either as Monad (에러 처리 모나드)
+**[그림 10.6]** Result/Either as Monad (에러 처리 모나드)
 ```
 +-------------------------------------------------------------------+
 |                  Result = 성공 OR 실패                                |
@@ -642,7 +642,7 @@ Optional을 "있거나 없거나"라는 컨텍스트를 가진 Monad로 사용�
 
 ### Before: Traditional OOP
 
-**[코드 09.11]** Traditional OOP: 예외로 에러를 처리: 시그니처에 드러나지 않고 제어 흐름이 비선형적
+**[코드 10.11]** Traditional OOP: 예외로 에러를 처리: 시그니처에 드러나지 않고 제어 흐름이 비선형적
 ```java
  1| // package: com.ecommerce.payment
  2| // [X] 예외로 에러를 처리: 시그니처에 드러나지 않고 제어 흐름이 비선형적
@@ -688,7 +688,7 @@ Optional을 "있거나 없거나"라는 컨텍스트를 가진 Monad로 사용�
 
 ### After: Modern Approach
 
-**[코드 09.12]** Modern: Result Monad로 에러를 값으로 다루고 flatMap으로 파이프라인 구성
+**[코드 10.12]** Modern: Result Monad로 에러를 값으로 다루고 flatMap으로 파이프라인 구성
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] Result Monad로 에러를 값으로 다루고 flatMap으로 파이프라인 구성
@@ -777,7 +777,7 @@ Optional을 "있거나 없거나"라는 컨텍스트를 가진 Monad로 사용�
 ### 이해를 위한 부가 상세
 에러 처리 전략 선택:
 
-**[표 09.2]** Result/Either as Monad (에러 처리 모나드)
+**[표 10.2]** Result/Either as Monad (에러 처리 모나드)
 | 상황 | 방식 |
 |------|------|
 | 비즈니스/도메인 에러 | Result (값으로 표현) |

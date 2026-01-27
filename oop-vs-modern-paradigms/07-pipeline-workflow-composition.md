@@ -1,4 +1,4 @@
-# 06. Pipeline & Workflow Composition (파이프라인과 워크플로우 합성)
+# 07. Pipeline & Workflow Composition (파이프라인과 워크플로우 합성)
 
 > Sources: DMMF Ch.5 (Workflow Pipeline), DMMF Ch.7 (Pipeline Assembly), DOP Ch.6 (Pipeline and Determinism)
 
@@ -17,7 +17,7 @@ DMMF에서는 이를 "워크플로우를 타입으로 표현"한다고 설명한
 
 이 접근법의 핵심 이점은 **자기 문서화(self-documenting)**이다. 코드를 읽는 것만으로 "이 함수는 검증된 주문을 받아 가격이 붙은 주문을 만든다"는 것을 알 수 있다.
 
-**[그림 06.1]** Workflow as Pipeline (워크플로우를 파이프라인으로)
+**[그림 07.1]** Workflow as Pipeline (워크플로우를 파이프라인으로)
 ```
 === Order Processing Pipeline ===
 
@@ -42,7 +42,7 @@ DMMF에서는 이를 "워크플로우를 타입으로 표현"한다고 설명한
 
 ### Before: Traditional OOP
 
-**[코드 06.1]** Traditional OOP: 하나의 Order 클래스가 모든 상태를 담당
+**[코드 07.1]** Traditional OOP: 하나의 Order 클래스가 모든 상태를 담당
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 하나의 Order 클래스가 모든 상태를 담당
@@ -78,7 +78,7 @@ DMMF에서는 이를 "워크플로우를 타입으로 표현"한다고 설명한
 
 ### After: Modern Approach
 
-**[코드 06.2]** Modern: 중간 타입으로 데이터 품질 표현
+**[코드 07.2]** Modern: 중간 타입으로 데이터 품질 표현
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] 중간 타입으로 데이터 품질 표현
@@ -162,7 +162,7 @@ DMMF에서는 이를 "함수 합성 파이프라인"이라 부르며, 각 함수
 
 Java에서는 `Function.andThen()`이나 `Result.map()/flatMap()`을 통해 합성을 구현한다. Result를 반환하는 함수들의 합성에서는 flatMap이 "접착제" 역할을 한다.
 
-**[그림 06.2]** Function Composition (함수 합성)
+**[그림 07.2]** Function Composition (함수 합성)
 ```
 === Function Composition: Type Alignment ===
 
@@ -189,7 +189,7 @@ Java에서는 `Function.andThen()`이나 `Result.map()/flatMap()`을 통해 합�
 
 ### Before: Traditional OOP
 
-**[코드 06.3]** Traditional OOP: 절차적으로 단계를 나열 - 합성 불가능한 구조
+**[코드 07.3]** Traditional OOP: 절차적으로 단계를 나열 - 합성 불가능한 구조
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 절차적으로 단계를 나열 - 합성 불가능한 구조
@@ -218,7 +218,7 @@ Java에서는 `Function.andThen()`이나 `Result.map()/flatMap()`을 통해 합�
 
 ### After: Modern Approach
 
-**[코드 06.4]** Modern: 함수 합성 - 입출력이 명확한 순수 함수
+**[코드 07.4]** Modern: 함수 합성 - 입출력이 명확한 순수 함수
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] 함수 합성 - 입출력이 명확한 순수 함수
@@ -288,7 +288,7 @@ Java에서는 `Function.andThen()`이나 `Result.map()/flatMap()`을 통해 합�
 
 이 원칙은 파이프라인 설계의 근간이다. 비즈니스 로직을 결정론적 함수로 작성하고, I/O를 경계에 밀어내면 "Functional Core / Imperative Shell" 아키텍처가 자연스럽게 도출된다.
 
-**[그림 06.3]** Deterministic Systems (결정론적 시스템)
+**[그림 07.3]** Deterministic Systems (결정론적 시스템)
 ```
 === Deterministic vs Non-Deterministic ===
 
@@ -319,7 +319,7 @@ Java에서는 `Function.andThen()`이나 `Result.map()/flatMap()`을 통해 합�
 
 ### Before: Traditional OOP
 
-**[코드 06.5]** Traditional OOP: 비결정론적 함수 - I/O가 로직에 섞여있음
+**[코드 07.5]** Traditional OOP: 비결정론적 함수 - I/O가 로직에 섞여있음
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] 비결정론적 함수 - I/O가 로직에 섞여있음
@@ -353,7 +353,7 @@ Java에서는 `Function.andThen()`이나 `Result.map()/flatMap()`을 통해 합�
 
 ### After: Modern Approach
 
-**[코드 06.6]** Modern: 결정론적 함수 - 외부 의존성을 파라미터로
+**[코드 07.6]** Modern: 결정론적 함수 - 외부 의존성을 파라미터로
 ```java
  1| // package: com.ecommerce.order
  2| // [O] 결정론적 함수 - 외부 의존성을 파라미터로
@@ -427,7 +427,7 @@ Top Bun(윗빵)은 필요한 데이터를 외부에서 수집하는 I/O 영역�
 
 이 패턴의 핵심 이점은 Meat 영역을 Mock 없이 단위 테스트할 수 있다는 것이다. 순수 함수이므로 입력값만 준비하면 결과를 검증할 수 있다. 또한 비즈니스 로직 변경과 인프라 변경이 서로 영향을 주지 않는다.
 
-**[그림 06.4]** Sandwich Architecture Intro (I/O -> Pure -> I/O)
+**[그림 07.4]** Sandwich Architecture Intro (I/O -> Pure -> I/O)
 ```
 +==================================================+
 |  TOP BUN (Impure - Data Collection)              |
@@ -461,7 +461,7 @@ Top Bun(윗빵)은 필요한 데이터를 외부에서 수집하는 I/O 영역�
 
 ### Before: Traditional OOP
 
-**[코드 06.7]** Traditional OOP: I/O와 로직이 뒤섞인 안티패턴
+**[코드 07.7]** Traditional OOP: I/O와 로직이 뒤섞인 안티패턴
 ```java
  1| // package: com.ecommerce.order
  2| // [X] I/O와 로직이 뒤섞인 안티패턴
@@ -495,7 +495,7 @@ Top Bun(윗빵)은 필요한 데이터를 외부에서 수집하는 I/O 영역�
 
 ### After: Modern Approach
 
-**[코드 06.8]** Modern: 샌드위치 구조 - I/O와 로직 분리
+**[코드 07.8]** Modern: 샌드위치 구조 - I/O와 로직 분리
 ```java
  1| // package: com.ecommerce.order
  2| // [O] 샌드위치 구조 - I/O와 로직 분리

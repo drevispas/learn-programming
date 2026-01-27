@@ -1,4 +1,4 @@
-# 08. FP Fundamentals (함수형 프로그래밍 기초)
+# 09. FP Fundamentals (함수형 프로그래밍 기초)
 
 > 함수형 프로그래밍의 핵심 빌딩 블록: 일급 함수, 고차 함수, 클로저, 커링, 합성을 이해하고 Java 25에서 활용한다.
 
@@ -18,7 +18,7 @@
 
   메서드 레퍼런스(`String::length`)는 단순 위임에서 람다보다 간결하고, 변환이나 조합이 필요할 때는 람다(`x -> x.length() + 1`)가 적합하다.
 
-**[그림 08.1]** 일급 함수 (First-Class Functions)
+**[그림 09.1]** 일급 함수 (First-Class Functions)
 ```
 +-------------------------------------------------------------------+
 |                  일급 함수 = 값처럼 다루는 함수                       |
@@ -43,7 +43,7 @@
 
 ### Before: Traditional OOP
 
-**[코드 08.1]** Traditional OOP: Strategy Pattern을 위해 인터페이스 + 구현 클래스 필요
+**[코드 09.1]** Traditional OOP: Strategy Pattern을 위해 인터페이스 + 구현 클래스 필요
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] Strategy Pattern을 위해 인터페이스 + 구현 클래스 필요
@@ -90,7 +90,7 @@
 
 ### After: Modern Approach
 
-**[코드 08.2]** Modern: 함수를 값으로 다뤄서 전략을 인라인으로 정의
+**[코드 09.2]** Modern: 함수를 값으로 다뤄서 전략을 인라인으로 정의
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] 함수를 값으로 다뤄서 전략을 인라인으로 정의
@@ -137,7 +137,7 @@
 ### 이해를 위한 부가 상세
 Java의 주요 Functional Interface 정리:
 
-**[표 08.1]** 일급 함수 (First-Class Functions)
+**[표 09.1]** 일급 함수 (First-Class Functions)
 | Interface | 시그니처 | 용도 |
 |-----------|----------|------|
 | `Function<T,R>` | `T -> R` | 변환 |
@@ -171,7 +171,7 @@ Java의 주요 Functional Interface 정리:
 
   또한 고차 함수는 의도를 명확히 표현한다. `filter`를 보면 "골라내기"임을 즉시 알 수 있고, `map`을 보면 "변환"임을 알 수 있다.
 
-**[그림 08.2]** 고차 함수 (Higher-Order Functions)
+**[그림 09.2]** 고차 함수 (Higher-Order Functions)
 ```
 +-------------------------------------------------------------------+
 |                  고차 함수의 세 가지 핵심 연산                        |
@@ -196,7 +196,7 @@ Java의 주요 Functional Interface 정리:
 
 ### Before: Traditional OOP
 
-**[코드 08.3]** Traditional OOP: 매번 for 루프를 복붙하며 로직 변경
+**[코드 09.3]** Traditional OOP: 매번 for 루프를 복붙하며 로직 변경
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 매번 for 루프를 복붙하며 로직 변경
@@ -241,7 +241,7 @@ Java의 주요 Functional Interface 정리:
 
 ### After: Modern Approach
 
-**[코드 08.4]** Modern: 고차 함수로 "무엇을"과 "어떻게"를 분리
+**[코드 09.4]** Modern: 고차 함수로 "무엇을"과 "어떻게"를 분리
 ```java
  1| // package: com.ecommerce.order
  2| // [O] 고차 함수로 "무엇을"과 "어떻게"를 분리
@@ -290,7 +290,7 @@ Java의 주요 Functional Interface 정리:
 ### 이해를 위한 부가 상세
 고차 함수를 직접 정의하면 도메인 특화 추상화를 만들 수 있다:
 
-**[코드 08.5]** 함수를 인자로 받아 로깅을 추가하는 데코레이터 고차 함수
+**[코드 09.5]** 함수를 인자로 받아 로깅을 추가하는 데코레이터 고차 함수
 ```java
  1| // package: com.ecommerce.order
  2| // 함수를 인자로 받아 로깅을 추가하는 데코레이터 고차 함수
@@ -329,7 +329,7 @@ map-filter-reduce는 함수형 프로그래밍의 "삼신기"이다. 이 세 고
 
   Effectively final 제약은 FP 원칙(불변성, 참조 투명성)을 컴파일 타임에 강제하는 Java의 안전장치이다.
 
-**[그림 08.3]** 클로저 (Closures)
+**[그림 09.3]** 클로저 (Closures)
 ```
 +-------------------------------------------------------------------+
 |                  클로저 = 환경을 캡처한 함수                          |
@@ -357,7 +357,7 @@ map-filter-reduce는 함수형 프로그래밍의 "삼신기"이다. 이 세 고
 
 ### Before: Traditional OOP
 
-**[코드 08.6]** Traditional OOP: 설정값마다 별도 클래스를 만들어야 함
+**[코드 09.6]** Traditional OOP: 설정값마다 별도 클래스를 만들어야 함
 ```java
  1| // package: com.ecommerce.coupon
  2| // [X] 설정값마다 별도 클래스를 만들어야 함
@@ -389,7 +389,7 @@ map-filter-reduce는 함수형 프로그래밍의 "삼신기"이다. 이 세 고
 
 ### After: Modern Approach
 
-**[코드 08.7]** Modern: 클로저로 설정값을 캡처한 함수 생성
+**[코드 09.7]** Modern: 클로저로 설정값을 캡처한 함수 생성
 ```java
  1| // package: com.ecommerce.coupon
  2| // [O] 클로저로 설정값을 캡처한 함수 생성
@@ -433,7 +433,7 @@ map-filter-reduce는 함수형 프로그래밍의 "삼신기"이다. 이 세 고
 ### 이해를 위한 부가 상세
 Java의 effectively final 제약과 해결책:
 
-**[코드 08.8]** 컴파일 에러: i는 변경되므로 effectively final이 아님
+**[코드 09.8]** 컴파일 에러: i는 변경되므로 effectively final이 아님
 ```java
  1| // package: com.ecommerce.shared
  2| // 컴파일 에러: i는 변경되므로 effectively final이 아님
@@ -472,7 +472,7 @@ Java의 effectively final 제약과 해결책:
 
   Java에서 커링된 함수의 타입은 `Function<A, Function<B, Function<C, D>>>`로 중첩되어 다소 장황하지만, 실제 사용은 직관적이다.
 
-**[그림 08.4]** 커링과 부분 적용 (Currying and Partial Application)
+**[그림 09.4]** 커링과 부분 적용 (Currying and Partial Application)
 ```
 +-------------------------------------------------------------------+
 |                  커링 = 한 칸씩 채우기                                |
@@ -499,7 +499,7 @@ Java의 effectively final 제약과 해결책:
 
 ### Before: Traditional OOP
 
-**[코드 08.9]** Traditional OOP: 설정 조합마다 메서드를 오버로딩하거나 빌더를 만듦
+**[코드 09.9]** Traditional OOP: 설정 조합마다 메서드를 오버로딩하거나 빌더를 만듦
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] 설정 조합마다 메서드를 오버로딩하거나 빌더를 만듦
@@ -525,7 +525,7 @@ Java의 effectively final 제약과 해결책:
 
 ### After: Modern Approach
 
-**[코드 08.10]** Modern: 커링으로 범용 함수에서 특수화된 함수를 동적으로 파생
+**[코드 09.10]** Modern: 커링으로 범용 함수에서 특수화된 함수를 동적으로 파생
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] 커링으로 범용 함수에서 특수화된 함수를 동적으로 파생
@@ -571,7 +571,7 @@ Java의 effectively final 제약과 해결책:
 ### 이해를 위한 부가 상세
 커링된 함수 타입 해석법:
 
-**[코드 08.11]** 커링과 부분 적용 (Currying and Partial Application)
+**[코드 09.11]** 커링과 부분 적용 (Currying and Partial Application)
 ```java
 1| // package: com.ecommerce.shared
 2| Function<String, Function<String, Function<String, BigDecimal>>>
@@ -605,7 +605,7 @@ Java의 effectively final 제약과 해결책:
 
   합성은 디버깅도 용이하다. 파이프라인 중간에 로깅 함수를 삽입(`f.andThen(log).andThen(g)`)하면 중간 결과를 확인할 수 있다.
 
-**[그림 08.5]** 함수 합성 (Function Composition)
+**[그림 09.5]** 함수 합성 (Function Composition)
 ```
 +-------------------------------------------------------------------+
 |                  함수 합성 = 파이프라인                               |
@@ -631,7 +631,7 @@ Java의 effectively final 제약과 해결책:
 
 ### Before: Traditional OOP
 
-**[코드 08.12]** Traditional OOP: 하나의 거대한 메서드에 모든 변환 로직을 넣음
+**[코드 09.12]** Traditional OOP: 하나의 거대한 메서드에 모든 변환 로직을 넣음
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] 하나의 거대한 메서드에 모든 변환 로직을 넣음
@@ -663,7 +663,7 @@ Java의 effectively final 제약과 해결책:
 
 ### After: Modern Approach
 
-**[코드 08.13]** Modern: 작은 순수 함수를 합성하여 파이프라인 구성
+**[코드 09.13]** Modern: 작은 순수 함수를 합성하여 파이프라인 구성
 ```java
  1| // package: com.example.pattern
  2| // [O] 작은 순수 함수를 합성하여 파이프라인 구성
@@ -724,7 +724,7 @@ Java의 effectively final 제약과 해결책:
 ### 이해를 위한 부가 상세
 `andThen` vs `compose` 동작 원리:
 
-**[코드 08.14]** andThen: 입력 -> f -> g -> 출력 (왼쪽에서 오른쪽)
+**[코드 09.14]** andThen: 입력 -> f -> g -> 출력 (왼쪽에서 오른쪽)
 ```java
  1| // package: com.ecommerce.shared
  2| // andThen: 입력 -> f -> g -> 출력 (왼쪽에서 오른쪽)

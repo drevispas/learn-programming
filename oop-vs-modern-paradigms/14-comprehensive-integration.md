@@ -1,4 +1,4 @@
-# 13. Comprehensive Integration (종합 통합)
+# 14. Comprehensive Integration (종합 통합)
 
 > **Sources**: DMMF Ch.10 (Comprehensive Project), DOP Ch.9 (JPA/Spring Coexistence)
 
@@ -17,7 +17,7 @@
   - 모든 실패 가능성을 Result로 명시
   - 워크플로우를 flatMap 파이프라인으로 구성
 
-**[그림 13.1]** Full Domain Model with ADT + Result + Pipeline (ADT + Result + 파이프라인 종합)
+**[그림 14.1]** Full Domain Model with ADT + Result + Pipeline (ADT + Result + 파이프라인 종합)
 ```
 FULL DOMAIN MODEL ARCHITECTURE
 =================================
@@ -51,7 +51,7 @@ Bounded Contexts:
 
 ### Before: Traditional OOP
 
-**[코드 13.1]** Traditional OOP: 신(God) 서비스 - 모든 도메인 로직이 한 곳에 결합
+**[코드 14.1]** Traditional OOP: 신(God) 서비스 - 모든 도메인 로직이 한 곳에 결합
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 신(God) 서비스 - 모든 도메인 로직이 한 곳에 결합
@@ -102,7 +102,7 @@ Bounded Contexts:
 
 ### After: Modern Approach
 
-**[코드 13.2]** Modern: 종합 통합: ADT + Result + Pipeline
+**[코드 14.2]** Modern: 종합 통합: ADT + Result + Pipeline
 ```java
  1| // package: com.ecommerce.order
  2| // [O] 종합 통합: ADT + Result + Pipeline
@@ -204,7 +204,7 @@ Bounded Contexts:
 
   핵심 원칙: "Entity는 DB와 대화하는 언어, Record는 비즈니스 로직의 언어, Mapper는 통역사"
 
-**[그림 13.2]** JPA Entity vs Domain Record Mapping (JPA Entity와 도메인 Record 매핑)
+**[그림 14.2]** JPA Entity vs Domain Record Mapping (JPA Entity와 도메인 Record 매핑)
 ```
 ENTITY vs DOMAIN RECORD
 ==========================
@@ -233,7 +233,7 @@ JPA Entity (Infrastructure):    Domain Record (Core):
 
 ### Before: Traditional OOP
 
-**[코드 13.3]** Traditional OOP: Entity를 도메인 로직에서 직접 사용
+**[코드 14.3]** Traditional OOP: Entity를 도메인 로직에서 직접 사용
 ```java
  1| // package: com.ecommerce.order
  2| // [X] Entity를 도메인 로직에서 직접 사용
@@ -273,7 +273,7 @@ JPA Entity (Infrastructure):    Domain Record (Core):
 
 ### After: Modern Approach
 
-**[코드 13.4]** Modern: Mapper로 Entity와 Domain Record 분리
+**[코드 14.4]** Modern: Mapper로 Entity와 Domain Record 분리
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Mapper로 Entity와 Domain Record 분리
@@ -366,7 +366,7 @@ JPA Entity (Infrastructure):    Domain Record (Core):
 
   핵심: "작은 승리를 반복하라. 한 번에 큰 변경은 위험하다."
 
-**[그림 13.3]** Gradual Migration Strategy (점진적 마이그레이션 전략)
+**[그림 14.3]** Gradual Migration Strategy (점진적 마이그레이션 전략)
 ```
 GRADUAL MIGRATION STEPS
 ==========================
@@ -394,7 +394,7 @@ Step 4: Expand gradually
 
 ### Before: Traditional OOP
 
-**[코드 13.5]** Traditional OOP: 모든 로직이 Service에 뭉쳐있는 레거시
+**[코드 14.5]** Traditional OOP: 모든 로직이 Service에 뭉쳐있는 레거시
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 모든 로직이 Service에 뭉쳐있는 레거시
@@ -436,7 +436,7 @@ Step 4: Expand gradually
 
 ### After: Modern Approach
 
-**[코드 13.6]** Modern: 점진적 마이그레이션: 순수 함수 추출 -> 테스트 -> 확장
+**[코드 14.6]** Modern: 점진적 마이그레이션: 순수 함수 추출 -> 테스트 -> 확장
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] 점진적 마이그레이션: 순수 함수 추출 -> 테스트 -> 확장
@@ -543,7 +543,7 @@ Step 4: Expand gradually
   - Imperative Shell (UseCase): 통합 테스트로 I/O 흐름 검증
   - 대부분의 비즈니스 로직이 순수 함수이므로, 테스트 피라미드의 하단(단위 테스트)이 두꺼워짐
 
-**[그림 13.4]** Testing Strategy (테스트 전략) - 순수 함수 우선
+**[그림 14.4]** Testing Strategy (테스트 전략) - 순수 함수 우선
 ```
 TEST STRATEGY COMPARISON
 ===========================
@@ -570,7 +570,7 @@ Traditional Unit Test:       Pure Function Test:
 
 ### Before: Traditional OOP
 
-**[코드 13.7]** Traditional OOP: Mock 의존적인 단위 테스트 - 설정이 테스트보다 길다
+**[코드 14.7]** Traditional OOP: Mock 의존적인 단위 테스트 - 설정이 테스트보다 길다
 ```java
  1| // package: com.ecommerce.order
  2| // [X] Mock 의존적인 단위 테스트 - 설정이 테스트보다 길다
@@ -613,7 +613,7 @@ Traditional Unit Test:       Pure Function Test:
 
 ### After: Modern Approach
 
-**[코드 13.8]** Modern: 순수 함수 우선 테스트 - Mock 없이 빠르고 안정적
+**[코드 14.8]** Modern: 순수 함수 우선 테스트 - Mock 없이 빠르고 안정적
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] 순수 함수 우선 테스트 - Mock 없이 빠르고 안정적
@@ -705,7 +705,7 @@ Traditional Unit Test:       Pure Function Test:
   - 레거시 상황: 그린필드 vs 기존 코드 존재
   - 변경 빈도: 비즈니스 규칙이 자주 변하는지
 
-**[그림 13.5]** Architecture Decision Record (아키텍처 결정 기록) - when to use which pattern
+**[그림 14.5]** Architecture Decision Record (아키텍처 결정 기록) - when to use which pattern
 ```
 PATTERN SELECTION DECISION TREE
 ==================================
@@ -742,7 +742,7 @@ PATTERN SELECTION DECISION TREE
 
 ### Before: Traditional OOP
 
-**[코드 13.9]** Traditional OOP: 맥락 없는 패턴 적용 - 과잉 설계
+**[코드 14.9]** Traditional OOP: 맥락 없는 패턴 적용 - 과잉 설계
 ```java
  1| // package: com.ecommerce.auth
  2| // [X] 맥락 없는 패턴 적용 - 과잉 설계
@@ -772,7 +772,7 @@ PATTERN SELECTION DECISION TREE
 
 ### After: Modern Approach
 
-**[코드 13.10]** Modern: ADR 기반 패턴 선택 - 맥락에 맞는 적절한 수준
+**[코드 14.10]** Modern: ADR 기반 패턴 선택 - 맥락에 맞는 적절한 수준
 ```java
  1| // package: com.ecommerce.payment
  2| // [O] ADR 기반 패턴 선택 - 맥락에 맞는 적절한 수준

@@ -1,4 +1,4 @@
-# 03. Algebraic Data Types (대수적 데이터 타입)
+# 04. Algebraic Data Types (대수적 데이터 타입)
 
 > **Sources**: DMMF Ch.3 (Composite Types - AND/OR), DOP Ch.3 (Cardinality Theory)
 
@@ -13,7 +13,7 @@
 
   이 두 가지 결합을 올바르게 활용하면 도메인의 "가능한 상태"를 정확히 표현할 수 있고, 불가능한 상태는 타입 시스템이 차단합니다.
 
-**[그림 03.1]** Product Type과 Sum Type (곱 타입과 합 타입)
+**[그림 04.1]** Product Type과 Sum Type (곱 타입과 합 타입)
 ```
 ALGEBRAIC DATA TYPES (ADT)
 ===========================
@@ -40,7 +40,7 @@ State space:                   State space:
 
 ### Before: Traditional OOP
 
-**[코드 03.1]** Traditional OOP: String/enum으로 상태 표현: 상태별 데이터를 담을 수 없음
+**[코드 04.1]** Traditional OOP: String/enum으로 상태 표현: 상태별 데이터를 담을 수 없음
 ```java
  1| // package: com.ecommerce.order
  2| // [X] String/enum으로 상태 표현: 상태별 데이터를 담을 수 없음
@@ -69,7 +69,7 @@ State space:                   State space:
 
 ### After: Modern Approach
 
-**[코드 03.2]** Modern: Sum Type: 각 상태가 필요한 데이터만 보유
+**[코드 04.2]** Modern: Sum Type: 각 상태가 필요한 데이터만 보유
 ```java
  1| // package: com.ecommerce.payment
  2| // [O] Sum Type: 각 상태가 필요한 데이터만 보유
@@ -137,7 +137,7 @@ State space:                   State space:
 - **통찰**: 복잡도는 "가능한 상태의 총 개수"와 비례한다. 곱 타입은 상태를 곱하고, 합 타입은 상태를 더한다.
 - **설명**: `boolean` 필드 5개가 있으면 상태 공간은 2^5 = 32입니다. 하지만 유효한 상태가 5개뿐이라면, 32 - 5 = 27가지의 불가능한 상태가 존재합니다. Sealed Interface로 5가지 variant를 정의하면 상태 공간이 정확히 5로 줄어들어 복잡도가 84% 감소합니다.
 
-**[그림 03.2]** 기수 이론: 상태 공간 계산 (Cardinality Theory: State Space Calculation)
+**[그림 04.2]** 기수 이론: 상태 공간 계산 (Cardinality Theory: State Space Calculation)
 ```
 BOOLEAN FLAGS (Product Type)       SEALED INTERFACE (Sum Type)
 ============================       ============================
@@ -159,7 +159,7 @@ Invalid: 27 (!)
 
 ### Before: Traditional OOP
 
-**[코드 03.3]** Traditional OOP: Boolean 필드로 상태 표현: 2^5 = 32가지 상태 (유효한 건 5개)
+**[코드 04.3]** Traditional OOP: Boolean 필드로 상태 표현: 2^5 = 32가지 상태 (유효한 건 5개)
 ```java
  1| // package: com.ecommerce.order
  2| // [X] Boolean 필드로 상태 표현: 2^5 = 32가지 상태 (유효한 건 5개)
@@ -193,7 +193,7 @@ Invalid: 27 (!)
 
 ### After: Modern Approach
 
-**[코드 03.4]** Modern: Sealed Interface: 정확히 5가지 유효한 상태만 표현
+**[코드 04.4]** Modern: Sealed Interface: 정확히 5가지 유효한 상태만 표현
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Sealed Interface: 정확히 5가지 유효한 상태만 표현
@@ -259,7 +259,7 @@ Invalid: 27 (!)
 
 ### Before: Traditional OOP
 
-**[코드 03.5]** Traditional OOP: if/else 체인 + instanceof 캐스팅
+**[코드 04.5]** Traditional OOP: if/else 체인 + instanceof 캐스팅
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] if/else 체인 + instanceof 캐스팅
@@ -283,7 +283,7 @@ Invalid: 27 (!)
 
 ### After: Modern Approach
 
-**[코드 03.6]** Modern: Sealed Interface + Pattern Matching = 망라적 분기
+**[코드 04.6]** Modern: Sealed Interface + Pattern Matching = 망라적 분기
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] Sealed Interface + Pattern Matching = 망라적 분기

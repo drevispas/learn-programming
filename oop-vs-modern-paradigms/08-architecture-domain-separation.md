@@ -1,4 +1,4 @@
-# 07. Architecture & Domain Separation (아키텍처와 도메인 분리)
+# 08. Architecture & Domain Separation (아키텍처와 도메인 분리)
 
 > Sources: DMMF Ch.8 (Domain Separation), DMMF Ch.9 (Functional Architecture), DOP Ch.6 (Pipeline/Determinism), DOP Ch.9 (JPA/Spring Coexistence)
 
@@ -17,7 +17,7 @@ Functional Core의 함수들은 같은 입력에 항상 같은 출력을 보장�
 
 Imperative Shell은 "로직이 거의 없도록" 설계한다. 데이터를 수집하고 Core의 순수 함수를 호출한 뒤, 결과를 저장/전달하는 역할만 담당한다. Shell이 얇을수록 테스트 부담이 줄어든다.
 
-**[그림 07.1]** Functional Core / Imperative Shell (함수형 코어 / 명령형 셸)
+**[그림 08.1]** Functional Core / Imperative Shell (함수형 코어 / 명령형 셸)
 ```
 +==================================================================+
 |                    IMPERATIVE SHELL                               |
@@ -48,7 +48,7 @@ Imperative Shell은 "로직이 거의 없도록" 설계한다. 데이터를 수�
 
 ### Before: Traditional OOP
 
-**[코드 07.1]** Traditional OOP: 비즈니스 로직과 부수효과가 뒤섞인 서비스
+**[코드 08.1]** Traditional OOP: 비즈니스 로직과 부수효과가 뒤섞인 서비스
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 비즈니스 로직과 부수효과가 뒤섞인 서비스
@@ -90,7 +90,7 @@ Imperative Shell은 "로직이 거의 없도록" 설계한다. 데이터를 수�
 
 ### After: Modern Approach
 
-**[코드 07.2]** Modern: Functional Core: 순수한 도메인 로직
+**[코드 08.2]** Modern: Functional Core: 순수한 도메인 로직
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Functional Core: 순수한 도메인 로직
@@ -183,7 +183,7 @@ Imperative Shell은 "로직이 거의 없도록" 설계한다. 데이터를 수�
 
 DMMF에서는 이를 더 나아가 "함수를 파라미터로 전달"하는 패턴을 제시한다. `GetExchangeRate` 같은 Functional Interface를 파라미터로 받으면, 인터페이스 없이도 교체 가능성을 확보할 수 있다.
 
-**[그림 07.2]** Dependency Injection vs Function Parameters (의존성 주입 vs 함수 파라미터)
+**[그림 08.2]** Dependency Injection vs Function Parameters (의존성 주입 vs 함수 파라미터)
 ```
 === Traditional DI vs Functional Parameter ===
 
@@ -214,7 +214,7 @@ Functional Parameter:
 
 ### Before: Traditional OOP
 
-**[코드 07.3]** Traditional OOP: 비즈니스 로직에도 DI 사용 - 테스트 시 Mock 필수
+**[코드 08.3]** Traditional OOP: 비즈니스 로직에도 DI 사용 - 테스트 시 Mock 필수
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] 비즈니스 로직에도 DI 사용 - 테스트 시 Mock 필수
@@ -246,7 +246,7 @@ Functional Parameter:
 
 ### After: Modern Approach
 
-**[코드 07.4]** Modern: 데이터 의존성은 파라미터로, 기능 의존성은 Shell에서
+**[코드 08.4]** Modern: 데이터 의존성은 파라미터로, 기능 의존성은 Shell에서
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] 데이터 의존성은 파라미터로, 기능 의존성은 Shell에서
@@ -306,7 +306,7 @@ Functional Parameter:
 ### 이해를 위한 부가 상세
 - DMMF에서는 Functional Interface를 파라미터로 전달하는 Higher-Order Function 패턴도 제시한다:
 
-**[코드 07.5]** Dependency Injection vs Function Parameters (의존성 주입 vs 함수 파라미터)
+**[코드 08.5]** Dependency Injection vs Function Parameters (의존성 주입 vs 함수 파라미터)
 ```java
 1| // package: com.ecommerce.shared
 2|  public Money convertPrice(Money price, Currency to, GetExchangeRate getRate) {
@@ -340,7 +340,7 @@ Sandwich Architecture(DOP)는 시간 순서로 코드를 배치한다. Top Bun(I
 
 두 패턴의 **공통 원칙**은 "비즈니스 로직을 순수하게 유지하고, 부수효과를 경계로 밀어낸다"이다. Onion은 **전체 시스템 구조**를, Sandwich는 **개별 UseCase의 코드 배치**를 가이드한다.
 
-**[그림 07.3]** Onion Architecture (DMMF) vs Sandwich Architecture (DOP)
+**[그림 08.3]** Onion Architecture (DMMF) vs Sandwich Architecture (DOP)
 ```
 === DMMF: Onion Architecture (System Structure) ===
 
@@ -387,7 +387,7 @@ Sandwich Architecture(DOP)는 시간 순서로 코드를 배치한다. Top Bun(I
 
 ### Before: Traditional OOP
 
-**[코드 07.6]** Traditional OOP: 계층 없이 모든 것이 뒤섞인 서비스
+**[코드 08.6]** Traditional OOP: 계층 없이 모든 것이 뒤섞인 서비스
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 계층 없이 모든 것이 뒤섞인 서비스
@@ -421,7 +421,7 @@ Sandwich Architecture(DOP)는 시간 순서로 코드를 배치한다. Top Bun(I
 
 ### After: DMMF 관점 (DDD + FP) - Onion Architecture
 
-**[코드 07.7]** DMMF: Domain Layer: 순수 비즈니스 규칙 (가장 안쪽)
+**[코드 08.7]** DMMF: Domain Layer: 순수 비즈니스 규칙 (가장 안쪽)
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Domain Layer: 순수 비즈니스 규칙 (가장 안쪽)
@@ -484,7 +484,7 @@ Sandwich Architecture(DOP)는 시간 순서로 코드를 배치한다. Top Bun(I
 
 ### After: DOP 관점 - Sandwich Architecture
 
-**[코드 07.8]** DOP: Calculations 클래스: 순수 함수 (Meat)
+**[코드 08.8]** DOP: Calculations 클래스: 순수 함수 (Meat)
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Calculations 클래스: 순수 함수 (Meat)
@@ -561,7 +561,7 @@ Trust Boundary는 외부(HTTP 요청, 외부 API 응답)와 내부(도메인 모
 
 Anti-Corruption Layer(ACL)는 외부 시스템의 모델이 도메인 모델을 "오염"시키지 않도록 번역하는 계층이다. 외부 결제 API의 응답 형식이 바뀌어도 ACL(Adapter)만 수정하면 도메인은 영향받지 않는다.
 
-**[그림 07.4]** Domain Layer Purity (도메인 레이어 순수성)
+**[그림 08.4]** Domain Layer Purity (도메인 레이어 순수성)
 ```
 === Domain Layer Purity ===
 
@@ -591,7 +591,7 @@ Anti-Corruption Layer(ACL)는 외부 시스템의 모델이 도메인 모델을 
 
 ### Before: Traditional OOP
 
-**[코드 07.9]** Traditional OOP: 도메인 모델에 인프라 관심사가 섞임
+**[코드 08.9]** Traditional OOP: 도메인 모델에 인프라 관심사가 섞임
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 도메인 모델에 인프라 관심사가 섞임
@@ -642,7 +642,7 @@ Anti-Corruption Layer(ACL)는 외부 시스템의 모델이 도메인 모델을 
 
 ### After: Modern Approach
 
-**[코드 07.10]** Modern: 도메인 Record: 인프라를 전혀 모름 (Persistence Ignorance)
+**[코드 08.10]** Modern: 도메인 Record: 인프라를 전혀 모름 (Persistence Ignorance)
 ```java
  1| // package: com.ecommerce.order
  2| // [O] 도메인 Record: 인프라를 전혀 모름 (Persistence Ignorance)
@@ -741,7 +741,7 @@ Anti-Corruption Layer(ACL)는 외부 시스템의 모델이 도메인 모델을 
 
 점진적 리팩토링 전략은: (1) 가장 복잡한 비즈니스 로직 식별, (2) 해당 로직을 순수 함수(Calculations)로 추출, (3) Mock 없이 테스트 작성, (4) UseCase에서 순수 함수 호출로 교체. 이렇게 안에서부터 바깥으로 점진적으로 DOP를 도입한다.
 
-**[그림 07.5]** JPA/Spring Coexistence Strategies (JPA/Spring 공존 전략)
+**[그림 08.5]** JPA/Spring Coexistence Strategies (JPA/Spring 공존 전략)
 ```
 === JPA/Spring Coexistence Architecture ===
 
@@ -773,7 +773,7 @@ Anti-Corruption Layer(ACL)는 외부 시스템의 모델이 도메인 모델을 
 
 ### Before: Traditional OOP
 
-**[코드 07.11]** Traditional OOP: Entity에 비즈니스 로직이 섞인 안티패턴
+**[코드 08.11]** Traditional OOP: Entity에 비즈니스 로직이 섞인 안티패턴
 ```java
  1| // package: com.ecommerce.order
  2| // [X] Entity에 비즈니스 로직이 섞인 안티패턴
@@ -828,7 +828,7 @@ Anti-Corruption Layer(ACL)는 외부 시스템의 모델이 도메인 모델을 
 
 ### After: Modern Approach
 
-**[코드 07.12]** Modern: Domain Record: 순수 비즈니스 로직
+**[코드 08.12]** Modern: Domain Record: 순수 비즈니스 로직
 ```java
   1| // package: com.ecommerce.order
   2| // [O] Domain Record: 순수 비즈니스 로직

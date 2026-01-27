@@ -1,4 +1,4 @@
-# 12. Interpreter Pattern (인터프리터 패턴)
+# 13. Interpreter Pattern (인터프리터 패턴)
 
 > **Sources**: DOP Ch.8 (Interpreter Pattern - Rule as Data)
 
@@ -15,7 +15,7 @@
 
   핵심 원리: "규칙은 데이터다. 데이터는 직렬화 가능하다. 직렬화 가능하면 외부에서 관리할 수 있다."
 
-**[그림 12.1]** Rule as Data (비즈니스 규칙의 데이터화)
+**[그림 13.1]** Rule as Data (비즈니스 규칙의 데이터화)
 ```
 RULE AS DATA vs HARDCODED LOGIC
 =================================
@@ -46,7 +46,7 @@ Hardcoded (if-else):           Rule as Data (ADT):
 
 ### Before: Traditional OOP
 
-**[코드 12.1]** Traditional OOP: 하드코딩된 비즈니스 규칙 - 변경마다 배포 필요
+**[코드 13.1]** Traditional OOP: 하드코딩된 비즈니스 규칙 - 변경마다 배포 필요
 ```java
  1| // package: com.ecommerce.member
  2| // [X] 하드코딩된 비즈니스 규칙 - 변경마다 배포 필요
@@ -80,7 +80,7 @@ Hardcoded (if-else):           Rule as Data (ADT):
 
 ### After: Modern Approach
 
-**[코드 12.2]** Modern: 규칙을 ADT(sealed interface)로 표현 - 데이터화
+**[코드 13.2]** Modern: 규칙을 ADT(sealed interface)로 표현 - 데이터화
 ```java
  1| // package: com.ecommerce.rule
  2| // [O] 규칙을 ADT(sealed interface)로 표현 - 데이터화
@@ -149,7 +149,7 @@ Hardcoded (if-else):           Rule as Data (ADT):
 
   핵심: Record의 중첩 조합 = 구문 트리(AST) = DSL의 프로그램
 
-**[그림 12.2]** DSL (Domain-Specific Language) with Records
+**[그림 13.2]** DSL (Domain-Specific Language) with Records
 ```
 RULE DSL AS SYNTAX TREE (AST)
 ================================
@@ -176,7 +176,7 @@ Syntax Tree:
 
 ### Before: Traditional OOP
 
-**[코드 12.3]** Traditional OOP: Specification 패턴 - 클래스 폭발, 읽기 어려움
+**[코드 13.3]** Traditional OOP: Specification 패턴 - 클래스 폭발, 읽기 어려움
 ```java
  1| // package: com.ecommerce.rule
  2| // [X] Specification 패턴 - 클래스 폭발, 읽기 어려움
@@ -210,7 +210,7 @@ Syntax Tree:
 
 ### After: Modern Approach
 
-**[코드 12.4]** Modern: Record DSL - 간결하고 타입 안전한 규칙 표현
+**[코드 13.4]** Modern: Record DSL - 간결하고 타입 안전한 규칙 표현
 ```java
  1| // package: com.ecommerce.rule
  2| // [O] Record DSL - 간결하고 타입 안전한 규칙 표현
@@ -270,7 +270,7 @@ Syntax Tree:
 
   sealed interface의 망라성 덕분에, 새로운 Rule record를 추가하면 evaluate에서 컴파일 에러가 발생하여 처리 누락을 방지한다.
 
-**[그림 12.3]** Rule Engine Pattern
+**[그림 13.3]** Rule Engine Pattern
 ```
 RULE ENGINE EVALUATION FLOW
 ==============================
@@ -297,7 +297,7 @@ Recursive Evaluation:
 
 ### Before: Traditional OOP
 
-**[코드 12.5]** Traditional OOP: 전략 패턴 기반 - 실행과 정의가 혼재
+**[코드 13.5]** Traditional OOP: 전략 패턴 기반 - 실행과 정의가 혼재
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] 전략 패턴 기반 - 실행과 정의가 혼재
@@ -332,7 +332,7 @@ Recursive Evaluation:
 
 ### After: Modern Approach
 
-**[코드 12.6]** Modern: 순수 함수 기반 Rule Engine - 재귀적 평가
+**[코드 13.6]** Modern: 순수 함수 기반 Rule Engine - 재귀적 평가
 ```java
  1| // package: com.ecommerce.rule
  2| // [O] 순수 함수 기반 Rule Engine - 재귀적 평가
@@ -402,7 +402,7 @@ Recursive Evaluation:
 
   JSON으로 표현된 규칙은 Jackson 등의 라이브러리로 역직렬화하여 Rule ADT로 변환한다. 이 과정에서 타입 검증을 거치므로, 잘못된 형식의 규칙은 로딩 시점에 거부된다.
 
-**[그림 12.4]** Dynamic Rule Evaluation (동적 규칙 평가)
+**[그림 13.4]** Dynamic Rule Evaluation (동적 규칙 평가)
 ```
 DYNAMIC RULE LOADING ARCHITECTURE
 ====================================
@@ -439,7 +439,7 @@ DYNAMIC RULE LOADING ARCHITECTURE
 
 ### Before: Traditional OOP
 
-**[코드 12.7]** Traditional OOP: 하드코딩 + 배포 의존 - 변경마다 개발팀 투입
+**[코드 13.7]** Traditional OOP: 하드코딩 + 배포 의존 - 변경마다 개발팀 투입
 ```java
  1| // package: com.ecommerce.member
  2| // [X] 하드코딩 + 배포 의존 - 변경마다 개발팀 투입
@@ -465,7 +465,7 @@ DYNAMIC RULE LOADING ARCHITECTURE
 
 ### After: Modern Approach
 
-**[코드 12.8]** Modern: 규칙을 JSON/DB에서 동적 로딩
+**[코드 13.8]** Modern: 규칙을 JSON/DB에서 동적 로딩
 ```java
  1| // package: com.ecommerce.rule
  2| // [O] 규칙을 JSON/DB에서 동적 로딩
@@ -552,7 +552,7 @@ DYNAMIC RULE LOADING ARCHITECTURE
   - Rule을 직접 평가하는 대신, 설명 문자열로 변환하거나, SQL WHERE절로 변환하는 등 다양한 Interpreter 구현 가능
   - Rule의 테스트와 Interpreter의 테스트를 독립적으로 수행 가능
 
-**[그림 12.5]** Separation of Rule Definition from Execution (규칙 정의와 실행의 분리)
+**[그림 13.5]** Separation of Rule Definition from Execution (규칙 정의와 실행의 분리)
 ```
 MULTIPLE INTERPRETERS FOR SAME RULE
 ======================================
@@ -582,7 +582,7 @@ MULTIPLE INTERPRETERS FOR SAME RULE
 
 ### Before: Traditional OOP
 
-**[코드 12.9]** Traditional OOP: 규칙 정의와 실행이 결합된 전략 패턴
+**[코드 13.9]** Traditional OOP: 규칙 정의와 실행이 결합된 전략 패턴
 ```java
  1| // package: com.ecommerce.member
  2| // [X] 규칙 정의와 실행이 결합된 전략 패턴
@@ -615,7 +615,7 @@ MULTIPLE INTERPRETERS FOR SAME RULE
 
 ### After: Modern Approach
 
-**[코드 12.10]** Modern: 규칙 정의와 실행 완전 분리
+**[코드 13.10]** Modern: 규칙 정의와 실행 완전 분리
 ```java
  1| // package: com.ecommerce.rule
  2| // [O] 규칙 정의와 실행 완전 분리

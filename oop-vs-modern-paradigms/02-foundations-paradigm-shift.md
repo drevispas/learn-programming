@@ -1,4 +1,4 @@
-# 01. Foundations & Paradigm Shift (기초와 패러다임 전환)
+# 02. Foundations & Paradigm Shift (기초와 패러다임 전환)
 
 > **Sources**: DMMF Ch.1 (DDD 기초), DOP Intro (DOP 4원칙), DOP Ch.1 (OOP 환상과 데이터 실체)
 
@@ -13,10 +13,10 @@
 
   God Class의 판별 기준은 명확합니다: 500줄 이상의 LOC, 10개 이상의 의존성 주입, 여러 도메인 관심사 처리, 혼합된 추상화 수준. 이 중 2개 이상 해당되면 God Class를 의심해야 합니다.
 
-**[그림 01.1]** God Class와 캡슐화의 한계 (God Class and the Limits of Encapsulation)
+**[그림 02.1]** God Class와 캡슐화의 한계 (God Class and the Limits of Encapsulation)
 ```
 +---------------------------------------------+
-|              GOD CLASS (Order)               |
+|              GOD CLASS (Order)              |
 |---------------------------------------------|
 | - id, status, items, payment, shipping,     |
 |   coupon, customer, notification...         |
@@ -47,7 +47,7 @@
 
 ### Before: Traditional OOP
 
-**[코드 01.1]** Traditional OOP: God Class: 모든 것을 담은 OrderService
+**[코드 02.1]** Traditional OOP: God Class: 모든 것을 담은 OrderService
 ```java
  1| // package: com.ecommerce.order
  2| // [X] God Class: 모든 것을 담은 OrderService
@@ -95,7 +95,7 @@
 
 ### After: DMMF 관점 (DDD + FP)
 
-**[코드 01.2]** DMMF: Bounded Context별 분리 + 순수 함수 + Orchestration Shell
+**[코드 02.2]** DMMF: Bounded Context별 분리 + 순수 함수 + Orchestration Shell
 ```java
  1| // package: com.ecommerce.order (primary), com.ecommerce.auth
  2| // [O] Bounded Context별 분리 + 순수 함수 + Orchestration Shell
@@ -170,7 +170,7 @@
 
 ### After: DOP 관점
 
-**[코드 01.3]** DOP: 데이터(Record) + 계산(Calculations) + 조율(Orchestrator)
+**[코드 02.3]** DOP: 데이터(Record) + 계산(Calculations) + 조율(Orchestrator)
 ```java
  1| // package: com.ecommerce.order
  2| // [O] 데이터(Record) + 계산(Calculations) + 조율(Orchestrator)
@@ -282,7 +282,7 @@
 
 ### Before: Traditional OOP
 
-**[코드 01.4]** Traditional OOP: 가변 객체: 언제 어디서 상태가 바뀌는지 추적 불가
+**[코드 02.4]** Traditional OOP: 가변 객체: 언제 어디서 상태가 바뀌는지 추적 불가
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] 가변 객체: 언제 어디서 상태가 바뀌는지 추적 불가
@@ -316,7 +316,7 @@
 
 ### After: Modern Approach
 
-**[코드 01.5]** Modern: Java Record + Wither 패턴: 불변 객체
+**[코드 02.5]** Modern: Java Record + Wither 패턴: 불변 객체
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Java Record + Wither 패턴: 불변 객체
@@ -351,7 +351,7 @@
 
 **얕은 불변성 주의**: Record의 필드가 `List`일 때, `List` 참조는 final이지만 내부 원소는 변경 가능합니다. `List.copyOf()`로 깊은 불변성을 확보해야 합니다.
 
-**[코드 01.6]** Order record
+**[코드 02.6]** Order record
 ```java
 1| // package: com.ecommerce.order
 2| public record Order(List<OrderItem> items) {
@@ -381,7 +381,7 @@
 - **통찰**: 순수 함수는 "입력이 같으면 결과가 항상 같고, 세상에 아무 흔적도 남기지 않는" 함수이다.
 - **설명**: 순수 함수의 핵심은 참조 투명성입니다. `add(2, 3)`을 숫자 `5`로 대체해도 프로그램의 동작이 바뀌지 않습니다. 이는 테스트(Mock 불필요), 동시성(Lock 불필요), 추론(함수 안만 보면 됨)에서 강력한 이점을 제공합니다.
 
-**[그림 01.2]** 순수 함수와 참조 투명성 (Pure Functions and Referential Transparency)
+**[그림 02.2]** 순수 함수와 참조 투명성 (Pure Functions and Referential Transparency)
 ```
 +------------------+         +------------------+
 |   Impure Func    |         |   Pure Func      |
@@ -401,7 +401,7 @@
 
 ### Before: Traditional OOP
 
-**[코드 01.7]** Traditional OOP: 비순수 함수: 외부 상태에 의존하고, 부수효과 발생
+**[코드 02.7]** Traditional OOP: 비순수 함수: 외부 상태에 의존하고, 부수효과 발생
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 비순수 함수: 외부 상태에 의존하고, 부수효과 발생
@@ -427,7 +427,7 @@
 
 ### After: Modern Approach
 
-**[코드 01.8]** Modern: 순수 함수: 입력만으로 결과를 만듦, 부수효과 없음
+**[코드 02.8]** Modern: 순수 함수: 입력만으로 결과를 만듦, 부수효과 없음
 ```java
  1| // package: com.ecommerce.order
  2| // [O] 순수 함수: 입력만으로 결과를 만듦, 부수효과 없음
@@ -481,7 +481,7 @@
 
 ### Before: Traditional OOP
 
-**[코드 01.9]** Traditional OOP: 기획서와 코드의 용어가 다름
+**[코드 02.9]** Traditional OOP: 기획서와 코드의 용어가 다름
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] 기획서와 코드의 용어가 다름
@@ -505,7 +505,7 @@
 
 ### After: Modern Approach
 
-**[코드 01.10]** Modern: 기획서의 용어가 그대로 코드에 등장
+**[코드 02.10]** Modern: 기획서의 용어가 그대로 코드에 등장
 ```java
  1| // package: com.ecommerce.coupon
  2| // [O] 기획서의 용어가 그대로 코드에 등장
@@ -545,7 +545,7 @@
 
 ### After: DMMF 관점 (DDD + FP)
 
-**[코드 01.11]** DMMF: OOP 구조를 유지하면서 FP 원칙 적용
+**[코드 02.11]** DMMF: OOP 구조를 유지하면서 FP 원칙 적용
 ```java
  1| // package: com.ecommerce.shared
  2| // DMMF: OOP 구조를 유지하면서 FP 원칙 적용
@@ -565,7 +565,7 @@
 
 ### After: DOP 관점
 
-**[코드 01.12]** DOP: 데이터와 코드를 완전 분리
+**[코드 02.12]** DOP: 데이터와 코드를 완전 분리
 ```java
  1| // package: com.ecommerce.shared
  2| // DOP: 데이터와 코드를 완전 분리

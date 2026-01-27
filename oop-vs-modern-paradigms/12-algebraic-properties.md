@@ -1,4 +1,4 @@
-# 11. Algebraic Properties (대수적 속성)
+# 12. Algebraic Properties (대수적 속성)
 
 > **Sources**: DOP Ch.7 (Algebraic Properties)
 
@@ -15,7 +15,7 @@
 
   실전에서 결합법칙을 만족하는 대표적인 연산은 덧셈, 문자열 연결, 리스트 병합, 최대/최소값 등이다. 반면 뺄셈, 나눗셈, 평균 계산 등은 결합법칙을 만족하지 않는다.
 
-**[그림 11.1]** Associativity (결합법칙) - 병렬 처리 안전성
+**[그림 12.1]** Associativity (결합법칙) - 병렬 처리 안전성
 ```
 SEQUENTIAL vs PARALLEL PROCESSING (Associativity)
 ==================================================
@@ -45,7 +45,7 @@ Sequential: O(n)                 Parallel: O(n/p)
 
 ### Before: Traditional OOP
 
-**[코드 11.1]** Traditional OOP: 순차 처리만 가능한 가변 누적기
+**[코드 12.1]** Traditional OOP: 순차 처리만 가능한 가변 누적기
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 순차 처리만 가능한 가변 누적기
@@ -76,7 +76,7 @@ Sequential: O(n)                 Parallel: O(n/p)
 
 ### After: Modern Approach
 
-**[코드 11.2]** Modern: 결합법칙을 만족하는 불변 Money 타입
+**[코드 12.2]** Modern: 결합법칙을 만족하는 불변 Money 타입
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] 결합법칙을 만족하는 불변 Money 타입
@@ -138,7 +138,7 @@ Sequential: O(n)                 Parallel: O(n/p)
 
   멱등성은 "토글 스위치(ON/OFF)"가 아닌 "ON 버튼"과 같다. ON 버튼은 이미 켜져 있으면 아무 변화가 없고, 꺼져 있으면 켠다. 두 번 눌러도 결과는 같다.
 
-**[그림 11.2]** Idempotency (멱등성) - 재시도 안전성
+**[그림 12.2]** Idempotency (멱등성) - 재시도 안전성
 ```
 IDEMPOTENT vs NON-IDEMPOTENT
 ==============================
@@ -167,7 +167,7 @@ Payment Example:
 
 ### Before: Traditional OOP
 
-**[코드 11.3]** Traditional OOP: 멱등하지 않은 결제 - 중복 호출 시 이중 출금
+**[코드 12.3]** Traditional OOP: 멱등하지 않은 결제 - 중복 호출 시 이중 출금
 ```java
  1| // package: com.ecommerce.payment
  2| // [X] 멱등하지 않은 결제 - 중복 호출 시 이중 출금
@@ -192,7 +192,7 @@ Payment Example:
 
 ### After: Modern Approach
 
-**[코드 11.4]** Modern: 멱등한 결제 - 재시도 안전
+**[코드 12.4]** Modern: 멱등한 결제 - 재시도 안전
 ```java
  1| // package: com.ecommerce.payment
  2| // [O] 멱등한 결제 - 재시도 안전
@@ -262,7 +262,7 @@ Payment Example:
 
   도메인에서 "아무 할인 없음", "무료 배송", "빈 장바구니" 등은 모두 해당 연산의 항등원으로 모델링할 수 있다.
 
-**[그림 11.3]** Identity Element (항등원) - 초기값과 빈 컬렉션 처리
+**[그림 12.3]** Identity Element (항등원) - 초기값과 빈 컬렉션 처리
 ```
 IDENTITY ELEMENT IN reduce()
 ==============================
@@ -293,7 +293,7 @@ Domain Identity Elements:
 
 ### Before: Traditional OOP
 
-**[코드 11.5]** Traditional OOP: 빈 컬렉션에서 예외 발생 가능한 누적 계산
+**[코드 12.5]** Traditional OOP: 빈 컬렉션에서 예외 발생 가능한 누적 계산
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 빈 컬렉션에서 예외 발생 가능한 누적 계산
@@ -327,7 +327,7 @@ Domain Identity Elements:
 
 ### After: Modern Approach
 
-**[코드 11.6]** Modern: 항등원을 활용한 안전한 reduce
+**[코드 12.6]** Modern: 항등원을 활용한 안전한 reduce
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] 항등원을 활용한 안전한 reduce
@@ -397,7 +397,7 @@ Domain Identity Elements:
 
   주의: 교환법칙과 결합법칙은 독립적인 속성이다. 문자열 연결은 결합법칙은 만족하지만 교환법칙은 만족하지 않는다 ("AB" != "BA"). 반면 max(a, b)는 둘 다 만족한다.
 
-**[그림 11.4]** Commutativity (교환법칙) - 순서 무관 연산
+**[그림 12.4]** Commutativity (교환법칙) - 순서 무관 연산
 ```
 COMMUTATIVITY IN DISTRIBUTED SYSTEMS
 ======================================
@@ -426,7 +426,7 @@ Messages arrive in different order:
 
 ### Before: Traditional OOP
 
-**[코드 11.7]** Traditional OOP: 순서 의존적인 할인 적용 - 순서에 따라 결과 다름
+**[코드 12.7]** Traditional OOP: 순서 의존적인 할인 적용 - 순서에 따라 결과 다름
 ```java
  1| // package: com.ecommerce.coupon
  2| // [X] 순서 의존적인 할인 적용 - 순서에 따라 결과 다름
@@ -459,7 +459,7 @@ Messages arrive in different order:
 
 ### After: Modern Approach
 
-**[코드 11.8]** Modern: 교환법칙을 만족하도록 설계: 할인을 독립적으로 계산 후 합산
+**[코드 12.8]** Modern: 교환법칙을 만족하도록 설계: 할인을 독립적으로 계산 후 합산
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] 교환법칙을 만족하도록 설계: 할인을 독립적으로 계산 후 합산
@@ -527,7 +527,7 @@ Messages arrive in different order:
 
   이 속성들은 개별로도 유용하지만, 결합하면 더 강력해진다. 결합법칙 + 항등원 = Monoid로 안전한 병렬 reduce를, 멱등성 + 재시도 = 안전한 분산 처리를 보장한다.
 
-**[그림 11.5]** Practical Applications (실전 적용) - reduce, fold, retry
+**[그림 12.5]** Practical Applications (실전 적용) - reduce, fold, retry
 ```
 ALGEBRAIC PROPERTIES IN PRACTICE
 ==================================
@@ -554,7 +554,7 @@ Combined: Monoid (Assoc + Id) -> parallelStream().reduce(id, op)
 
 ### Before: Traditional OOP
 
-**[코드 11.9]** Traditional OOP: 대수적 속성을 고려하지 않은 설계
+**[코드 12.9]** Traditional OOP: 대수적 속성을 고려하지 않은 설계
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] 대수적 속성을 고려하지 않은 설계
@@ -591,7 +591,7 @@ Combined: Monoid (Assoc + Id) -> parallelStream().reduce(id, op)
 
 ### After: Modern Approach
 
-**[코드 11.10]** Modern: 대수적 속성을 종합 적용한 Cart 설계
+**[코드 12.10]** Modern: 대수적 속성을 종합 적용한 Cart 설계
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] 대수적 속성을 종합 적용한 Cart 설계

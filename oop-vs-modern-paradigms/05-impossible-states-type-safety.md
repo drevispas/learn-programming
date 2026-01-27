@@ -1,4 +1,4 @@
-# 04. Impossible States & Type Safety (불가능한 상태와 타입 안전성)
+# 05. Impossible States & Type Safety (불가능한 상태와 타입 안전성)
 
 > **Sources**: DMMF Ch.4 (Impossible States), DOP Ch.4 (Make Illegal States Unrepresentable)
 
@@ -11,7 +11,7 @@
 - **통찰**: 런타임 if 검증 대신, 타입 시스템으로 불가능한 상태를 아예 표현하지 못하게 만든다.
 - **설명**: "결제됐는데 취소됨", "배송됐는데 미결제"와 같은 모순 상태가 코드로 작성조차 되지 않으면, 런타임 검증이 필요 없습니다. 이는 "경비원을 더 잘 훈련시키자"가 아니라 "처음부터 자물쇠를 설치하자"는 접근입니다.
 
-**[그림 04.1]** Make Illegal States Unrepresentable (불가능한 상태를 표현 불가능하게)
+**[그림 05.1]** Make Illegal States Unrepresentable (불가능한 상태를 표현 불가능하게)
 ```
 RUNTIME VALIDATION (Guard)        COMPILE-TIME SAFETY (Lock)
 ==========================        ==========================
@@ -33,7 +33,7 @@ RUNTIME VALIDATION (Guard)        COMPILE-TIME SAFETY (Lock)
 
 ### Before: Traditional OOP
 
-**[코드 04.1]** Traditional OOP: 런타임 검증에 의존: 개발자가 검증을 빠뜨리면 버그
+**[코드 05.1]** Traditional OOP: 런타임 검증에 의존: 개발자가 검증을 빠뜨리면 버그
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 런타임 검증에 의존: 개발자가 검증을 빠뜨리면 버그
@@ -66,7 +66,7 @@ RUNTIME VALIDATION (Guard)        COMPILE-TIME SAFETY (Lock)
 
 ### After: Modern Approach
 
-**[코드 04.2]** Modern: 타입으로 불가능한 상태 차단: 검증 없이도 안전
+**[코드 05.2]** Modern: 타입으로 불가능한 상태 차단: 검증 없이도 안전
 ```java
  1| // package: com.ecommerce.order
  2| // [O] 타입으로 불가능한 상태 차단: 검증 없이도 안전
@@ -140,7 +140,7 @@ RUNTIME VALIDATION (Guard)        COMPILE-TIME SAFETY (Lock)
 - **통찰**: 함수의 시그니처가 "이 상태에서만 이 연산이 가능함"을 표현하면, 잘못된 순서의 호출이 컴파일 에러가 된다.
 - **설명**: `ship()` 함수가 `PaidOrder` 타입만 받으면, 결제 안 된 주문을 배송하려는 시도는 컴파일 단계에서 차단됩니다. 각 상태가 별도 타입이므로, 상태 전이는 "한 타입에서 다른 타입으로의 변환 함수"가 됩니다.
 
-**[그림 04.2]** 상태별 Entity 패턴 (State-per-Entity Pattern)
+**[그림 05.2]** 상태별 Entity 패턴 (State-per-Entity Pattern)
 ```
 State Machine as Types:
 
@@ -157,7 +157,7 @@ State Machine as Types:
 
 ### Before: Traditional OOP
 
-**[코드 04.3]** Traditional OOP: 상태를 String으로 관리: 잘못된 전이가 런타임에만 발견됨
+**[코드 05.3]** Traditional OOP: 상태를 String으로 관리: 잘못된 전이가 런타임에만 발견됨
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 상태를 String으로 관리: 잘못된 전이가 런타임에만 발견됨
@@ -186,7 +186,7 @@ State Machine as Types:
 
 ### After: Modern Approach
 
-**[코드 04.4]** Modern: 상태별 타입: 함수 시그니처가 전이 규칙을 강제
+**[코드 05.4]** Modern: 상태별 타입: 함수 시그니처가 전이 규칙을 강제
 ```java
  1| // package: com.ecommerce.order
  2| // [O] 상태별 타입: 함수 시그니처가 전이 규칙을 강제
@@ -258,7 +258,7 @@ State Machine as Types:
 ### 배경 지식: Type Erasure (타입 소거)
 Java 제네릭은 **Type Erasure(타입 소거)** 방식으로 구현된다. 컴파일러가 제네릭 타입 정보를 사용하여 타입 안전성을 검증한 후, 바이트코드 생성 시 타입 파라미터를 제거한다.
 
-**[그림 04.A]** Type Erasure (타입 소거)
+**[그림 05.A]** Type Erasure (타입 소거)
 ```
 Compile Time                          Runtime (Bytecode)
 =============                         ==================
@@ -283,7 +283,7 @@ Type Erasure 때문에 Phantom Type이 "공짜"가 된다. `Email<Verified>`와 
 - **통찰**: 타입 파라미터를 런타임에 사용하지 않으면서도, 컴파일 타임에 상태를 추적할 수 있다.
 - **설명**: `Email<Unverified>`와 `Email<Verified>`는 런타임에는 같은 구조이지만, 컴파일러는 이들을 다른 타입으로 취급합니다. 인증된 이메일만 받는 함수에 미인증 이메일을 전달하면 컴파일 에러가 발생합니다.
 
-**[그림 04.3]** Phantom Type 패턴 (팬텀 타입)
+**[그림 05.3]** Phantom Type 패턴 (팬텀 타입)
 ```
 Phantom Type = "invisible stamp"
 
@@ -298,7 +298,7 @@ Phantom Type = "invisible stamp"
 
 ### Before: Traditional OOP
 
-**[코드 04.5]** Traditional OOP: boolean 플래그로 인증 상태 관리
+**[코드 05.5]** Traditional OOP: boolean 플래그로 인증 상태 관리
 ```java
  1| // package: com.ecommerce.shared
  2| // [X] boolean 플래그로 인증 상태 관리
@@ -320,7 +320,7 @@ Phantom Type = "invisible stamp"
 
 ### After: Modern Approach
 
-**[코드 04.6]** Modern: Phantom Type: 타입 파라미터로 상태를 컴파일 타임에 추적
+**[코드 05.6]** Modern: Phantom Type: 타입 파라미터로 상태를 컴파일 타임에 추적
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] Phantom Type: 타입 파라미터로 상태를 컴파일 타임에 추적
@@ -387,7 +387,7 @@ Phantom Type = "invisible stamp"
 
 ### Before: Traditional OOP
 
-**[코드 04.7]** Traditional OOP: null로 부재 표현: NullPointerException 지뢰밭
+**[코드 05.7]** Traditional OOP: null로 부재 표현: NullPointerException 지뢰밭
 ```java
  1| // package: com.ecommerce.member
  2| // [X] null로 부재 표현: NullPointerException 지뢰밭
@@ -414,7 +414,7 @@ Phantom Type = "invisible stamp"
 
 ### After: Modern Approach
 
-**[코드 04.8]** Modern: Optional 또는 Sum Type으로 부재를 타입에 명시
+**[코드 05.8]** Modern: Optional 또는 Sum Type으로 부재를 타입에 명시
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] Optional 또는 Sum Type으로 부재를 타입에 명시

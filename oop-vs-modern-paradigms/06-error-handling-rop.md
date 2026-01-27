@@ -1,4 +1,4 @@
-# 05. Error Handling & ROP (에러 처리와 Railway-Oriented Programming)
+# 06. Error Handling & ROP (에러 처리와 Railway-Oriented Programming)
 
 > Sources: DMMF Ch.6 (Railway-Oriented Programming), DOP Ch.5 (Total Functions)
 
@@ -17,7 +17,7 @@
 
 DOP에서는 "시그니처가 거짓말하면 호출자가 실패 케이스를 놓친다"고 표현하며, DMMF에서는 "Exception은 함수형 합성을 깨뜨린다"고 설명한다. 두 관점 모두 부분 함수를 전체 함수로 바꾸는 것을 핵심 원칙으로 삼는다.
 
-**[그림 05.1]** Total Functions vs Partial Functions (전체 함수 vs 부분 함수)
+**[그림 06.1]** Total Functions vs Partial Functions (전체 함수 vs 부분 함수)
 ```
 +------------------------------------------------------------+
 |               Partial Function                             |
@@ -41,7 +41,7 @@ DOP에서는 "시그니처가 거짓말하면 호출자가 실패 케이스를 �
 
 ### Before: Traditional OOP
 
-**[코드 05.1]** Traditional OOP: Partial Function - 시그니처가 거짓말하는 안티패턴
+**[코드 06.1]** Traditional OOP: Partial Function - 시그니처가 거짓말하는 안티패턴
 ```java
  1| // package: com.ecommerce.order
  2| // [X] Partial Function - 시그니처가 거짓말하는 안티패턴
@@ -83,7 +83,7 @@ DOP에서는 "시그니처가 거짓말하면 호출자가 실패 케이스를 �
 
 ### After: Modern Approach
 
-**[코드 05.2]** Modern: Total Function - 정직한 시그니처
+**[코드 06.2]** Modern: Total Function - 정직한 시그니처
 ```java
  1| // package: com.ecommerce.auth
  2| // [O] Total Function - 정직한 시그니처
@@ -137,7 +137,7 @@ DMMF에서는 이를 "철도 분기점" 비유로 설명한다. 기차가 분기
 
 DOP에서는 에러 타입을 sealed interface로 정의하여 패턴 매칭으로 모든 케이스를 강제 처리하는 것을 강조한다. 이를 통해 에러 처리 누락을 컴파일 타임에 잡을 수 있다.
 
-**[그림 05.2]** Result Type Pattern (Result<Success, Failure>)
+**[그림 06.2]** Result Type Pattern (Result<Success, Failure>)
 ```
 +-----------------------------------------------+
 |        Result<S, F> (Sealed Interface)         |
@@ -162,7 +162,7 @@ DOP에서는 에러 타입을 sealed interface로 정의하여 패턴 매칭으�
 
 ### Before: Traditional OOP
 
-**[코드 05.3]** Traditional OOP: Exception으로 에러 처리 - 흐름 제어가 GOTO와 유사
+**[코드 06.3]** Traditional OOP: Exception으로 에러 처리 - 흐름 제어가 GOTO와 유사
 ```java
  1| // package: com.ecommerce.order
  2| // [X] Exception으로 에러 처리 - 흐름 제어가 GOTO와 유사
@@ -195,7 +195,7 @@ DOP에서는 에러 타입을 sealed interface로 정의하여 패턴 매칭으�
 
 ### After: Modern Approach
 
-**[코드 05.4]** Modern: Result 타입으로 에러를 일급 값으로 처리
+**[코드 06.4]** Modern: Result 타입으로 에러를 일급 값으로 처리
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] Result 타입으로 에러를 일급 값으로 처리
@@ -297,7 +297,7 @@ Railway-Oriented Programming(ROP)은 Scott Wlaschin이 제안한 에러 처리 �
 
 ROP의 핵심 이점은 **선형적 코드 흐름**이다. try-catch의 비지역적 점프나 중첩된 if-else 없이, 깔끔한 파이프라인으로 복잡한 워크플로우를 표현할 수 있다.
 
-**[그림 05.3]** Railway-Oriented Programming (두 개의 레일 비유)
+**[그림 06.3]** Railway-Oriented Programming (두 개의 레일 비유)
 ```
 === Railway-Oriented Programming: Two Tracks ===
 
@@ -317,7 +317,7 @@ ROP의 핵심 이점은 **선형적 코드 흐름**이다. try-catch의 비지�
 
 ### Before: Traditional OOP
 
-**[코드 05.5]** Traditional OOP: 중첩된 try-catch와 조건문으로 워크플로우 구현
+**[코드 06.5]** Traditional OOP: 중첩된 try-catch와 조건문으로 워크플로우 구현
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 중첩된 try-catch와 조건문으로 워크플로우 구현
@@ -363,7 +363,7 @@ ROP의 핵심 이점은 **선형적 코드 흐름**이다. try-catch의 비지�
 
 ### After: Modern Approach
 
-**[코드 05.6]** Modern: Railway-Oriented Programming - flatMap 체이닝
+**[코드 06.6]** Modern: Railway-Oriented Programming - flatMap 체이닝
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Railway-Oriented Programming - flatMap 체이닝
@@ -442,7 +442,7 @@ ROP의 핵심 이점은 **선형적 코드 흐름**이다. try-catch의 비지�
 
 체이닝을 통해 여러 단계의 연산을 선형적으로 합성할 수 있다. 각 단계가 독립적으로 실패할 수 있더라도, 파이프라인 전체가 하나의 `Result`로 수렴한다.
 
-**[그림 05.4]** flatMap/map Chaining for Error Composition (에러 합성을 위한 체이닝)
+**[그림 06.4]** flatMap/map Chaining for Error Composition (에러 합성을 위한 체이닝)
 ```
 === map vs flatMap ===
 
@@ -467,7 +467,7 @@ flatMap + (A -> Result<B>):
 
 ### Before: Traditional OOP
 
-**[코드 05.7]** Traditional OOP: map 없이 매번 switch로 분기
+**[코드 06.7]** Traditional OOP: map 없이 매번 switch로 분기
 ```java
  1| // package: com.ecommerce.order
  2| // [X] map 없이 매번 switch로 분기
@@ -498,7 +498,7 @@ flatMap + (A -> Result<B>):
 
 ### After: Modern Approach
 
-**[코드 05.8]** Modern: map/flatMap으로 깔끔한 체이닝
+**[코드 06.8]** Modern: map/flatMap으로 깔끔한 체이닝
 ```java
  1| // package: com.ecommerce.order
  2| // [O] map/flatMap으로 깔끔한 체이닝
@@ -584,7 +584,7 @@ Validation은 Applicative 합성이다. 각 검증이 서로 독립적이므로,
 
 DMMF에서는 이 둘의 차이를 "시험 채점"으로 비유한다. Result는 "첫 오답에서 불합격 처리", Validation은 "모든 문제를 채점하고 종합 리포트 제공"이다.
 
-**[그림 05.5]** Validation (Applicative) vs Result (Monadic) - 모든 에러 수집 vs 빠른 실패
+**[그림 06.5]** Validation (Applicative) vs Result (Monadic) - 모든 에러 수집 vs 빠른 실패
 ```
 === Result.flatMap: Fail-Fast (Sequential) ===
 
@@ -616,7 +616,7 @@ DMMF에서는 이 둘의 차이를 "시험 채점"으로 비유한다. Result는
 
 ### Before: Traditional OOP
 
-**[코드 05.9]** Traditional OOP: 첫 에러에서 예외를 던져 나머지 검증 불가
+**[코드 06.9]** Traditional OOP: 첫 에러에서 예외를 던져 나머지 검증 불가
 ```java
  1| // package: com.ecommerce.auth
  2| // [X] 첫 에러에서 예외를 던져 나머지 검증 불가
@@ -645,7 +645,7 @@ DMMF에서는 이 둘의 차이를 "시험 채점"으로 비유한다. Result는
 
 ### After: Modern Approach
 
-**[코드 05.10]** Modern: Validation.combine으로 모든 에러 수집
+**[코드 06.10]** Modern: Validation.combine으로 모든 에러 수집
 ```java
  1| // package: com.ecommerce.auth
  2| // [O] Validation.combine으로 모든 에러 수집

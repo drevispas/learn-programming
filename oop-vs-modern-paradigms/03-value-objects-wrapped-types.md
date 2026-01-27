@@ -1,4 +1,4 @@
-# 02. Value Objects / Wrapped Types (값 객체와 래핑 타입)
+# 03. Value Objects / Wrapped Types (값 객체와 래핑 타입)
 
 > **Sources**: DMMF Ch.2 (Wrapped Objects), DOP Ch.2 (Identity vs Value)
 
@@ -13,7 +13,7 @@
 
   Java Record를 사용하면 도메인 타입을 한 줄로 정의할 수 있어, "타입이 너무 많아진다"는 우려가 크게 줄어듭니다.
 
-**[그림 02.1]** Primitive Obsession 해결 (Solving Primitive Obsession)
+**[그림 03.1]** Primitive Obsession 해결 (Solving Primitive Obsession)
 ```
 Primitive Obsession:
 
@@ -38,7 +38,7 @@ Type-Safe Design:
 
 ### Before: Traditional OOP
 
-**[코드 02.1]** Traditional OOP: Primitive Obsession: 모든 것이 String과 double
+**[코드 03.1]** Traditional OOP: Primitive Obsession: 모든 것이 String과 double
 ```java
  1| // package: com.ecommerce.payment
  2| // [X] Primitive Obsession: 모든 것이 String과 double
@@ -77,7 +77,7 @@ Type-Safe Design:
 
 ### After: DMMF 관점 (DDD + FP)
 
-**[코드 02.2]** DMMF: 도메인 전용 Value Object + 비즈니스 연산 포함
+**[코드 03.2]** DMMF: 도메인 전용 Value Object + 비즈니스 연산 포함
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] DMMF: 도메인 전용 Value Object + 비즈니스 연산 포함
@@ -131,7 +131,7 @@ Type-Safe Design:
 
 ### After: DOP 관점
 
-**[코드 02.3]** DOP: Record는 순수 데이터, 로직은 Calculations 클래스
+**[코드 03.3]** DOP: Record는 순수 데이터, 로직은 Calculations 클래스
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] DOP: Record는 순수 데이터, 로직은 Calculations 클래스
@@ -184,7 +184,7 @@ Type-Safe Design:
 
 **Constrained Type 패턴**: 범위나 형식을 가진 도메인 값을 타입으로 표현합니다.
 
-**[코드 02.4]** OrderQuantity record
+**[코드 03.4]** OrderQuantity record
 ```java
  1| // package: com.ecommerce.order
  2| public record OrderQuantity(int value) {
@@ -222,7 +222,7 @@ Type-Safe Design:
 - **통찰**: Value는 "내용이 같으면 같은 것"이고, Entity는 "ID가 같으면 같은 것"이다.
 - **설명**: 만원짜리 두 장은 "같은" 만원입니다(Value). 하지만 같은 100만원이 들어있어도 "내 계좌"와 "네 계좌"는 다릅니다(Entity). 이 구분은 `equals()`를 어떻게 구현할지, 불변으로 만들지 여부를 결정합니다.
 
-**[그림 02.2]** Value Object vs Entity (값 객체와 엔티티)
+**[그림 03.2]** Value Object vs Entity (값 객체와 엔티티)
 ```
 VALUE OBJECT                    ENTITY
 +----------+                    +----------+
@@ -243,7 +243,7 @@ Immutable: always               Mutable: state changes
 
 ### Before: Traditional OOP
 
-**[코드 02.5]** Value와 Entity의 구분이 모호한 OOP 코드
+**[코드 03.5]** Value와 Entity의 구분이 모호한 OOP 코드
 ```java
  1| // package: com.ecommerce.order
  2| // [X] Value와 Entity의 구분이 모호한 OOP 코드
@@ -275,7 +275,7 @@ Immutable: always               Mutable: state changes
 
 ### After: Modern Approach
 
-**[코드 02.6]** Modern: Value Object: 값이 같으면 동일 (Record가 자동 처리)
+**[코드 03.6]** Modern: Value Object: 값이 같으면 동일 (Record가 자동 처리)
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Value Object: 값이 같으면 동일 (Record가 자동 처리)
@@ -337,7 +337,7 @@ Immutable: always               Mutable: state changes
 - **통찰**: "생성된 객체는 반드시 유효하다"는 보장이 있으면, 이후 코드에서 재검증이 불필요하다.
 - **설명**: Compact Constructor는 "공항 입국 심사"와 같습니다. 심사를 통과하지 못한 데이터는 시스템에 들어올 수 없고, 일단 통과하면 "유효하다"고 확신할 수 있습니다. 이것이 "Parse, Don't Validate" 원칙입니다.
 
-**[그림 02.3]** Compact Constructor와 검증 전략 (Compact Constructor and Validation Strategy)
+**[그림 03.3]** Compact Constructor와 검증 전략 (Compact Constructor and Validation Strategy)
 ```
 +-------------------+        +-------------------+
 | External World    |        | Domain (trusted)  |
@@ -357,7 +357,7 @@ Immutable: always               Mutable: state changes
 
 ### Before: Traditional OOP
 
-**[코드 02.7]** Traditional OOP: 방어적 코딩: 모든 메서드에서 매번 검증
+**[코드 03.7]** Traditional OOP: 방어적 코딩: 모든 메서드에서 매번 검증
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 방어적 코딩: 모든 메서드에서 매번 검증
@@ -385,7 +385,7 @@ Immutable: always               Mutable: state changes
 
 ### After: DMMF 관점 (DDD + FP)
 
-**[코드 02.8]** DMMF: 모든 검증을 Compact Constructor에 집중
+**[코드 03.8]** DMMF: 모든 검증을 Compact Constructor에 집중
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] DMMF: 모든 검증을 Compact Constructor에 집중
@@ -412,7 +412,7 @@ Immutable: always               Mutable: state changes
 
 ### After: DOP 관점
 
-**[코드 02.9]** DOP: 불변식만 Compact Constructor, 비즈니스 규칙은 Validator
+**[코드 03.9]** DOP: 불변식만 Compact Constructor, 비즈니스 규칙은 Validator
 ```java
  1| // package: com.ecommerce.shared
  2| // [O] DOP: 불변식만 Compact Constructor, 비즈니스 규칙은 Validator
@@ -469,7 +469,7 @@ Immutable: always               Mutable: state changes
 
 ### Before: Traditional OOP
 
-**[코드 02.10]** Traditional OOP: 얕은 불변성의 함정
+**[코드 03.10]** Traditional OOP: 얕은 불변성의 함정
 ```java
  1| // package: com.ecommerce.order
  2| // [X] 얕은 불변성의 함정
@@ -496,7 +496,7 @@ Immutable: always               Mutable: state changes
 
 ### After: Modern Approach
 
-**[코드 02.11]** Modern: Compact Constructor에서 방어적 복사
+**[코드 03.11]** Modern: Compact Constructor에서 방어적 복사
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Compact Constructor에서 방어적 복사
