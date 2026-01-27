@@ -9,35 +9,38 @@
 **[표 B.1]** 핵심 패턴 요약
 | # | Pattern | One-line Description | Topic |
 |---|---------|---------------------|-------|
-| 1 | Value Object | 원시 타입 대신 도메인 의미를 가진 불변 래퍼 타입 | 02 |
-| 2 | Compact Constructor | Record 생성 시 불변 조건을 검증하는 축약 생성자 | 02 |
-| 3 | Wither Pattern | 불변 객체의 일부 필드만 변경한 새 인스턴스 반환 | 02 |
-| 4 | Sum Type (ADT) | sealed interface로 가능한 상태를 OR로 열거 | 03 |
-| 5 | Product Type | record로 필수 필드를 AND로 결합 | 03 |
-| 6 | Exhaustive Pattern Matching | sealed interface의 모든 case를 switch로 망라 처리 | 03 |
-| 7 | Record Pattern | switch에서 Record 필드를 분해하여 바인딩 | 03 |
-| 8 | State Machine | sealed interface로 상태 전이를 타입으로 강제 | 04 |
-| 9 | Phantom Type | 런타임 데이터 없이 컴파일 타임 상태를 추적하는 타입 | 04 |
-| 10 | Total Function | 모든 입력에 대해 유효한 결과를 반환 (예외 대신 Result) | 05 |
-| 11 | Result Type | Success/Failure로 연산 결과를 명시적 표현 | 05, 06 |
-| 12 | Railway-Oriented Programming | flatMap 체인으로 성공/실패 경로 분리 | 06, 08 |
-| 13 | Pipeline Pattern | 순수 함수들을 flatMap/map으로 순차 연결 | 06 |
-| 14 | Functional Core / Imperative Shell | 순수 로직(Core)과 I/O(Shell)를 분리 | 06, 13 |
-| 15 | Validation (Applicative) | 모든 에러를 수집하는 병렬 검증 패턴 | 07, 08 |
-| 16 | Monoid (Assoc + Identity) | 결합법칙 + 항등원으로 안전한 reduce 보장 | 11 |
-| 17 | Idempotent Operation | 멱등성 키로 중복 실행 방지 | 11 |
-| 18 | Rule as Data | 비즈니스 규칙을 sealed interface(ADT)로 데이터화 | 12 |
-| 19 | Rule Engine | 규칙 데이터를 패턴 매칭으로 평가하는 순수 함수 | 12 |
-| 20 | Interpreter Separation | 규칙 정의(data)와 실행(interpreter)을 분리 | 12 |
-| 21 | Entity-Record Mapper | JPA Entity와 Domain Record 간 변환 통역사 | 13 |
-| 22 | Gradual Migration | 복잡한 로직부터 순수 함수로 점진 추출 | 13 |
-| 23 | Bounded Context Model | 같은 도메인을 컨텍스트별 독립 모델로 분리 | 01, 13 |
-| 24 | Defensive Copy | Record의 컬렉션 필드를 List.copyOf로 보호 | 02 |
-| 25 | Null Object via ADT | null 대신 NoDiscount(), Empty() 등 ADT case 사용 | 03, 11 |
-| 26 | Event Store | 상태 변화를 이벤트로 저장하여 완전한 이력 보존 | 14 |
-| 27 | Aggregate Reconstitution | fold(initialState, events)로 현재 상태 재구성 | 14 |
-| 28 | Decider Pattern | (State, Command) -> Result<Events, Error> 순수 함수 | 14 |
-| 29 | Projection (CQRS) | 이벤트 스트림을 읽기 전용 모델로 변환 | 14 |
+| 1 | Value Object | 원시 타입 대신 도메인 의미를 가진 불변 래퍼 타입 | 03 |
+| 2 | Compact Constructor | Record 생성 시 불변 조건을 검증하는 축약 생성자 | 03 |
+| 3 | Wither Pattern | 불변 객체의 일부 필드만 변경한 새 인스턴스 반환 | 03 |
+| 4 | Sum Type (ADT) | sealed interface로 가능한 상태를 OR로 열거 | 04 |
+| 5 | Product Type | record로 필수 필드를 AND로 결합 | 04 |
+| 6 | Exhaustive Pattern Matching | sealed interface의 모든 case를 switch로 망라 처리 | 04 |
+| 7 | Record Pattern | switch에서 Record 필드를 분해하여 바인딩 | 04 |
+| 8 | State Machine | sealed interface로 상태 전이를 타입으로 강제 | 05 |
+| 9 | Phantom Type | 런타임 데이터 없이 컴파일 타임 상태를 추적하는 타입 | 05 |
+| 10 | Total Function | 모든 입력에 대해 유효한 결과를 반환 (예외 대신 Result) | 06 |
+| 11 | Result Type | Success/Failure로 연산 결과를 명시적 표현 | 06 |
+| 12 | Railway-Oriented Programming | flatMap 체인으로 성공/실패 경로 분리 | 06, 10 |
+| 13 | Pipeline Pattern | 순수 함수들을 flatMap/map으로 순차 연결 | 07 |
+| 14 | Functional Core / Imperative Shell | 순수 로직(Core)과 I/O(Shell)를 분리 | 08, 14 |
+| 15 | Validation (Applicative) | 모든 에러를 수집하는 병렬 검증 패턴 | 08, 10 |
+| 16 | Monoid (Assoc + Identity) | 결합법칙 + 항등원으로 안전한 reduce 보장 | 12 |
+| 17 | Idempotent Operation | 멱등성 키로 중복 실행 방지 | 12 |
+| 18 | Rule as Data | 비즈니스 규칙을 sealed interface(ADT)로 데이터화 | 13 |
+| 19 | Rule Engine | 규칙 데이터를 패턴 매칭으로 평가하는 순수 함수 | 13 |
+| 20 | Interpreter Separation | 규칙 정의(data)와 실행(interpreter)을 분리 | 13 |
+| 21 | Entity-Record Mapper | JPA Entity와 Domain Record 간 변환 통역사 | 14 |
+| 22 | Gradual Migration | 복잡한 로직부터 순수 함수로 점진 추출 | 14 |
+| 23 | Bounded Context Model | 같은 도메인을 컨텍스트별 독립 모델로 분리 | 01, 14 |
+| 24 | Defensive Copy | Record의 컬렉션 필드를 List.copyOf로 보호 | 03 |
+| 25 | Null Object via ADT | null 대신 NoDiscount(), Empty() 등 ADT case 사용 | 04, 12 |
+| 26 | Event Store | 상태 변화를 이벤트로 저장하여 완전한 이력 보존 | 15 |
+| 27 | Aggregate Reconstitution | fold(initialState, events)로 현재 상태 재구성 | 15 |
+| 28 | Decider Pattern | (State, Command) -> Result<Events, Error> 순수 함수 | 15 |
+| 29 | Projection (CQRS) | 이벤트 스트림을 읽기 전용 모델로 변환 | 15 |
+| 30 | Aggregate Root Pattern | 외부에서는 Root만 참조, 내부 Entity 보호 | 01 |
+| 31 | Repository Pattern (DDD) | Aggregate 단위 저장/조회 추상화 (DAO와 구분) | 01 |
+| 32 | Domain Service Pattern | 여러 Aggregate 협력이 필요한 상태 없는 순수 함수 | 01 |
 
 ---
 
@@ -367,6 +370,43 @@
 3|   switch (event) {
 4|     case OrderPlaced e -> summaryRepo.save(new OrderSummary(e.id(), "PLACED", e.at()));
 5|     case OrderPaid e -> summaryRepo.updateStatus(e.id(), "PAID", e.at());
+6|   }
+7| }
+```
+
+### 30. Aggregate Root Pattern
+
+**[코드 B.30]** Aggregate Root Pattern
+```java
+1| // package: com.ecommerce.order
+2| public record Order(OrderId id, List<OrderItem> items, OrderStatus status) {
+3|   public Order addItem(ProductId p, Quantity q, Money price) {
+4|     var newItem = new OrderItem(ItemId.generate(), p, q, price);
+5|     return new Order(id, List.copyOf(append(items, newItem)), status);
+6|   }
+7| }
+```
+
+### 31. Repository Pattern (DDD)
+
+**[코드 B.31]** Repository Pattern (DDD)
+```java
+1| // package: com.ecommerce.order
+2| public interface OrderRepository {
+3|   Optional<Order> findById(OrderId id);  // Domain type 반환
+4|   void save(Order order);                 // Aggregate 단위 저장
+5| }
+```
+
+### 32. Domain Service Pattern
+
+**[코드 B.32]** Domain Service Pattern
+```java
+1| // package: com.ecommerce.order
+2| public class OrderDomainService {
+3|   public static Result<Order, OrderError> validateAndCreate(
+4|     CreateOrderCommand cmd, Customer customer, StockInfo stock) {
+5|     return validateStock(cmd.items(), stock).map(items -> new Order(...));
 6|   }
 7| }
 ```

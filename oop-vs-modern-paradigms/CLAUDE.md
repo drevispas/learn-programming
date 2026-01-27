@@ -24,7 +24,7 @@ Comparative study documents contrasting Traditional OOP with modern paradigms (D
 - 코드 블록: `**[코드 XX.N]** Title` 레이블, `// package:` 주석, `N| ` 라인넘버, 2칸 들여쓰기
 - ASCII 다이어그램: `**[그림 XX.N]** Title` 레이블
 - 마크다운 표: `**[표 XX.N]** Title` 레이블
-- XX = 파일 번호 (00~13, A, B, C), N = 파일 내 타입별 순번
+- XX = 파일 번호 (00~15, A, B, C), N = 파일 내 타입별 순번
 - 레이블은 블록 바로 위에 배치 (레이블과 블록 사이 빈 줄 없음, 레이블 위에는 빈 줄)
 - 패키지 결정: Order→order, Payment→payment, Customer→member, Product→product, Coupon→coupon, Auth→auth, Money/VO→shared, Shipping→shipping, Tax→tax, Rule→rule, Generic→com.example.pattern, Infra→infra
 
@@ -55,5 +55,5 @@ When the two sources disagree, use split After sections:
 - DOP: `../dop-in-java-2026-chris-kiehl/lectures/`
 
 ## File Naming
-- `00-overview.md` through `13-comprehensive-integration.md`
+- `00-overview.md` through `15-event-sourcing.md`
 - `appendix-a-*`, `appendix-b-*`, `appendix-c-*`
