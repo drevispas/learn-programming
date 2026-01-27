@@ -103,42 +103,47 @@
 19|   OrderStatus status
 20| ) {
 21|   public Order {
-22|     items = List.copyOf(items);
-23|   }
-24|
-25|   // 도메인 로직: Order가 스스로 결제 가능 여부 판단
-26|   public Result<Order, OrderError> pay(PaymentId paymentId, LocalDateTime at) {
-27|     return switch (status) {
-28|       case Pending _ -> Result.success(
-29|         new Order(id, customerId, items, totalAmount, new Paid(at, paymentId)));
-30|       case Paid _, Shipped _, Cancelled _ ->
-31|         Result.failure(new OrderError.CannotPay(id, status));
-32|     };
-33|   }
-34|
-35|   public Result<Order, OrderError> ship(TrackingNumber tracking, LocalDateTime at) {
-36|     return switch (status) {
-37|       case Paid _ -> Result.success(
-38|         new Order(id, customerId, items, totalAmount, new Shipped(at, tracking)));
-39|       case Pending _, Shipped _, Cancelled _ ->
-40|         Result.failure(new OrderError.CannotShip(id, status));
-41|     };
-42|   }
-43| }
-44|
-45| // --- UseCase: Orchestration만 담당 ---
-46| @RequiredArgsConstructor
-47| public class PayOrderUseCase {
-48|   private final OrderRepository orderRepository;
-49|   private final PaymentGateway paymentGateway;
-50|
-51|   public Result<Order, OrderError> execute(OrderId orderId, PaymentInfo info) {
-52|     Order order = orderRepository.findById(orderId).orElseThrow();
-53|     PaymentId paymentId = paymentGateway.charge(info);
-54|     return order.pay(paymentId, LocalDateTime.now())
-55|       .peek(orderRepository::save);
-56|   }
-57| }
+22|     Objects.requireNonNull(id, "OrderId는 필수");
+23|     Objects.requireNonNull(customerId, "CustomerId는 필수");
+24|     Objects.requireNonNull(items, "items는 필수");
+25|     Objects.requireNonNull(totalAmount, "totalAmount는 필수");
+26|     Objects.requireNonNull(status, "status는 필수");
+27|     items = List.copyOf(items);
+28|   }
+29|
+30|   // 도메인 로직: Order가 스스로 결제 가능 여부 판단
+31|   public Result<Order, OrderError> pay(PaymentId paymentId, LocalDateTime at) {
+32|     return switch (status) {
+33|       case Pending _ -> Result.success(
+34|         new Order(id, customerId, items, totalAmount, new Paid(at, paymentId)));
+35|       case Paid _, Shipped _, Cancelled _ ->
+36|         Result.failure(new OrderError.CannotPay(id, status));
+37|     };
+38|   }
+39|
+40|   public Result<Order, OrderError> ship(TrackingNumber tracking, LocalDateTime at) {
+41|     return switch (status) {
+42|       case Paid _ -> Result.success(
+43|         new Order(id, customerId, items, totalAmount, new Shipped(at, tracking)));
+44|       case Pending _, Shipped _, Cancelled _ ->
+45|         Result.failure(new OrderError.CannotShip(id, status));
+46|     };
+47|   }
+48| }
+49|
+50| // --- UseCase: Orchestration만 담당 ---
+51| @RequiredArgsConstructor
+52| public class PayOrderUseCase {
+53|   private final OrderRepository orderRepository;
+54|   private final PaymentGateway paymentGateway;
+55|
+56|   public Result<Order, OrderError> execute(OrderId orderId, PaymentInfo info) {
+57|     Order order = orderRepository.findById(orderId).orElseThrow();
+58|     PaymentId paymentId = paymentGateway.charge(info);
+59|     return order.pay(paymentId, LocalDateTime.now())
+60|       .peek(orderRepository::save);
+61|   }
+62| }
 ```
 
 ### After: DOP 관점
@@ -164,45 +169,52 @@
 17|   Money totalAmount,
 18|   OrderStatus status
 19| ) {
-20|   public Order { items = List.copyOf(items); }
-21| }
-22|
-23| // --- Calculations (순수 함수) ---
-24| public class OrderTransitions {
-25|   public static Result<Order, OrderError> pay(Order order, PaymentId paymentId, LocalDateTime at) {
-26|     return switch (order.status()) {
-27|       case Pending _ -> Result.success(
-28|         new Order(order.id(), order.customerId(), order.items(),
-29|           order.totalAmount(), new Paid(at, paymentId)));
-30|       case Paid _, Shipped _, Cancelled _ ->
-31|         Result.failure(new OrderError.CannotPay(order.id(), order.status()));
-32|     };
-33|   }
-34|
-35|   public static Result<Order, OrderError> ship(Order order, TrackingNumber tracking, LocalDateTime at) {
-36|     return switch (order.status()) {
-37|       case Paid _ -> Result.success(
-38|         new Order(order.id(), order.customerId(), order.items(),
-39|           order.totalAmount(), new Shipped(at, tracking)));
-40|       case Pending _, Shipped _, Cancelled _ ->
-41|         Result.failure(new OrderError.CannotShip(order.id(), order.status()));
-42|     };
-43|   }
-44| }
-45|
-46| // --- Orchestrator ---
-47| @RequiredArgsConstructor
-48| public class PayOrderUseCase {
-49|   private final OrderRepository orderRepository;
-50|   private final PaymentGateway paymentGateway;
-51|
-52|   public Result<Order, OrderError> execute(OrderId orderId, PaymentInfo info) {
-53|     Order order = orderRepository.findById(orderId).orElseThrow();
-54|     PaymentId paymentId = paymentGateway.charge(info);
-55|     return OrderTransitions.pay(order, paymentId, LocalDateTime.now())
-56|       .peek(orderRepository::save);
-57|   }
-58| }
+20|   public Order {
+21|     Objects.requireNonNull(id, "OrderId는 필수");
+22|     Objects.requireNonNull(customerId, "CustomerId는 필수");
+23|     Objects.requireNonNull(items, "items는 필수");
+24|     Objects.requireNonNull(totalAmount, "totalAmount는 필수");
+25|     Objects.requireNonNull(status, "status는 필수");
+26|     items = List.copyOf(items);
+27|   }
+28| }
+29|
+30| // --- Calculations (순수 함수) ---
+31| public class OrderTransitions {
+32|   public static Result<Order, OrderError> pay(Order order, PaymentId paymentId, LocalDateTime at) {
+33|     return switch (order.status()) {
+34|       case Pending _ -> Result.success(
+35|         new Order(order.id(), order.customerId(), order.items(),
+36|           order.totalAmount(), new Paid(at, paymentId)));
+37|       case Paid _, Shipped _, Cancelled _ ->
+38|         Result.failure(new OrderError.CannotPay(order.id(), order.status()));
+39|     };
+40|   }
+41|
+42|   public static Result<Order, OrderError> ship(Order order, TrackingNumber tracking, LocalDateTime at) {
+43|     return switch (order.status()) {
+44|       case Paid _ -> Result.success(
+45|         new Order(order.id(), order.customerId(), order.items(),
+46|           order.totalAmount(), new Shipped(at, tracking)));
+47|       case Pending _, Shipped _, Cancelled _ ->
+48|         Result.failure(new OrderError.CannotShip(order.id(), order.status()));
+49|     };
+50|   }
+51| }
+52|
+53| // --- Orchestrator ---
+54| @RequiredArgsConstructor
+55| public class PayOrderUseCase {
+56|   private final OrderRepository orderRepository;
+57|   private final PaymentGateway paymentGateway;
+58|
+59|   public Result<Order, OrderError> execute(OrderId orderId, PaymentInfo info) {
+60|     Order order = orderRepository.findById(orderId).orElseThrow();
+61|     PaymentId paymentId = paymentGateway.charge(info);
+62|     return OrderTransitions.pay(order, paymentId, LocalDateTime.now())
+63|       .peek(orderRepository::save);
+64|   }
+65| }
 ```
 
 ### 관점 차이 분석
@@ -543,17 +555,31 @@
 | - save(Order)    |                    | OrderPlaced      |
 | - findById(id)   |                    | OrderPaid        |
 +------------------+                    +------------------+
-           |
-           | uses
-           v
-+------------------+
-| DOMAIN SERVICE   |
-|------------------|
-| - 상태 없음       |
-| - 도메인 로직     |
-| - 여러 Aggregate |
-|   협력 필요 시    |
-+------------------+
+           ^                                      ^
+           |                                      |
+           +----------------+---------------------+
+                            |
+                      uses  |
+                            |
+                  +------------------+
+                  | USE CASE         |
+                  | (Application)    |
+                  |------------------|
+                  | - orchestration  |
+                  | - Repository     |<----+
+                  | - DomainService  |     |
+                  +------------------+     |
+                            |              |
+                      calls |              |
+                            v              |
+                  +------------------+     |
+                  | DOMAIN SERVICE   |-----+
+                  |------------------|  operates on
+                  | - stateless      |  Aggregate data
+                  | - pure functions |
+                  | - multi-Aggregate|
+                  |   coordination   |
+                  +------------------+
 ```
 
 ### 4.1 Entity (엔티티)
@@ -877,7 +903,7 @@
 **[표 01.7]** DDD 안티패턴
 | 안티패턴 | 증상 | 원인 | 해결책 |
 |---------|------|------|--------|
-| **Anemic Domain Model** | Entity에 getter/setter만, 로직은 Service에 | "객체는 데이터" 사고 | Entity에 도메인 로직 포함 |
+| **Anemic Domain Model** | Entity에 getter/setter만, 도메인 규칙이 Service에 산재 | "객체는 데이터" 사고 | 타입 시스템으로 불변식/상태 전이 캡처 (아래 상세) |
 | **Big Ball of Mud** | 경계 없는 거대한 모놀리스 | BC 분리 실패 | Context Mapping으로 분리 |
 | **Smart UI** | UI 코드에 비즈니스 로직 | 빠른 개발 압박 | 도메인 계층 분리 |
 | **Database-Driven Design** | 테이블 구조가 도메인 모델 결정 | DBA 주도 설계 | 도메인 먼저, 영속화는 나중 |
@@ -907,25 +933,75 @@
 19| }
 ```
 
-**[코드 01.17]** Rich Domain Model (해결책)
+### Anemic Model vs DOP: 무엇이 다른가?
+
+얼핏 보면 DOP도 "데이터(Record)와 로직(Calculations) 분리"이니 Anemic처럼 보입니다. 차이점은 **도메인 지식이 어디에 캡처되는가**입니다.
+
+**[표 01.8]** Anemic Model vs DOP 비교
+| 관점 | Anemic Model (안티패턴) | DOP (권장) |
+|------|------------------------|-----------|
+| **타입 정의** | `String status` (원시 타입) | `sealed interface OrderStatus` (Sum Type) |
+| **불변식** | Service에서 if 문으로 검사 | Compact Constructor에서 강제 |
+| **상태 전이 규칙** | Service에 산재된 if/else | switch 표현식의 망라적 매칭 |
+| **컴파일 타임 검증** | 없음 | 타입 시스템이 잘못된 상태 방지 |
+| **도메인 전문가 이해** | 코드 읽기 어려움 | 타입 정의만 보면 도메인 이해 |
+
+**핵심 차이**:
+- Anemic: 도메인 규칙이 **절차적 코드에 숨겨져** 있음
+- DOP: 도메인 규칙이 **타입 정의에 명시적으로** 드러남
+
+**[코드 01.17]** Anemic vs DOP: 상태 검사 비교
+```java
+ 1| // Anemic: 상태가 String, 규칙이 Service에 숨어있음
+ 2| if ("PENDING".equals(order.getStatus())) { /* ... */ }
+ 3|
+ 4| // DOP: 상태가 타입, 컴파일러가 모든 케이스 강제
+ 5| switch (order.status()) {
+ 6|   case Pending p -> /* ... */    // 컴파일러가 Paid, Shipped, Cancelled 누락 경고
+ 7|   case Paid p -> /* ... */
+ 8|   case Shipped s -> /* ... */
+ 9|   case Cancelled c -> /* ... */
+10| }
+```
+
+**[코드 01.18]** Rich Domain Model (DMMF 스타일 해결책)
 ```java
  1| // package: com.ecommerce.order
- 2| // [O] Rich: Entity가 자신의 규칙을 알고 있음
- 3|
- 4| public record Order(OrderId id, Money amount, OrderStatus status) {
- 5|   public Result<Order, OrderError> pay(PaymentId paymentId) {
- 6|     return switch (status) {
- 7|       case Pending _ -> Result.success(
- 8|         new Order(id, amount, new Paid(LocalDateTime.now(), paymentId)));
- 9|       default -> Result.failure(new OrderError.CannotPay(id));
-10|     };
-11|   }
-12| }
+ 2| // [O] Rich Domain Model: 상태 전이 함수를 타입에 포함 (DMMF 스타일)
+ 3| // 주의: DOP 스타일에서는 이 함수를 OrderTransitions 클래스로 분리
+ 4| // 아래는 DMMF 스타일의 예시임
+ 5|
+ 6| public record Order(OrderId id, Money amount, OrderStatus status) {
+ 7|   // 상태 전이 함수: 새 Order 반환 (불변)
+ 8|   // 비즈니스 계산(가격, 할인 등)은 외부 Calculations로 분리 권장
+ 9|   public Result<Order, OrderError> pay(PaymentId paymentId) {
+10|     return switch (status) {
+11|       case Pending _ -> Result.success(
+12|         new Order(id, amount, new Paid(LocalDateTime.now(), paymentId)));
+13|       default -> Result.failure(new OrderError.CannotPay(id));
+14|     };
+15|   }
+16| }
 ```
+
+### JPA @Entity vs DDD Entity: 같은 이름, 다른 개념
+
+**[표 01.9]** JPA @Entity vs DDD Entity
+| 관점 | JPA @Entity | DDD Entity |
+|------|-------------|------------|
+| **목적** | 테이블 매핑 (영속화) | 도메인 모델링 (식별자 기반 객체) |
+| **위치** | 인프라 계층 | 도메인 계층 |
+| **가변성** | 보통 가변 (setter) | 원칙적으로 불변 권장 |
+| **예시** | `@Entity class OrderEntity` | `record Order(OrderId id, ...)` |
+
+실무에서 두 개념을 혼용하면 도메인 모델이 DB 스키마에 종속됩니다. 권장 접근:
+- **Domain Model**: `record Order` (순수 도메인, JPA 어노테이션 없음)
+- **JPA Entity**: `@Entity class OrderEntity` (영속화 전용)
+- **Mapper**: 두 모델 간 변환
 
 ### Database-Driven Design (데이터베이스 주도 설계)
 
-**[코드 01.18]** Database-Driven Design
+**[코드 01.19]** Database-Driven Design
 ```java
  1| // package: com.ecommerce.order
  2| // [X] Database-Driven: 테이블 구조가 도메인을 결정
@@ -943,7 +1019,7 @@
 14| }
 ```
 
-**[코드 01.19]** Domain-First Design (해결책)
+**[코드 01.20]** Domain-First Design (해결책)
 ```java
  1| // package: com.ecommerce.order
  2| // [O] Domain-First: 도메인 모델을 먼저, 영속화는 나중
@@ -983,7 +1059,7 @@
 
 ## 정리: 이 챕터에서 다룬 DDD 개념과 이후 챕터 연결
 
-**[표 01.8]** DDD 개념 → 후속 챕터 매핑
+**[표 01.10]** DDD 개념 → 후속 챕터 매핑
 | DDD 개념 | 핵심 내용 | 상세 챕터 |
 |---------|----------|----------|
 | Value Object | 값 기반 불변 타입 | Ch.02 (Value Objects) |
