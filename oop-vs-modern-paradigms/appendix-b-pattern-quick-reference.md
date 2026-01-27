@@ -34,6 +34,10 @@
 | 23 | Bounded Context Model | 같은 도메인을 컨텍스트별 독립 모델로 분리 | 01, 13 |
 | 24 | Defensive Copy | Record의 컬렉션 필드를 List.copyOf로 보호 | 02 |
 | 25 | Null Object via ADT | null 대신 NoDiscount(), Empty() 등 ADT case 사용 | 03, 11 |
+| 26 | Event Store | 상태 변화를 이벤트로 저장하여 완전한 이력 보존 | 14 |
+| 27 | Aggregate Reconstitution | fold(initialState, events)로 현재 상태 재구성 | 14 |
+| 28 | Decider Pattern | (State, Command) -> Result<Events, Error> 순수 함수 | 14 |
+| 29 | Projection (CQRS) | 이벤트 스트림을 읽기 전용 모델로 변환 | 14 |
 
 ---
 
@@ -318,6 +322,55 @@
 6| }
 ```
 
+### 26. Event Store
+
+**[코드 B.26]** OrderEvent interface
+```java
+1| // package: com.ecommerce.order
+2| public sealed interface OrderEvent {
+3|   record OrderPlaced(OrderId id, List<OrderItem> items, LocalDateTime at) implements OrderEvent {}
+4|   record OrderPaid(OrderId id, PaymentId paymentId, LocalDateTime at) implements OrderEvent {}
+5|   record OrderShipped(OrderId id, TrackingNumber tracking, LocalDateTime at) implements OrderEvent {}
+6| }
+```
+
+### 27. Aggregate Reconstitution
+
+**[코드 B.27]** Aggregate Reconstitution
+```java
+1| // package: com.ecommerce.order
+2| public static OrderState reconstitute(List<OrderEvent> events) {
+3|   return events.stream()
+4|     .reduce(OrderState.initial(), OrderAggregate::apply, (s1, s2) -> s2);
+5| }
+```
+
+### 28. Decider Pattern
+
+**[코드 B.28]** Decider Pattern
+```java
+1| // package: com.ecommerce.order
+2| public static Result<List<OrderEvent>, OrderError> decide(OrderState state, OrderCommand cmd) {
+3|   return switch (cmd) {
+4|     case PlaceOrder c -> handlePlace(state, c);
+5|     case PayOrder c -> handlePay(state, c);
+6|   };
+7| }
+```
+
+### 29. Projection (CQRS)
+
+**[코드 B.29]** Projection (CQRS)
+```java
+1| // package: com.ecommerce.order
+2| public void on(OrderEvent event) {
+3|   switch (event) {
+4|     case OrderPlaced e -> summaryRepo.save(new OrderSummary(e.id(), "PLACED", e.at()));
+5|     case OrderPaid e -> summaryRepo.updateStatus(e.id(), "PAID", e.at());
+6|   }
+7| }
+```
+
 ---
 
 ## 패턴 조합 가이드
@@ -334,3 +387,5 @@
 | JPA 기존 코드 | Entity-Record Mapper + Gradual Migration |
 | 분산/병렬 처리 | Monoid + Idempotent Operation |
 | 도메인 모델링 | Bounded Context + ADT + Value Object |
+| 이력 추적 필수 도메인 | Event Store + Aggregate Reconstitution + Decider |
+| 복잡한 조회 요구 | Event Sourcing + Projection (CQRS) |

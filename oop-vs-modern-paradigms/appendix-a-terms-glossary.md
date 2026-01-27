@@ -9,6 +9,7 @@
 |---|---|---|---|
 | Abstract Data Type | 추상 데이터 타입 | 데이터와 그 연산을 함께 정의하는 타입 (ADT와 구분 필요) | 03 |
 | Accumulator | 누적기 | reduce/fold에서 중간 결과를 저장하는 값 | 11 |
+| Aggregate Reconstitution | 애그리거트 재구성 | 이벤트 스트림을 fold하여 현재 상태를 계산하는 과정 | 14 |
 | ADT (Algebraic Data Type) | 대수적 데이터 타입 | Sum Type + Product Type의 조합으로 도메인 모델을 표현하는 타입 체계 | 03 |
 | Aggregate | 애그리거트 | 트랜잭션 일관성의 경계를 형성하는 도메인 객체 클러스터 | 13 |
 | Anti-Corruption Layer (ACL) | 반부패 계층 | 외부 시스템의 모델이 도메인을 오염시키지 않도록 변환하는 계층 | 13 |
@@ -18,19 +19,24 @@
 | Builder Pattern | 빌더 패턴 | 복잡한 객체를 단계적으로 생성하는 생성 패턴 | 02 |
 | Cardinality | 카디널리티 | 타입이 표현할 수 있는 가능한 값의 수 | 03 |
 | Combiner | 결합기 | parallelStream의 reduce에서 부분 결과를 합치는 함수 | 11 |
+| Command | 커맨드 | 시스템에 대한 상태 변경 요청을 나타내는 불변 객체 (명령형, 미래 시제) | 14 |
 | Commutativity | 교환법칙 | A+B = B+A. 피연산자 순서를 바꿔도 결과 동일 | 11 |
+| CQRS | 명령 쿼리 책임 분리 | Command(쓰기)와 Query(읽기) 모델을 분리하는 아키텍처 패턴 | 14 |
 | Compact Constructor | 컴팩트 생성자 | Record에서 검증 로직을 넣는 축약 생성자 형태 | 02 |
 | CRDT | 충돌 없는 복제 데이터 타입 | 분산 시스템에서 순서 무관하게 수렴하는 데이터 구조 | 11 |
 | Curry (Currying) | 커링 | 다인자 함수를 단인자 함수의 연쇄로 변환하는 기법 | 06 |
+| Decider | 디사이더 | (State, Command) -> Result<Events, Error> 형태의 순수 함수로 비즈니스 규칙 검증 | 14 |
 | Defensive Copy | 방어적 복사 | 컬렉션 필드의 불변성을 보장하기 위해 복사본을 저장하는 패턴 | 02 |
 | Dependency Inversion (DIP) | 의존성 역전 | 상위 모듈이 하위 모듈에 의존하지 않고 추상화에 의존하는 원칙 | 13 |
 | DOP (Data-Oriented Programming) | 데이터 지향 프로그래밍 | 데이터와 로직을 분리하고, 불변 데이터를 다루는 프로그래밍 패러다임 | 01 |
 | DMMF (Domain Modeling Made Functional) | 도메인 모델링을 함수형으로 | Scott Wlaschin의 저서. DDD + FP 접근법 | 01 |
-| Domain Event | 도메인 이벤트 | 도메인에서 발생한 중요한 사건을 나타내는 불변 메시지 | 07 |
+| Domain Event | 도메인 이벤트 | 도메인에서 발생한 중요한 사건을 나타내는 불변 메시지 (과거 시제) | 07, 14 |
 | DSL (Domain-Specific Language) | 도메인 전용 언어 | 특정 도메인 문제를 해결하기 위한 전용 미니 언어 | 12 |
 | Entity (DDD) | 엔티티 | 고유 식별자로 구분되는 도메인 객체 (JPA Entity와 구분) | 01 |
 | Entity (JPA) | JPA 엔티티 | @Entity 어노테이션으로 표시된 영속성 객체. 가변, Identity 기반 | 13 |
 | Escape Analysis | 탈출 분석 | JIT 컴파일러가 객체의 스코프를 분석하여 스택 할당을 결정하는 기법 | Appendix C |
+| Event Sourcing | 이벤트 소싱 | 상태를 직접 저장하는 대신 상태 변화 이벤트를 저장하는 패턴 | 14 |
+| Event Store | 이벤트 저장소 | 이벤트를 append-only로 저장하는 영구 저장소 | 14 |
 | Exhaustiveness | 망라성 | sealed interface의 switch에서 모든 케이스를 다뤄야 하는 속성 | 03 |
 | Expression Problem | 표현 문제 | 기존 코드 수정 없이 새 타입과 새 연산을 동시에 추가하기 어려운 문제 | 12 |
 | Factory Method | 팩토리 메서드 | 객체 생성을 캡슐화하는 정적 메서드 패턴 | 02 |
@@ -71,6 +77,7 @@
 | Pipeline | 파이프라인 | 함수들을 순차적으로 연결하여 데이터를 변환하는 패턴 | 06, 08 |
 | Primitive Obsession | 원시 타입 집착 | String, int 등 원시 타입으로 도메인 값을 표현하는 안티패턴 | 02 |
 | Product Type | 곱 타입 | 여러 필드를 AND로 결합한 타입 (record) | 03 |
+| Projection | 프로젝션 | 이벤트 스트림을 읽기에 최적화된 별도 모델로 변환하는 과정 | 14 |
 | Property-Based Testing | 속성 기반 테스트 | 무작위 입력으로 속성(법칙)을 검증하는 테스트 기법 | 13 |
 | Pure Function | 순수 함수 | 동일 입력에 항상 동일 출력, 부수효과 없는 함수 | 06, 13 |
 | Railway-Oriented Programming (ROP) | 철도 지향 프로그래밍 | Result/flatMap으로 성공/실패 경로를 분리하는 에러 처리 패턴 | 06, 08 |
@@ -86,6 +93,7 @@
 | Short-circuit Evaluation | 단축 평가 | &&, ||에서 첫 피연산자로 결과가 결정되면 나머지를 평가하지 않는 전략 | 12 |
 | Side Effect | 부수효과 | 함수 외부 상태를 변경하는 동작 (DB 저장, 출력 등) | 06 |
 | Smart Constructor | 스마트 생성자 | 검증을 포함하여 유효한 객체만 생성하는 생성자 패턴 | 02 |
+| Snapshot | 스냅샷 | 특정 시점의 상태를 저장하여 재구성 성능을 최적화하는 기법 | 14 |
 | State Machine | 상태 기계 | 유한한 상태와 상태 간 전이를 정의하는 모델 | 04, 13 |
 | Strangler Fig Pattern | 교살자 무화과 패턴 | 레거시 시스템을 점진적으로 새 시스템으로 교체하는 전략 | 13 |
 | Structural Sharing | 구조적 공유 | 불변 객체 생성 시 변경되지 않은 부분을 참조로 재사용하는 기법 | Appendix C |
@@ -104,4 +112,4 @@
 
 ---
 
-> 총 85개 용어. 각 Topic 번호는 해당 용어가 처음 또는 주로 다뤄지는 문서를 의미한다.
+> 총 95개 용어. 각 Topic 번호는 해당 용어가 처음 또는 주로 다뤄지는 문서를 의미한다.

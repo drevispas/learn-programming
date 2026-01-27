@@ -80,6 +80,9 @@
 - [13. Comprehensive Integration](13-comprehensive-integration.md)
   전체 패턴 통합, 실전 프로젝트, JPA/Spring 공존
 
+- [14. Event Sourcing](14-event-sourcing.md)
+  이벤트 저장소, Aggregate 재구성, Decider 패턴, CQRS
+
 ### 부록
 
 - [Appendix A: Terms Glossary](appendix-a-terms-glossary.md)
@@ -123,5 +126,5 @@
 [10 FP Practical] --> [11 Algebra] --> [12 Interpreter] --> [07 Architecture]
                                                               |
                                                               v
-                                                        [13 Integration]
+                                       [14 Event Sourcing] <-- [13 Integration]
 ```
